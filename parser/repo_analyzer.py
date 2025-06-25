@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """
-仓库分析器 - 对整个代码仓库进行函数分析
+仓库分析器 - 综合的C/C++代码仓库分析工具
 """
 
-import os
 import time
+import logging
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict, Any
 from .file_finder import FileFinder
 from .function_extractor import FunctionExtractor, FunctionInfo
+
+# 配置logging
+logger = logging.getLogger(__name__)
 
 
 class RepoAnalyzer:
@@ -23,95 +26,100 @@ class RepoAnalyzer:
     def analyze_repository(self, repo_path: str, recursive: bool = True, 
                           show_progress: bool = True) -> Dict:
         """
-        分析整个代码仓库
+        分析代码仓库
         
         Args:
             repo_path: 仓库路径
-            recursive: 是否递归搜索子目录
-            show_progress: 是否显示进度
+            recursive: 是否递归搜索
+            show_progress: 是否显示进度信息
             
         Returns:
             分析结果字典
         """
-        print(f"🔍 开始分析代码仓库: {repo_path}")
-        print("=" * 80)
-        
         start_time = time.time()
         
-        # 1. 查找所有C/C++文件
-        print("📂 正在搜索C/C++文件...")
+        if show_progress:
+            print(f"🔍 开始分析代码仓库: {repo_path}")
+            print("=" * 80)
+        
+        logger.info(f"开始分析代码仓库: {repo_path}")
+        
+        # 1. 搜索文件
+        if show_progress:
+            print("📂 正在搜索C/C++文件...")
+        
         try:
             files = self.file_finder.find_files(repo_path, recursive)
         except Exception as e:
-            print(f"错误: 搜索文件时出错: {e}")
+            error_msg = f"搜索文件时出错: {e}"
+            logger.error(error_msg)
+            if show_progress:
+                print(f"错误: {error_msg}")
             return {}
         
         if not files:
-            print("❌ 未找到任何C/C++文件")
+            logger.warning("未找到任何C/C++文件")
+            if show_progress:
+                print("❌ 未找到任何C/C++文件")
             return {}
         
         file_stats = self.file_finder.get_file_stats()
-        print(f"✅ 找到 {file_stats['total_files']} 个文件")
-        print(f"   - C文件: {file_stats['c_files']}")
-        print(f"   - C++文件: {file_stats['cpp_files']}")
-        print(f"   - 头文件: {file_stats['header_files']}")
-        print()
+        logger.info(f"找到 {file_stats['total_files']} 个文件")
         
-        # 2. 提取函数定义
-        print("🔧 正在提取函数定义...")
+        if show_progress:
+            print(f"✅ 找到 {file_stats['total_files']} 个文件")
+            print(f"   - C文件: {file_stats['c_files']}")
+            print(f"   - C++文件: {file_stats['cpp_files']}")
+            print(f"   - 头文件: {file_stats['header_files']}")
+            print()
+        
+        # 2. 提取函数
+        if show_progress:
+            print("🔧 正在提取函数定义...")
+        
         self.all_functions = []
         failed_files = []
         
         for i, file_path in enumerate(files, 1):
-            if show_progress:
-                print(f"  处理文件 {i}/{len(files)}: {Path(file_path).name}", end="")
-            
             try:
+                if show_progress:
+                    print(f"  处理文件 {i}/{len(files)}: {Path(file_path).name}", end="")
+                
                 functions = self.function_extractor.extract_from_file(file_path)
                 self.all_functions.extend(functions)
                 
                 if show_progress:
                     print(f" -> 找到 {len(functions)} 个函数")
-                    
+                
+                logger.debug(f"处理文件 {file_path}: 找到 {len(functions)} 个函数")
+                
             except Exception as e:
                 failed_files.append((file_path, str(e)))
+                logger.error(f"处理文件 {file_path} 失败: {e}")
                 if show_progress:
                     print(f" -> 失败: {e}")
         
-        end_time = time.time()
+        # 3. 生成统计信息
+        duration = time.time() - start_time
+        self.analysis_stats = self._generate_statistics(files, failed_files, duration)
         
-        # 3. 生成分析统计
-        self.analysis_stats = self._generate_statistics(files, failed_files, end_time - start_time)
+        if show_progress:
+            print("\n" + "=" * 80)
+            print("📊 分析完成！")
+            self._print_summary()
         
-        print("\n" + "=" * 80)
-        print("📊 分析完成！")
-        self._print_summary()
+        logger.info(f"分析完成，用时 {duration:.2f} 秒，找到 {len(self.all_functions)} 个函数")
         
-        return {
-            'functions': self.all_functions,
-            'stats': self.analysis_stats,
-            'files': files,
-            'failed_files': failed_files
-        }
+        return self.analysis_stats
     
     def _generate_statistics(self, files: List[str], failed_files: List, duration: float) -> Dict:
         """生成分析统计信息"""
-        file_function_count = {}
+        
+        # 基本统计
         definitions = [f for f in self.all_functions if not f.is_declaration]
         declarations = [f for f in self.all_functions if f.is_declaration]
         
-        # 按文件统计函数数量
-        for func in self.all_functions:
-            file_name = Path(func.file_path).name if func.file_path else "Unknown"
-            if file_name not in file_function_count:
-                file_function_count[file_name] = {'definitions': 0, 'declarations': 0}
-            
-            if func.is_declaration:
-                file_function_count[file_name]['declarations'] += 1
-            else:
-                file_function_count[file_name]['definitions'] += 1
-        
-        # 按函数名统计（找重复定义）
+        # 检测重复函数定义
         function_names = {}
         for func in definitions:
             full_name = f"{func.scope}::{func.name}" if func.scope else func.name
@@ -119,19 +127,24 @@ class RepoAnalyzer:
                 function_names[full_name] = []
             function_names[full_name].append(func)
         
-        duplicate_functions = {name: funcs for name, funcs in function_names.items() if len(funcs) > 1}
+        # 找出重复定义
+        duplicate_functions = {name: funcs for name, funcs in function_names.items() 
+                             if len(funcs) > 1}
         
-        return {
+        stats = {
+            'processing_time': duration,
             'total_files': len(files),
             'successful_files': len(files) - len(failed_files),
             'failed_files': len(failed_files),
+            'failed_file_list': failed_files,
             'total_functions': len(self.all_functions),
             'function_definitions': len(definitions),
             'function_declarations': len(declarations),
-            'file_function_count': file_function_count,
             'duplicate_functions': duplicate_functions,
-            'processing_time': duration
+            'unique_function_names': len(function_names),
         }
+        
+        return stats
     
     def _print_summary(self):
         """打印分析摘要"""
@@ -230,6 +243,7 @@ class RepoAnalyzer:
             if regex.search(func.name):
                 matched_functions.append(func)
         
+        logger.info(f"搜索模式 '{pattern}' 找到 {len(matched_functions)} 个匹配函数")
         return matched_functions
     
     def save_analysis_report(self, output_file: str):
@@ -280,76 +294,10 @@ class RepoAnalyzer:
                             f.write(f"- {file_name}:{func.start_line}-{func.end_line}\n")
                         f.write("\n")
             
+            logger.info(f"分析报告已保存到: {output_file}")
             print(f"✅ 分析报告已保存到: {output_file}")
             
         except Exception as e:
-            print(f"❌ 保存报告失败: {e}")
-
-
-def main():
-    """命令行入口"""
-    import argparse
-    
-    parser = argparse.ArgumentParser(description='C/C++ 代码仓库函数分析工具')
-    parser.add_argument('path', help='要分析的文件或目录路径')
-    parser.add_argument('--no-recursive', action='store_true', help='不递归搜索子目录')
-    parser.add_argument('--no-progress', action='store_true', help='不显示处理进度')
-    parser.add_argument('--no-details', action='store_true', help='不显示详细信息')
-    parser.add_argument('--flat', action='store_true', help='平铺显示函数，不按文件分组')
-    parser.add_argument('--search', type=str, help='搜索函数名匹配的模式')
-    parser.add_argument('--case-sensitive', action='store_true', help='区分大小写搜索')
-    parser.add_argument('--report', type=str, help='保存分析报告到指定文件')
-    parser.add_argument('--duplicates-only', action='store_true', help='只显示重复的函数')
-    
-    args = parser.parse_args()
-    
-    # 创建分析器
-    analyzer = RepoAnalyzer()
-    
-    # 执行分析
-    try:
-        result = analyzer.analyze_repository(
-            args.path, 
-            recursive=not args.no_recursive,
-            show_progress=not args.no_progress
-        )
-        
-        if not result:
-            return
-        
-        # 处理搜索
-        if args.search:
-            print(f"\n🔍 搜索函数名包含 '{args.search}' 的函数:")
-            matched = analyzer.search_functions(args.search, args.case_sensitive)
-            if matched:
-                analyzer.function_extractor.print_functions(matched, not args.no_details)
-            else:
-                print("❌ 没有找到匹配的函数")
-            return
-        
-        # 显示重复函数
-        if args.duplicates_only:
-            analyzer.print_duplicate_functions()
-            return
-        
-        # 显示所有函数
-        analyzer.print_all_functions(
-            group_by_file=not args.flat, 
-            show_details=not args.no_details
-        )
-        
-        # 显示重复函数
-        analyzer.print_duplicate_functions()
-        
-        # 保存报告
-        if args.report:
-            analyzer.save_analysis_report(args.report)
-            
-    except KeyboardInterrupt:
-        print("\n❌ 用户中断分析")
-    except Exception as e:
-        print(f"❌ 分析出错: {e}")
-
-
-if __name__ == "__main__":
-    main() 
+            error_msg = f"保存报告失败: {e}"
+            logger.error(error_msg)
+            print(f"❌ {error_msg}") 

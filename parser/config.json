@@ -1,0 +1,36 @@
+{
+  "file_extensions": {
+    "c_extensions": [".c", ".h"],
+    "cpp_extensions": [".cpp", ".cxx", ".cc", ".hpp", ".hxx", ".hh"]
+  },
+  "skip_directories": [
+    ".git", 
+    ".svn", 
+    ".hg",
+    ".vscode",
+    ".idea",
+    ".pytest_cache",
+    ".coverage",
+    ".coverage",
+    "build", 
+    "Build", 
+    "BUILD",
+    "bin", 
+    "obj",
+    "venv", 
+    "env", 
+    ".env",
+    "node_modules",
+    "CMakeFiles",
+    "__pycache__",
+    "dist", 
+    "Debug", 
+    "Release",
+    "target", 
+    "out"
+  ],
+  "description": {
+    "file_extensions": "支持的C/C++文件扩展名",
+    "skip_directories": "搜索时应跳过的目录名"
+  }
+} 

@@ -5,20 +5,41 @@
 
 import os
 import glob
+import json
+import logging
 from pathlib import Path
 from typing import List, Set
+
+# 配置logging
+logger = logging.getLogger(__name__)
 
 
 class FileFinder:
     """C/C++文件查找器"""
     
-    # 支持的文件扩展名
-    C_EXTENSIONS = {'.c', '.h'}
-    CPP_EXTENSIONS = {'.cpp', '.cxx', '.cc', '.hpp', '.hxx', '.hh'}
-    ALL_EXTENSIONS = C_EXTENSIONS | CPP_EXTENSIONS
-    
     def __init__(self):
+        # 从配置文件加载设置
+        self._load_config()
+        self.ALL_EXTENSIONS = self.C_EXTENSIONS | self.CPP_EXTENSIONS
         self.found_files = []
+    
+    def _load_config(self):
+        """从配置文件加载设置"""
+        config_path = Path(__file__).parent / "config.json"
+        
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+        except Exception as e:
+            raise RuntimeError(f"无法加载配置文件 {config_path}: {e}")
+        
+        # 加载文件扩展名
+        file_ext = config.get("file_extensions", {})
+        self.C_EXTENSIONS = set(file_ext.get("c_extensions", []))
+        self.CPP_EXTENSIONS = set(file_ext.get("cpp_extensions", []))
+        
+        # 加载要跳过的目录
+        self.SKIP_DIRECTORIES = set(config.get("skip_directories", []))
     
     def find_files(self, path: str, recursive: bool = True) -> List[str]:
         """
@@ -71,21 +92,11 @@ class FileFinder:
                     if item.is_file() and self._is_c_cpp_file(item):
                         self.found_files.append(str(item.absolute()))
         except PermissionError as e:
-            print(f"警告: 无法访问目录 {dir_path}: {e}")
+            logger.warning(f"无法访问目录 {dir_path}: {e}")
     
     def _should_skip_directory(self, dir_name: str) -> bool:
         """判断是否应该跳过某个目录"""
-        skip_dirs = {
-            '.git', '.svn', '.hg',  # 版本控制
-            'build', 'Build', 'BUILD',  # 构建目录
-            'bin', 'obj',  # 二进制目录
-            'venv', 'env', '.env',  # Python虚拟环境
-            'node_modules',  # Node.js
-            '.vscode', '.idea',  # IDE配置
-            'CMakeFiles',  # CMake生成的文件
-            '__pycache__',  # Python缓存
-        }
-        return dir_name in skip_dirs
+        return dir_name in self.SKIP_DIRECTORIES
     
     def get_file_stats(self) -> dict:
         """获取文件统计信息"""
@@ -110,41 +121,26 @@ class FileFinder:
         
         return stats
     
-    def print_file_list(self, show_stats: bool = True):
-        """打印找到的文件列表"""
+    def get_file_list_info(self, show_stats: bool = True) -> dict:
+        """获取文件列表信息（用于日志或返回）"""
         if not self.found_files:
-            print("未找到任何C/C++文件")
-            return
+            return {"message": "未找到任何C/C++文件", "files": [], "stats": {}}
         
-        print(f"找到 {len(self.found_files)} 个C/C++文件:")
-        print("-" * 60)
+        file_info = {
+            "message": f"找到 {len(self.found_files)} 个C/C++文件",
+            "files": []
+        }
         
         for i, file_path in enumerate(self.found_files, 1):
             file_obj = Path(file_path)
-            print(f"{i:3d}. {file_obj.name} ({file_obj.suffix})")
-            print(f"     路径: {file_path}")
+            file_info["files"].append({
+                "index": i,
+                "name": file_obj.name,
+                "extension": file_obj.suffix,
+                "path": file_path
+            })
         
         if show_stats:
-            print("\n" + "=" * 60)
-            stats = self.get_file_stats()
-            print("文件统计:")
-            print(f"  总文件数: {stats.get('total_files', 0)}")
-            print(f"  C文件: {stats.get('c_files', 0)}")
-            print(f"  C++文件: {stats.get('cpp_files', 0)}")
-            print(f"  头文件: {stats.get('header_files', 0)}")
-
-
-if __name__ == "__main__":
-    import sys
-    
-    if len(sys.argv) != 2:
-        print("使用方法: python file_finder.py <目录或文件路径>")
-        sys.exit(1)
-    
-    finder = FileFinder()
-    try:
-        files = finder.find_files(sys.argv[1])
-        finder.print_file_list()
-    except Exception as e:
-        print(f"错误: {e}")
-        sys.exit(1) 
+            file_info["stats"] = self.get_file_stats()
+        
+        return file_info 

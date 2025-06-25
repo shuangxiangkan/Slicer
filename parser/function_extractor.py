@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """
-函数提取器 - 使用tree-sitter提取C/C++函数定义
+函数提取器 - 使用tree-sitter解析C/C++文件并提取函数定义
 """
 
 import tree_sitter_c as tsc
 import tree_sitter_cpp as tscpp
 from tree_sitter import Language, Parser, Node
-from typing import List, Dict, Optional, Tuple
 from pathlib import Path
-import re
+from typing import List, Optional, Dict
+import logging
+
+# 配置logging
+logger = logging.getLogger(__name__)
 
 
 class FunctionInfo:
@@ -24,19 +27,18 @@ class FunctionInfo:
         self.end_line = end_line
         self.file_path = file_path
         self.is_declaration = is_declaration
-        self.scope = scope  # 对于C++，可能是类或命名空间
+        self.scope = scope
     
     def __str__(self):
-        param_str = ", ".join(self.parameters)
         decl_type = "声明" if self.is_declaration else "定义"
-        scope_str = f"{self.scope}::" if self.scope else ""
-        return f"{self.return_type} {scope_str}{self.name}({param_str}) [{decl_type}]"
+        scope_info = f" [{self.scope}]" if self.scope else ""
+        return f"{self.name}({', '.join(self.parameters)}) -> {self.return_type} ({decl_type}){scope_info}"
     
     def get_signature(self):
         """获取函数签名"""
-        param_str = ", ".join(self.parameters)
-        scope_str = f"{self.scope}::" if self.scope else ""
-        return f"{self.return_type} {scope_str}{self.name}({param_str})"
+        params = ', '.join(self.parameters) if self.parameters else ""
+        scope_prefix = f"{self.scope}::" if self.scope else ""
+        return f"{self.return_type} {scope_prefix}{self.name}({params})"
 
 
 class FunctionExtractor:
@@ -44,48 +46,48 @@ class FunctionExtractor:
     
     def __init__(self):
         # 初始化C和C++解析器
-        self.c_language = Language(tsc.language(), "c")
-        self.cpp_language = Language(tscpp.language(), "cpp")
-        
-        self.c_parser = Parser()
-        self.cpp_parser = Parser()
-        
-        self.c_parser.set_language(self.c_language)
-        self.cpp_parser.set_language(self.cpp_language)
-        
-        self.functions = []
+        try:
+            self.c_language = Language(tsc.language(), "c")
+            self.c_parser = Parser()
+            self.c_parser.set_language(self.c_language)
+            
+            self.cpp_language = Language(tscpp.language(), "cpp")
+            self.cpp_parser = Parser()
+            self.cpp_parser.set_language(self.cpp_language)
+        except Exception as e:
+            logger.error(f"初始化解析器失败: {e}")
+            raise
     
     def extract_from_file(self, file_path: str) -> List[FunctionInfo]:
-        """从文件中提取函数定义"""
+        """从文件中提取函数"""
         try:
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-            
             return self.extract_from_content(content, file_path)
-        
         except Exception as e:
-            print(f"警告: 无法读取文件 {file_path}: {e}")
+            logger.warning(f"无法读取文件 {file_path}: {e}")
             return []
     
     def extract_from_content(self, content: str, file_path: str = "") -> List[FunctionInfo]:
-        """从代码内容中提取函数定义"""
-        # 根据文件扩展名选择解析器
-        file_ext = Path(file_path).suffix.lower() if file_path else ".c"
-        
-        if file_ext in {'.cpp', '.cxx', '.cc', '.hpp', '.hxx', '.hh'}:
-            parser = self.cpp_parser
-            is_cpp = True
-        else:
-            parser = self.c_parser
-            is_cpp = False
-        
-        # 解析代码
-        tree = parser.parse(bytes(content, 'utf8'))
-        root_node = tree.root_node
-        
-        # 提取函数
+        """从内容中提取函数"""
         functions = []
-        self._extract_functions_recursive(root_node, content, file_path, functions, is_cpp)
+        
+        # 判断是否为C++文件
+        is_cpp = any(file_path.endswith(ext) for ext in ['.cpp', '.cxx', '.cc', '.hpp', '.hxx', '.hh'])
+        
+        # 选择合适的解析器
+        parser = self.cpp_parser if is_cpp else self.c_parser
+        
+        try:
+            # 解析代码
+            tree = parser.parse(content.encode('utf-8'))
+            root_node = tree.root_node
+            
+            # 递归提取函数
+            self._extract_functions_recursive(root_node, content, file_path, functions, is_cpp)
+            
+        except Exception as e:
+            logger.error(f"解析文件 {file_path} 时出错: {e}")
         
         return functions
     
@@ -94,33 +96,35 @@ class FunctionExtractor:
                                    current_scope: str = ""):
         """递归提取函数定义"""
         
-        # 处理函数定义
+        # 检查当前节点是否为函数定义
         if node.type == 'function_definition':
-            func_info = self._parse_function_definition(node, content, file_path, 
-                                                       current_scope, is_cpp)
+            func_info = self._parse_function_definition(node, content, file_path, current_scope, is_cpp)
             if func_info:
                 functions.append(func_info)
+            return
         
-        # 处理函数声明
-        elif node.type == 'declaration':
-            func_info = self._parse_function_declaration(node, content, file_path, 
-                                                        current_scope, is_cpp)
+        # 检查当前节点是否为函数声明
+        if node.type == 'declaration':
+            func_info = self._parse_function_declaration(node, content, file_path, current_scope, is_cpp)
             if func_info:
                 functions.append(func_info)
+            return
         
-        # 对于C++，处理类和命名空间
-        elif is_cpp:
-            if node.type == 'class_specifier':
+        # 处理C++特有的结构
+        if is_cpp:
+            # 处理类定义
+            if node.type in ['class_specifier', 'struct_specifier']:
                 class_name = self._get_class_name(node, content)
                 new_scope = f"{current_scope}::{class_name}" if current_scope else class_name
                 
-                # 递归处理类内的方法
+                # 递归处理类内的函数
                 for child in node.children:
                     self._extract_functions_recursive(child, content, file_path, 
                                                      functions, is_cpp, new_scope)
                 return
             
-            elif node.type == 'namespace_definition':
+            # 处理命名空间
+            if node.type == 'namespace_definition':
                 namespace_name = self._get_namespace_name(node, content)
                 new_scope = f"{current_scope}::{namespace_name}" if current_scope else namespace_name
                 
@@ -186,7 +190,7 @@ class FunctionExtractor:
             )
         
         except Exception as e:
-            print(f"警告: 解析函数定义时出错: {e}")
+            logger.warning(f"解析函数定义时出错: {e}")
             return None
     
     def _parse_function_declaration(self, node: Node, content: str, file_path: str, 
@@ -268,14 +272,15 @@ class FunctionExtractor:
                 return content[child.start_byte:child.end_byte]
         return "Unknown"
     
-    def print_functions(self, functions: List[FunctionInfo], show_details: bool = True):
-        """打印函数列表"""
+    def get_functions_info(self, functions: List[FunctionInfo], show_details: bool = True) -> dict:
+        """获取函数信息（用于日志或返回）"""
         if not functions:
-            print("未找到任何函数")
-            return
+            return {"message": "未找到任何函数", "functions": [], "stats": {}}
         
-        print(f"找到 {len(functions)} 个函数:")
-        print("=" * 80)
+        info = {
+            "message": f"找到 {len(functions)} 个函数",
+            "functions": []
+        }
         
         # 按文件分组
         files_functions = {}
@@ -286,41 +291,38 @@ class FunctionExtractor:
             files_functions[file_name].append(func)
         
         for file_name, file_functions in files_functions.items():
-            print(f"\n📁 文件: {file_name}")
-            print("-" * 60)
+            file_info = {
+                "file": file_name,
+                "functions": []
+            }
             
-            for i, func in enumerate(file_functions, 1):
-                decl_marker = "🔗" if func.is_declaration else "🔧"
-                print(f"{i:2d}. {decl_marker} {func}")
+            for func in file_functions:
+                func_info = {
+                    "name": func.name,
+                    "signature": func.get_signature(),
+                    "is_declaration": func.is_declaration,
+                    "start_line": func.start_line,
+                    "end_line": func.end_line
+                }
                 
                 if show_details:
-                    print(f"    📍 位置: 第{func.start_line}-{func.end_line}行")
-                    if func.file_path:
-                        print(f"    📂 文件: {func.file_path}")
-                    print()
+                    func_info.update({
+                        "file_path": func.file_path,
+                        "scope": func.scope
+                    })
+                
+                file_info["functions"].append(func_info)
+            
+            info["functions"].append(file_info)
         
         # 统计信息
         definitions = [f for f in functions if not f.is_declaration]
         declarations = [f for f in functions if f.is_declaration]
         
-        print("=" * 80)
-        print("统计信息:")
-        print(f"  总函数数: {len(functions)}")
-        print(f"  函数定义: {len(definitions)}")
-        print(f"  函数声明: {len(declarations)}")
-
-
-if __name__ == "__main__":
-    import sys
-    
-    if len(sys.argv) != 2:
-        print("使用方法: python function_extractor.py <文件路径>")
-        sys.exit(1)
-    
-    extractor = FunctionExtractor()
-    try:
-        functions = extractor.extract_from_file(sys.argv[1])
-        extractor.print_functions(functions)
-    except Exception as e:
-        print(f"错误: {e}")
-        sys.exit(1) 
+        info["stats"] = {
+            "total_functions": len(functions),
+            "function_definitions": len(definitions),
+            "function_declarations": len(declarations)
+        }
+        
+        return info 
