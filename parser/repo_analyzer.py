@@ -6,7 +6,7 @@
 import time
 import logging
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Set
 from .file_finder import FileFinder
 from .function_extractor import FunctionExtractor, FunctionInfo
 
@@ -24,7 +24,9 @@ class RepoAnalyzer:
         self.analysis_stats = {}
     
     def analyze_repository(self, repo_path: str, recursive: bool = True, 
-                          show_progress: bool = True) -> Dict:
+                          show_progress: bool = True,
+                          include_patterns: Optional[List[str]] = None,
+                          exclude_patterns: Optional[List[str]] = None) -> Dict:
         """
         分析代码仓库
         
@@ -32,6 +34,8 @@ class RepoAnalyzer:
             repo_path: 仓库路径
             recursive: 是否递归搜索
             show_progress: 是否显示进度信息
+            include_patterns: 包含的文件/目录模式列表 (支持通配符)
+            exclude_patterns: 排除的文件/目录模式列表 (支持通配符)
             
         Returns:
             分析结果字典
@@ -40,6 +44,10 @@ class RepoAnalyzer:
         
         if show_progress:
             print(f"🔍 开始分析代码仓库: {repo_path}")
+            if include_patterns:
+                print(f"📋 包含模式: {include_patterns}")
+            if exclude_patterns:
+                print(f"🚫 排除模式: {exclude_patterns}")
             print("=" * 80)
         
         logger.info(f"开始分析代码仓库: {repo_path}")
@@ -50,6 +58,11 @@ class RepoAnalyzer:
         
         try:
             files = self.file_finder.find_files(repo_path, recursive)
+            
+            # 应用用户指定的包含/排除模式
+            if include_patterns or exclude_patterns:
+                files = self._filter_files(files, include_patterns, exclude_patterns)
+                
         except Exception as e:
             error_msg = f"搜索文件时出错: {e}"
             logger.error(error_msg)
@@ -63,7 +76,7 @@ class RepoAnalyzer:
                 print("❌ 未找到任何C/C++文件")
             return {}
         
-        file_stats = self.file_finder.get_file_stats()
+        file_stats = self._get_filtered_file_stats(files)
         logger.info(f"找到 {file_stats['total_files']} 个文件")
         
         if show_progress:
@@ -83,13 +96,18 @@ class RepoAnalyzer:
         for i, file_path in enumerate(files, 1):
             try:
                 if show_progress:
-                    print(f"  处理文件 {i}/{len(files)}: {Path(file_path).name}", end="")
+                    # 显示相对路径，更清晰
+                    rel_path = self._get_relative_path(file_path, repo_path)
+                    print(f"  处理文件 {i}/{len(files)}: {rel_path}", end="")
                 
                 functions = self.function_extractor.extract_from_file(file_path)
                 self.all_functions.extend(functions)
                 
                 if show_progress:
-                    print(f" -> 找到 {len(functions)} 个函数")
+                    # 分别显示定义和声明的数量
+                    definitions = len([f for f in functions if not f.is_declaration])
+                    declarations = len([f for f in functions if f.is_declaration])
+                    print(f" -> {definitions}定义 + {declarations}声明 = {len(functions)}函数")
                 
                 logger.debug(f"处理文件 {file_path}: 找到 {len(functions)} 个函数")
                 
@@ -111,6 +129,70 @@ class RepoAnalyzer:
         logger.info(f"分析完成，用时 {duration:.2f} 秒，找到 {len(self.all_functions)} 个函数")
         
         return self.analysis_stats
+    
+    def _filter_files(self, files: List[str], include_patterns: Optional[List[str]] = None,
+                     exclude_patterns: Optional[List[str]] = None) -> List[str]:
+        """根据用户指定的模式过滤文件"""
+        import fnmatch
+        
+        filtered_files = files[:]
+        
+        # 应用包含模式（如果指定）
+        if include_patterns:
+            included_files = []
+            for file_path in filtered_files:
+                file_obj = Path(file_path)
+                # 检查文件名或路径是否匹配任何包含模式
+                if any(fnmatch.fnmatch(file_obj.name, pattern) or 
+                      fnmatch.fnmatch(str(file_obj), pattern) or
+                      any(fnmatch.fnmatch(part, pattern) for part in file_obj.parts)
+                      for pattern in include_patterns):
+                    included_files.append(file_path)
+            filtered_files = included_files
+        
+        # 应用排除模式（如果指定）
+        if exclude_patterns:
+            excluded_files = []
+            for file_path in filtered_files:
+                file_obj = Path(file_path)
+                # 检查文件名或路径是否匹配任何排除模式
+                should_exclude = any(fnmatch.fnmatch(file_obj.name, pattern) or 
+                                   fnmatch.fnmatch(str(file_obj), pattern) or
+                                   any(fnmatch.fnmatch(part, pattern) for part in file_obj.parts)
+                                   for pattern in exclude_patterns)
+                if not should_exclude:
+                    excluded_files.append(file_path)
+            filtered_files = excluded_files
+        
+        return filtered_files
+    
+    def _get_filtered_file_stats(self, files: List[str]) -> dict:
+        """获取过滤后文件的统计信息"""
+        stats = {
+            'total_files': len(files),
+            'c_files': 0,
+            'cpp_files': 0,
+            'header_files': 0,
+        }
+        
+        for file_path in files:
+            ext = Path(file_path).suffix.lower()
+            if ext == '.c':
+                stats['c_files'] += 1
+            elif ext in {'.cpp', '.cxx', '.cc'}:
+                stats['cpp_files'] += 1
+            elif ext in {'.h', '.hpp', '.hxx', '.hh'}:
+                stats['header_files'] += 1
+        
+        return stats
+    
+    def _get_relative_path(self, file_path: str, base_path: str) -> str:
+        """获取相对于基础路径的相对路径"""
+        try:
+            return str(Path(file_path).relative_to(Path(base_path)))
+        except ValueError:
+            # 如果无法获取相对路径，返回文件名
+            return Path(file_path).name
     
     def _generate_statistics(self, files: List[str], failed_files: List, duration: float) -> Dict:
         """生成分析统计信息"""
@@ -162,7 +244,8 @@ class RepoAnalyzer:
         if stats['duplicate_functions']:
             print(f"⚠️  重复函数: {len(stats['duplicate_functions'])}")
     
-    def print_all_functions(self, group_by_file: bool = True, show_details: bool = True):
+    def print_all_functions(self, group_by_file: bool = True, show_details: bool = True,
+                           show_full_path: bool = True):
         """打印所有找到的函数"""
         if not self.all_functions:
             print("❌ 没有找到任何函数")
@@ -172,41 +255,51 @@ class RepoAnalyzer:
         print("=" * 80)
         
         if group_by_file:
-            self._print_functions_by_file(show_details)
+            self._print_functions_by_file(show_details, show_full_path)
         else:
-            self._print_functions_flat(show_details)
+            self._print_functions_flat(show_details, show_full_path)
     
-    def _print_functions_by_file(self, show_details: bool):
+    def _print_functions_by_file(self, show_details: bool, show_full_path: bool):
         """按文件分组打印函数"""
         files_functions = {}
         for func in self.all_functions:
-            file_name = Path(func.file_path).name if func.file_path else "Unknown"
-            if file_name not in files_functions:
-                files_functions[file_name] = []
-            files_functions[file_name].append(func)
+            file_path = func.file_path if func.file_path else "Unknown"
+            if file_path not in files_functions:
+                files_functions[file_path] = []
+            files_functions[file_path].append(func)
         
-        for file_name, functions in sorted(files_functions.items()):
-            print(f"\n📁 {file_name} ({len(functions)} 个函数)")
+        for file_path, functions in sorted(files_functions.items()):
+            # 根据选项显示完整路径或文件名
+            display_name = file_path if show_full_path else Path(file_path).name
+            
+            # 统计定义和声明
+            definitions = [f for f in functions if not f.is_declaration]
+            declarations = [f for f in functions if f.is_declaration]
+            
+            print(f"\n📁 {display_name}")
+            print(f"   ({len(definitions)} 个定义 + {len(declarations)} 个声明 = {len(functions)} 个函数)")
             print("-" * 60)
             
             for i, func in enumerate(functions, 1):
-                decl_marker = "🔗" if func.is_declaration else "🔧"
-                print(f"{i:3d}. {decl_marker} {func.get_signature()}")
+                func_type = "🔧 定义" if not func.is_declaration else "🔗 声明"
+                print(f"{i:3d}. {func_type} {func.get_signature()}")
                 
                 if show_details:
                     print(f"     📍 第{func.start_line}-{func.end_line}行")
                     if func.scope:
                         print(f"     🏷️  作用域: {func.scope}")
     
-    def _print_functions_flat(self, show_details: bool):
+    def _print_functions_flat(self, show_details: bool, show_full_path: bool):
         """平铺打印所有函数"""
         for i, func in enumerate(self.all_functions, 1):
-            file_name = Path(func.file_path).name if func.file_path else "Unknown"
-            decl_marker = "🔗" if func.is_declaration else "🔧"
+            file_path = func.file_path if func.file_path else "Unknown"
+            display_name = file_path if show_full_path else Path(file_path).name
             
-            print(f"{i:3d}. {decl_marker} {func.get_signature()}")
+            func_type = "🔧 定义" if not func.is_declaration else "🔗 声明"
+            
+            print(f"{i:3d}. {func_type} {func.get_signature()}")
             if show_details:
-                print(f"     📁 {file_name}:{func.start_line}-{func.end_line}")
+                print(f"     📁 {display_name}:{func.start_line}-{func.end_line}")
                 if func.scope:
                     print(f"     🏷️  作用域: {func.scope}")
                 print()
@@ -228,7 +321,7 @@ class RepoAnalyzer:
             
             for i, func in enumerate(functions, 1):
                 file_name = Path(func.file_path).name if func.file_path else "Unknown"
-                print(f"  {i}. 📁 {file_name}:{func.start_line}-{func.end_line}")
+                print(f"  {i}. 📁 {func.file_path}:{func.start_line}-{func.end_line}")
                 print(f"     {func.get_signature()}")
     
     def search_functions(self, pattern: str, case_sensitive: bool = False) -> List[FunctionInfo]:
@@ -266,13 +359,13 @@ class RepoAnalyzer:
                 
                 files_functions = {}
                 for func in self.all_functions:
-                    file_name = Path(func.file_path).name if func.file_path else "Unknown"
-                    if file_name not in files_functions:
-                        files_functions[file_name] = []
-                    files_functions[file_name].append(func)
+                    file_path = func.file_path if func.file_path else "Unknown"
+                    if file_path not in files_functions:
+                        files_functions[file_path] = []
+                    files_functions[file_path].append(func)
                 
-                for file_name, functions in sorted(files_functions.items()):
-                    f.write(f"### {file_name}\n\n")
+                for file_path, functions in sorted(files_functions.items()):
+                    f.write(f"### {file_path}\n\n")
                     
                     for func in functions:
                         decl_type = "声明" if func.is_declaration else "定义"
@@ -290,8 +383,7 @@ class RepoAnalyzer:
                     for func_name, functions in duplicates.items():
                         f.write(f"### {func_name}\n\n")
                         for func in functions:
-                            file_name = Path(func.file_path).name
-                            f.write(f"- {file_name}:{func.start_line}-{func.end_line}\n")
+                            f.write(f"- {func.file_path}:{func.start_line}-{func.end_line}\n")
                         f.write("\n")
             
             logger.info(f"分析报告已保存到: {output_file}")

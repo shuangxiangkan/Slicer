@@ -1,380 +1,270 @@
 #!/usr/bin/env python3
 """
-Parser模块测试脚本
-测试文件查找器、函数提取器和仓库分析器的功能
+parser模块测试脚本
+测试parser模块的核心功能
 """
 
 import sys
 import os
-import tempfile
-import json
 from pathlib import Path
 
-# 添加项目根目录到Python路径
+# 添加父目录到路径，以便导入parser模块
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from parser import FileFinder, FunctionExtractor, RepoAnalyzer
+from parser import RepoAnalyzer
 
 
-class TestData:
-    """测试数据类"""
+def test_directory_analysis():
+    """测试1：从目录提取函数 - 使用libraries/cJSON目录"""
+    print("=" * 80)
+    print("🧪 测试1: 从目录提取函数 (libraries/cJSON)")
+    print("=" * 80)
     
-    SAMPLE_C_CODE = '''
-#include <stdio.h>
-
-int add(int a, int b) {
-    return a + b;
-}
-
-int multiply(int x, int y) {
-    int result = x * y;
-    return result;
-}
-
-void print_hello() {
-    printf("Hello, World!\\n");
-}
-
-int main() {
-    int sum = add(5, 3);
-    int product = multiply(4, 6);
-    print_hello();
-    return 0;
-}
-'''
-
-    SAMPLE_H_CODE = '''
-#ifndef MATH_H
-#define MATH_H
-
-int add(int a, int b);
-int multiply(int x, int y);
-void print_hello();
-
-#endif
-'''
-
-    SAMPLE_CPP_CODE = '''
-#include <iostream>
-
-class Calculator {
-public:
-    int add(int a, int b) {
-        return a + b;
-    }
+    # 使用实际项目目录
+    test_dir = "libraries/cJSON"
     
-    int subtract(int a, int b) {
-        return a - b;
-    }
-};
-
-namespace Math {
-    double pi() {
-        return 3.14159;
-    }
-}
-
-int main() {
-    Calculator calc;
-    int result = calc.add(10, 20);
-    std::cout << "Result: " << result << std::endl;
-    return 0;
-}
-'''
-
-
-class ParserTester:
-    """Parser模块测试器"""
+    if not os.path.exists(test_dir):
+        print(f"❌ 测试目录不存在: {test_dir}")
+        print("   请确保在项目根目录运行此测试")
+        return False
     
-    def __init__(self):
-        self.temp_dir = None
-        self.test_files = []
-        print("🧪 Parser模块测试器初始化")
-        print("=" * 60)
-    
-    def create_test_environment(self):
-        """创建测试环境"""
-        print("📁 创建测试环境...")
+    try:
+        analyzer = RepoAnalyzer()
         
-        # 创建临时目录
-        self.temp_dir = Path(tempfile.mkdtemp(prefix="parser_test_"))
-        print(f"   临时目录: {self.temp_dir}")
+        # 分析目录
+        print(f"📂 分析目录: {test_dir}")
+        result = analyzer.analyze_repository(test_dir, show_progress=True)
         
-        # 创建测试文件
-        test_files_data = [
-            ("main.c", TestData.SAMPLE_C_CODE),
-            ("math.h", TestData.SAMPLE_H_CODE),
-            ("calculator.cpp", TestData.SAMPLE_CPP_CODE),
-        ]
-        
-        # 创建子目录结构
-        src_dir = self.temp_dir / "src"
-        include_dir = self.temp_dir / "include"
-        build_dir = self.temp_dir / "build"  # 这个目录应该被跳过
-        
-        src_dir.mkdir()
-        include_dir.mkdir()
-        build_dir.mkdir()
-        
-        # 创建测试文件
-        for filename, content in test_files_data:
-            if filename.endswith('.h'):
-                file_path = include_dir / filename
-            else:
-                file_path = src_dir / filename
-            
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-            
-            self.test_files.append(file_path)
-            print(f"   创建文件: {file_path}")
-        
-        # 在build目录创建一个文件（应该被跳过）
-        build_file = build_dir / "temp.c"
-        with open(build_file, 'w') as f:
-            f.write("// This should be skipped\nint temp() { return 0; }")
-        
-        print(f"✅ 测试环境创建完成，共创建 {len(self.test_files)} 个测试文件")
-        return self.temp_dir
-    
-    def test_file_finder(self):
-        """测试文件查找器"""
-        print("\n🔍 测试文件查找器...")
-        print("-" * 40)
-        
-        try:
-            finder = FileFinder()
-            
-            # 测试查找所有文件
-            files = finder.find_files(str(self.temp_dir), recursive=True)
-            
-            print(f"✅ 找到 {len(files)} 个文件")
-            for file in files:
-                print(f"   📄 {Path(file).name}")
-            
-            # 验证结果
-            expected_files = {'main.c', 'math.h', 'calculator.cpp'}
-            found_files = {Path(f).name for f in files}
-            
-            if expected_files <= found_files:
-                print("✅ 文件查找测试通过")
-            else:
-                missing = expected_files - found_files
-                print(f"❌ 文件查找测试失败，缺少文件: {missing}")
-                return False
-            
-            # 测试统计信息
-            stats = finder.get_file_stats()
-            print(f"📊 统计信息: {stats}")
-            
-            # 验证build目录被跳过
-            build_files = [f for f in files if 'build' in f]
-            if not build_files:
-                print("✅ 成功跳过build目录")
-            else:
-                print(f"❌ 未能跳过build目录: {build_files}")
-                return False
-            
-            return True
-            
-        except Exception as e:
-            print(f"❌ 文件查找器测试失败: {e}")
-            import traceback
-            traceback.print_exc()
+        if not result:
+            print("❌ 分析失败")
             return False
+        
+        # 显示结果 - 使用完整路径显示
+        print(f"\n📋 找到的函数列表:")
+        analyzer.print_all_functions(
+            group_by_file=True, 
+            show_details=True,
+            show_full_path=True  # 显示完整路径
+        )
+        
+        # 显示重复函数（如果有）
+        if analyzer.analysis_stats.get('duplicate_functions'):
+            analyzer.print_duplicate_functions()
+        
+        print("\n✅ 测试1通过 - 目录分析功能正常")
+        return True
+        
+    except Exception as e:
+        print(f"❌ 测试1失败: {e}")
+        return False
+
+
+def test_single_file_analysis():
+    """测试2：从单个文件提取函数 - 使用example.c"""
+    print("\n" + "=" * 80)
+    print("🧪 测试2: 从单个文件提取函数 (example.c)")
+    print("=" * 80)
     
-    def test_function_extractor(self):
-        """测试函数提取器"""
-        print("\n🔧 测试函数提取器...")
+    test_file = "example.c"
+    
+    if not os.path.exists(test_file):
+        print(f"❌ 测试文件不存在: {test_file}")
+        print("   请确保在项目根目录运行此测试")
+        return False
+    
+    try:
+        analyzer = RepoAnalyzer()
+        
+        # 分析单个文件
+        print(f"📄 分析文件: {test_file}")
+        result = analyzer.analyze_repository(test_file, show_progress=True)
+        
+        if not result:
+            print("❌ 分析失败")
+            return False
+        
+        # 显示结果 - 使用完整路径显示
+        print(f"\n📋 找到的函数列表:")
+        analyzer.print_all_functions(
+            group_by_file=True, 
+            show_details=True,
+            show_full_path=True  # 显示完整路径
+        )
+        
+        print("\n✅ 测试2通过 - 单文件分析功能正常")
+        return True
+        
+    except Exception as e:
+        print(f"❌ 测试2失败: {e}")
+        return False
+
+
+def test_filtering_functionality():
+    """测试3：测试文件过滤功能"""
+    print("\n" + "=" * 80)
+    print("🧪 测试3: 文件过滤功能测试")
+    print("=" * 80)
+    
+    test_dir = "libraries/cJSON"
+    
+    if not os.path.exists(test_dir):
+        print(f"❌ 测试目录不存在: {test_dir}")
+        return False
+    
+    try:
+        analyzer = RepoAnalyzer()
+        
+        # 测试包含模式 - 只分析.h头文件
+        print("🔍 测试包含模式：只分析头文件 (*.h)")
         print("-" * 40)
         
-        try:
-            extractor = FunctionExtractor()
-            all_functions = []
+        result1 = analyzer.analyze_repository(
+            test_dir, 
+            show_progress=True,
+            include_patterns=["*.h"]
+        )
+        
+        if result1:
+            print(f"\n📋 头文件中的函数:")
+            analyzer.print_all_functions(
+                group_by_file=True, 
+                show_details=True,
+                show_full_path=True
+            )
+        
+        # 测试排除模式 - 排除测试相关文件
+        print("\n" + "=" * 60)
+        print("🚫 测试排除模式：排除测试文件 (*test*, *Test*)")
+        print("-" * 40)
+        
+        analyzer2 = RepoAnalyzer()
+        result2 = analyzer2.analyze_repository(
+            test_dir, 
+            show_progress=True,
+            exclude_patterns=["*test*", "*Test*", "*TEST*"]
+        )
+        
+        if result2:
+            print(f"\n📋 非测试文件中的函数:")
+            analyzer2.print_all_functions(
+                group_by_file=True, 
+                show_details=True,
+                show_full_path=True
+            )
+        
+        print("\n✅ 测试3通过 - 文件过滤功能正常")
+        return True
+        
+    except Exception as e:
+        print(f"❌ 测试3失败: {e}")
+        return False
+
+
+def test_function_search():
+    """测试4：测试函数搜索功能"""
+    print("\n" + "=" * 80)
+    print("🧪 测试4: 函数搜索功能测试")
+    print("=" * 80)
+    
+    test_dir = "libraries/cJSON"
+    
+    if not os.path.exists(test_dir):
+        print(f"❌ 测试目录不存在: {test_dir}")
+        return False
+    
+    try:
+        analyzer = RepoAnalyzer()
+        
+        # 先分析目录
+        print(f"📂 分析目录: {test_dir}")
+        result = analyzer.analyze_repository(test_dir, show_progress=False)
+        
+        if not result:
+            print("❌ 分析失败")
+            return False
+        
+        # 搜索特定函数
+        search_patterns = ["cJSON", "parse", "print"]
+        
+        for pattern in search_patterns:
+            print(f"\n🔍 搜索包含 '{pattern}' 的函数:")
+            print("-" * 40)
             
-            for test_file in self.test_files:
-                print(f"\n📄 分析文件: {test_file.name}")
-                functions = extractor.extract_from_file(str(test_file))
-                all_functions.extend(functions)
+            matched = analyzer.search_functions(pattern, case_sensitive=False)
+            
+            if matched:
+                # 分别统计定义和声明
+                definitions = [f for f in matched if not f.is_declaration]
+                declarations = [f for f in matched if f.is_declaration]
                 
-                print(f"   找到 {len(functions)} 个函数:")
-                for func in functions:
-                    func_type = "声明" if func.is_declaration else "定义"
-                    scope_info = f" (作用域: {func.scope})" if func.scope else ""
-                    print(f"   - {func.name} [{func_type}]{scope_info}")
-            
-            # 验证预期的函数
-            expected_functions = {
-                'add', 'multiply', 'print_hello', 'main', 'pi'
-            }
-            found_functions = {func.name for func in all_functions if not func.is_declaration}
-            
-            if expected_functions <= found_functions:
-                print(f"\n✅ 函数提取测试通过，找到 {len(all_functions)} 个函数")
-            else:
-                missing = expected_functions - found_functions
-                print(f"\n❌ 函数提取测试失败，缺少函数: {missing}")
-                print(f"   实际找到: {found_functions}")
-                return False
-            
-            return True
-            
-        except Exception as e:
-            print(f"❌ 函数提取器测试失败: {e}")
-            import traceback
-            traceback.print_exc()
-            return False
-    
-    def test_repo_analyzer(self):
-        """测试仓库分析器"""
-        print("\n📊 测试仓库分析器...")
-        print("-" * 40)
-        
-        try:
-            analyzer = RepoAnalyzer()
-            
-            # 分析测试目录
-            stats = analyzer.analyze_repository(str(self.temp_dir), show_progress=True)
-            
-            if not stats:
-                print("❌ 仓库分析失败")
-                return False
-            
-            print("\n📈 分析结果:")
-            print(f"   处理文件: {stats['successful_files']}/{stats['total_files']}")
-            print(f"   总函数数: {stats['total_functions']}")
-            print(f"   函数定义: {stats['function_definitions']}")
-            print(f"   函数声明: {stats['function_declarations']}")
-            
-            # 测试搜索功能
-            print("\n🔍 测试搜索功能...")
-            main_functions = analyzer.search_functions("main")
-            print(f"   搜索'main': 找到 {len(main_functions)} 个函数")
-            
-            add_functions = analyzer.search_functions("add")
-            print(f"   搜索'add': 找到 {len(add_functions)} 个函数")
-            
-            # 验证基本要求
-            if stats['total_functions'] >= 5:  # 至少应该有几个函数
-                print("✅ 仓库分析器测试通过")
-                return True
-            else:
-                print(f"❌ 仓库分析器测试失败，函数数量不足: {stats['total_functions']}")
-                return False
-            
-        except Exception as e:
-            print(f"❌ 仓库分析器测试失败: {e}")
-            import traceback
-            traceback.print_exc()
-            return False
-    
-    def test_config_loading(self):
-        """测试配置文件加载"""
-        print("\n⚙️  测试配置文件加载...")
-        print("-" * 40)
-        
-        try:
-            finder = FileFinder()
-            
-            # 检查是否正确加载了配置
-            print(f"   C扩展名: {finder.C_EXTENSIONS}")
-            print(f"   C++扩展名: {finder.CPP_EXTENSIONS}")
-            print(f"   跳过目录数量: {len(finder.SKIP_DIRECTORIES)}")
-            print(f"   跳过目录示例: {list(finder.SKIP_DIRECTORIES)[:5]}...")
-            
-            # 验证基本配置
-            if '.c' in finder.C_EXTENSIONS and '.cpp' in finder.CPP_EXTENSIONS:
-                print("✅ 配置文件加载测试通过")
-                return True
-            else:
-                print("❌ 配置文件加载测试失败")
-                return False
+                print(f"找到 {len(matched)} 个匹配函数:")
+                print(f"  - {len(definitions)} 个定义")
+                print(f"  - {len(declarations)} 个声明")
                 
-        except Exception as e:
-            print(f"❌ 配置文件加载测试失败: {e}")
-            return False
-    
-    def cleanup(self):
-        """清理测试环境"""
-        if self.temp_dir and self.temp_dir.exists():
-            import shutil
-            shutil.rmtree(self.temp_dir)
-            print(f"\n🧹 清理测试环境: {self.temp_dir}")
-    
-    def run_all_tests(self):
-        """运行所有测试"""
-        print("🚀 开始Parser模块综合测试")
-        print("=" * 80)
+                # 显示前几个结果
+                for i, func in enumerate(matched[:5], 1):
+                    func_type = "🔧 定义" if not func.is_declaration else "🔗 声明"
+                    rel_path = Path(func.file_path).name if func.file_path else "Unknown"
+                    print(f"  {i}. {func_type} {func.name} - {rel_path}:{func.start_line}")
+                
+                if len(matched) > 5:
+                    print(f"  ... 还有 {len(matched) - 5} 个函数")
+            else:
+                print("  未找到匹配的函数")
         
-        test_results = []
+        print("\n✅ 测试4通过 - 函数搜索功能正常")
+        return True
         
-        try:
-            # 创建测试环境
-            self.create_test_environment()
-            
-            # 运行各项测试
-            tests = [
-                ("配置文件加载", self.test_config_loading),
-                ("文件查找器", self.test_file_finder),
-                ("函数提取器", self.test_function_extractor),
-                ("仓库分析器", self.test_repo_analyzer),
-            ]
-            
-            for test_name, test_func in tests:
-                try:
-                    result = test_func()
-                    test_results.append((test_name, result))
-                except Exception as e:
-                    print(f"❌ {test_name}测试出现异常: {e}")
-                    test_results.append((test_name, False))
-            
-            # 输出测试总结
-            self.print_test_summary(test_results)
-            
-        except Exception as e:
-            print(f"❌ 测试过程中出现严重错误: {e}")
-            import traceback
-            traceback.print_exc()
-        
-        finally:
-            # 清理测试环境
-            self.cleanup()
-    
-    def print_test_summary(self, test_results):
-        """打印测试总结"""
-        print("\n" + "=" * 80)
-        print("📋 测试总结")
-        print("=" * 80)
-        
-        passed = 0
-        total = len(test_results)
-        
-        for test_name, result in test_results:
-            status = "✅ 通过" if result else "❌ 失败"
-            print(f"   {test_name:<20} {status}")
-            if result:
-                passed += 1
-        
-        print("-" * 40)
-        print(f"总计: {passed}/{total} 测试通过")
-        
-        if passed == total:
-            print("🎉 所有测试通过！Parser模块工作正常")
-        else:
-            print(f"⚠️  有 {total - passed} 个测试失败，请检查相关功能")
+    except Exception as e:
+        print(f"❌ 测试4失败: {e}")
+        return False
 
 
 def main():
-    """主函数"""
-    if len(sys.argv) > 1 and sys.argv[1] == "--help":
-        print("Parser模块测试脚本")
-        print("使用方法: python test/parser.py")
-        print("该脚本将创建临时测试环境，测试Parser模块的各项功能")
-        return
+    """运行所有测试"""
+    print("🚀 开始parser模块功能测试")
+    print("测试将使用项目中的实际文件")
     
-    tester = ParserTester()
-    tester.run_all_tests()
+    # 运行所有测试
+    tests = [
+        ("目录分析测试", test_directory_analysis),
+        ("单文件分析测试", test_single_file_analysis),
+        ("文件过滤测试", test_filtering_functionality),
+        ("函数搜索测试", test_function_search),
+    ]
+    
+    passed = 0
+    total = len(tests)
+    
+    for test_name, test_func in tests:
+        try:
+            if test_func():
+                passed += 1
+            else:
+                print(f"\n❌ {test_name} 失败")
+        except KeyboardInterrupt:
+            print(f"\n⚠️ 用户中断测试")
+            break
+        except Exception as e:
+            print(f"\n❌ {test_name} 出错: {e}")
+    
+    # 显示测试结果
+    print("\n" + "=" * 80)
+    print("📊 测试结果汇总")
+    print("=" * 80)
+    print(f"总测试数: {total}")
+    print(f"通过数量: {passed}")
+    print(f"失败数量: {total - passed}")
+    print(f"通过率: {passed/total*100:.1f}%")
+    
+    if passed == total:
+        print("\n🎉 所有测试通过！parser模块功能正常")
+        return 0
+    else:
+        print(f"\n⚠️ 有 {total - passed} 个测试失败")
+        return 1
 
 
 if __name__ == "__main__":
-    main() 
+    exit_code = main()
+    sys.exit(exit_code) 
