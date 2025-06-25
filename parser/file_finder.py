@@ -4,8 +4,6 @@
 """
 
 import os
-import glob
-import json
 import logging
 from pathlib import Path
 from typing import List, Set
@@ -17,29 +15,13 @@ logger = logging.getLogger(__name__)
 class FileFinder:
     """C/C++文件查找器"""
     
-    def __init__(self):
-        # 从配置文件加载设置
-        self._load_config()
-        self.ALL_EXTENSIONS = self.C_EXTENSIONS | self.CPP_EXTENSIONS
-        self.found_files = []
+    # C/C++文件扩展名定义
+    C_EXTENSIONS = {'.c', '.h'}
+    CPP_EXTENSIONS = {'.cpp', '.cxx', '.cc', '.hpp', '.hxx', '.hh'}
+    ALL_EXTENSIONS = C_EXTENSIONS | CPP_EXTENSIONS
     
-    def _load_config(self):
-        """从配置文件加载设置"""
-        config_path = Path(__file__).parent / "config.json"
-        
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-        except Exception as e:
-            raise RuntimeError(f"无法加载配置文件 {config_path}: {e}")
-        
-        # 加载文件扩展名
-        file_ext = config.get("file_extensions", {})
-        self.C_EXTENSIONS = set(file_ext.get("c_extensions", []))
-        self.CPP_EXTENSIONS = set(file_ext.get("cpp_extensions", []))
-        
-        # 加载要跳过的目录
-        self.SKIP_DIRECTORIES = set(config.get("skip_directories", []))
+    def __init__(self):
+        self.found_files = []
     
     def find_files(self, path: str, recursive: bool = True) -> List[str]:
         """
@@ -79,9 +61,6 @@ class FileFinder:
             if recursive:
                 # 递归搜索
                 for root, dirs, files in os.walk(dir_path):
-                    # 跳过一些常见的无关目录
-                    dirs[:] = [d for d in dirs if not self._should_skip_directory(d)]
-                    
                     for file in files:
                         file_path = Path(root) / file
                         if self._is_c_cpp_file(file_path):
@@ -93,10 +72,6 @@ class FileFinder:
                         self.found_files.append(str(item.absolute()))
         except PermissionError as e:
             logger.warning(f"无法访问目录 {dir_path}: {e}")
-    
-    def _should_skip_directory(self, dir_name: str) -> bool:
-        """判断是否应该跳过某个目录"""
-        return dir_name in self.SKIP_DIRECTORIES
     
     def get_file_stats(self) -> dict:
         """获取文件统计信息"""
