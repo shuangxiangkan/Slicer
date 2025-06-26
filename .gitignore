@@ -210,3 +210,5 @@ analysis_reports/
 
 # Log files
 *.log 
+
+libraries/

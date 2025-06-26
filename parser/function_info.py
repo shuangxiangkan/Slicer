@@ -32,6 +32,10 @@ class FunctionInfo:
         self.parameter_details = parameter_details if parameter_details is not None else []
         self.return_type_details = return_type_details if return_type_details is not None else ReturnTypeInfo(return_type, type_registry)
         
+        # Call Graph相关信息
+        self.callees = set()  # 直接调用的函数名集合
+        self._parsed_calls = False  # 是否已解析过函数调用
+        
         # 如果没有提供详细信息，自动解析
         if not self.parameter_details and self.parameters:
             self._parse_parameter_details()
@@ -45,6 +49,90 @@ class FunctionInfo:
                 # 只添加有效的参数（非空参数）
                 if param_info.param_type or param_info.name:
                     self.parameter_details.append(param_info)
+    
+    def parse_function_calls(self):
+        """解析函数体中的函数调用"""
+        if self._parsed_calls or self.is_declaration:
+            return
+        
+        import re
+        
+        body = self.get_body()
+        if not body:
+            self._parsed_calls = True
+            return
+        
+        # 函数调用的正则表达式
+        # 匹配形如 function_name( 的模式，但排除一些常见的非函数调用情况
+        function_call_pattern = r'\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\('
+        
+        # 需要排除的关键字
+        exclude_keywords = {
+            'if', 'while', 'for', 'switch', 'sizeof', 'typeof', 
+            'struct', 'union', 'enum', 'return', 'const', 'static',
+            'extern', 'inline', 'volatile', 'typedef'
+        }
+        
+        lines = body.split('\n')
+        for line in lines:
+            # 清理行内容
+            line = line.strip()
+            
+            # 跳过空行、注释和预处理指令
+            if not line or line.startswith('//') or line.startswith('#'):
+                continue
+            
+            # 简单处理块注释（单行内的）
+            if '/*' in line and '*/' in line:
+                # 移除注释部分
+                comment_start = line.find('/*')
+                comment_end = line.find('*/', comment_start)
+                if comment_end != -1:
+                    line = line[:comment_start] + line[comment_end + 2:]
+                else:
+                    continue
+            elif '/*' in line:
+                # 块注释开始，跳过这行
+                continue
+            elif '*/' in line:
+                # 块注释结束，跳过这行
+                continue
+            
+            # 查找函数调用
+            matches = re.finditer(function_call_pattern, line)
+            for match in matches:
+                func_name = match.group(1)
+                
+                # 排除关键字
+                if func_name.lower() in exclude_keywords:
+                    continue
+                
+                # 排除自己调用自己（递归调用的情况）
+                if func_name != self.name:
+                    self.callees.add(func_name)
+        
+        self._parsed_calls = True
+    
+    def get_callees(self) -> set:
+        """获取直接调用的函数列表"""
+        if not self._parsed_calls:
+            self.parse_function_calls()
+        return self.callees.copy()
+    
+    def add_callee(self, func_name: str):
+        """手动添加被调用的函数"""
+        self.callees.add(func_name)
+    
+    def has_callee(self, func_name: str) -> bool:
+        """检查是否调用了指定函数"""
+        if not self._parsed_calls:
+            self.parse_function_calls()
+        return func_name in self.callees
+    
+    def clear_call_cache(self):
+        """清除函数调用解析缓存，强制重新解析"""
+        self._parsed_calls = False
+        self.callees.clear()
     
     def __str__(self):
         decl_type = "声明" if self.is_declaration else "定义"

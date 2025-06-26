@@ -13,6 +13,7 @@ sys.path.insert(0, str(project_root))
 
 from parser.repo_analyzer import RepoAnalyzer
 from parser.config_parser import ConfigParser
+from graph.call_graph_generator import CallGraphGenerator
 
 
 def test_print_all_functions(analyzer: RepoAnalyzer):
@@ -64,7 +65,7 @@ def test_print_function_body(analyzer: RepoAnalyzer):
     functions = analyzer.get_functions()
     
     # 测试几个具体的函数
-    test_functions = ["cJSON_CreateNull", "cJSON_Parse", "cJSON_Delete"]
+    test_functions = ["mz_compress2"]
     
     for func_name in test_functions:
         print(f"\n🔍 查找函数: {func_name}")
@@ -217,6 +218,147 @@ def test_pointer_classification(analyzer: RepoAnalyzer):
     print(f"   平均每个函数指针数: {avg_pointers:.2f}")
 
 
+def test_call_graph_analysis(analyzer: RepoAnalyzer):
+    """测试功能5: Call Graph分析"""
+    print(f"\n🔗 测试功能5: Call Graph分析")
+    print("=" * 80)
+    
+    # 测试几个具体的函数
+    test_functions = ["mz_compress2", "mz_deflateInit", "mz_uncompress2"]
+    
+    for func_name in test_functions:
+        print(f"\n🔍 分析函数: {func_name}")
+        print("-" * 60)
+        
+        # 直接调用的函数
+        direct_callees = analyzer.get_direct_callees(func_name)
+        if direct_callees:
+            print(f"📞 直接调用 ({len(direct_callees)} 个):")
+            for callee in sorted(direct_callees):
+                print(f"   └─ {callee}")
+        else:
+            print(f"📞 直接调用: 无")
+        
+        # 被哪些函数直接调用
+        direct_callers = analyzer.get_direct_callers(func_name)
+        if direct_callers:
+            print(f"📲 被直接调用 ({len(direct_callers)} 个):")
+            for caller in sorted(direct_callers):
+                print(f"   └─ {caller}")
+        else:
+            print(f"📲 被直接调用: 无")
+        
+        # 所有依赖（限制深度避免输出过多）
+        all_deps = analyzer.get_function_dependencies(func_name, max_depth=3)
+        if all_deps:
+            print(f"🌳 所有依赖 (深度≤3, {len(all_deps)} 个):")
+            # 按深度分组显示
+            deps_by_depth = {}
+            for dep, depth in all_deps.items():
+                if depth not in deps_by_depth:
+                    deps_by_depth[depth] = []
+                deps_by_depth[depth].append(dep)
+            
+            for depth in sorted(deps_by_depth.keys()):
+                deps = sorted(deps_by_depth[depth])
+                print(f"   深度{depth}: {', '.join(deps[:5])}" + ("..." if len(deps) > 5 else ""))
+        else:
+            print(f"🌳 所有依赖: 无")
+        
+        print()
+    
+    # 显示Call Graph全局统计
+    print(f"\n📊 Call Graph全局统计:")
+    print("=" * 60)
+    
+    summary = analyzer.get_call_graph_summary()
+    print(f"总函数数: {summary['total_functions']}")
+    print(f"调用关系数: {summary['total_call_edges']}")
+    print(f"外部依赖数: {summary['external_dependencies']}")
+    print(f"平均每函数调用数: {summary['avg_callees_per_function']:.2f}")
+    print(f"叶子函数数: {summary['leaf_functions_count']} ({summary['leaf_functions_count']/summary['total_functions']*100:.1f}%)")
+    print(f"根函数数: {summary['root_functions_count']} ({summary['root_functions_count']/summary['total_functions']*100:.1f}%)")
+    
+    # 显示循环依赖
+    cycles = analyzer.find_cycles()
+    if cycles:
+        print(f"\n⚠️  发现循环依赖 ({len(cycles)} 个):")
+        for i, cycle in enumerate(cycles, 1):
+            print(f"   {i}. {' → '.join(cycle)}")
+    else:
+        print(f"\n✅ 无循环依赖")
+    
+    # 显示外部依赖
+    external_deps = analyzer.get_external_dependencies()
+    if external_deps:
+        print(f"\n🔗 外部依赖 ({len(external_deps)} 个):")
+        sorted_deps = sorted(external_deps)
+        # 只显示前10个
+        for dep in sorted_deps[:10]:
+            print(f"   └─ {dep}")
+        if len(sorted_deps) > 10:
+            print(f"   └─ ... 还有 {len(sorted_deps) - 10} 个")
+    else:
+        print(f"\n🔗 外部依赖: 无")
+
+
+def test_dot_graph_generation(analyzer: RepoAnalyzer):
+    """测试功能6: DOT图生成"""
+    print(f"\n📊 测试功能6: DOT图生成")
+    print("=" * 80)
+    
+    # 创建图生成器
+    generator = CallGraphGenerator(analyzer)
+    
+    # 生成整个仓库的Call Graph
+    print("🔗 生成整个仓库Call Graph...")
+    success = generator.generate_repo_call_graph("test/repo_call_graph.dot")
+    if success:
+        print("   ✅ 已生成: test/repo_call_graph.dot")
+    else:
+        print("   ❌ 生成失败")
+    
+    # 生成特定函数的三种Call Graph
+    test_function = "mz_compress2"
+    
+    print(f"📍 生成函数 {test_function} 的三种Call Graph...")
+    
+    # 生成callees图
+    success = generator.generate_function_callees_graph(
+        func_name=test_function,
+        output_file=f"test/{test_function}_callees.dot"
+    )
+    if success:
+        print(f"   ✅ Callees图: test/{test_function}_callees.dot")
+    else:
+        print(f"   ❌ Callees图生成失败")
+    
+    # 生成callers图
+    success = generator.generate_function_callers_graph(
+        func_name=test_function,
+        output_file=f"test/{test_function}_callers.dot"
+    )
+    if success:
+        print(f"   ✅ Callers图: test/{test_function}_callers.dot")
+    else:
+        print(f"   ❌ Callers图生成失败")
+    
+    # 生成完整图
+    success = generator.generate_function_call_graph(
+        func_name=test_function,
+        output_file=f"test/{test_function}_complete.dot"
+    )
+    if success:
+        print(f"   ✅ 完整图: test/{test_function}_complete.dot")
+    else:
+        print(f"   ❌ 完整图生成失败")
+    
+    print("\n💡 提示:")
+    print("   查看DOT文件: cat test/repo_call_graph.dot")
+    print("   转换为图片: dot -Tpng test/repo_call_graph.dot -o test/repo_call_graph.png")
+    print("   在线查看: https://dreampuf.github.io/GraphvizOnline/")
+
+
 def test_library_analysis():
     """测试指定库的分析"""
     print("🚀 代码分析器测试")
@@ -243,7 +385,9 @@ def test_library_analysis():
         # test_print_all_functions(analyzer)
         # test_print_function_body(analyzer)
         # test_detailed_parameter_info(analyzer)
-        test_pointer_classification(analyzer)
+        # test_pointer_classification(analyzer)
+        # test_call_graph_analysis(analyzer)
+        test_dot_graph_generation(analyzer)
         
     except Exception as e:
         print(f"❌ 分析失败: {e}")

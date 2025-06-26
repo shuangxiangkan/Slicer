@@ -14,6 +14,7 @@ from .function_info import FunctionInfo
 from .type_registry import TypeRegistry
 from .type_extractor import TypeExtractor
 from .config_parser import ConfigParser
+from .call_graph import CallGraph
 # from .summary import AnalysisSummary  # 已移除，使用DisplayHelper替代
 
 # 配置logging
@@ -36,6 +37,9 @@ class RepoAnalyzer:
         self.type_registry = TypeRegistry()
         self.type_extractor = TypeExtractor(self.type_registry)
         self.function_extractor = FunctionExtractor(self.type_registry)
+        
+        # 初始化Call Graph
+        self.call_graph = CallGraph()
         
         self.all_functions = []
         self.analysis_stats = {}
@@ -157,6 +161,20 @@ class RepoAnalyzer:
                 logger.error(f"处理文件 {file_path} 失败: {e}")
                 if progress_callback:
                     progress_callback(f" -> 失败: {e}", "function_error")
+        
+        # 构建Call Graph
+        if progress_callback:
+            progress_callback("🔗 正在构建Call Graph...", "call_graph")
+        
+        # 将所有函数添加到Call Graph
+        for func in all_functions:
+            self.call_graph.add_function(func)
+        
+        # 构建调用关系图
+        self.call_graph.build_graph()
+        
+        if progress_callback:
+            progress_callback("✅ Call Graph构建完成", "call_graph_complete")
         
         return all_functions
     
@@ -417,4 +435,64 @@ class RepoAnalyzer:
     def export_all_types(self) -> Dict:
         """导出所有类型信息"""
         return self.type_registry.export_types()
+    
+    # ===== Call Graph 相关方法 =====
+    
+    def get_call_graph(self) -> CallGraph:
+        """获取Call Graph实例"""
+        return self.call_graph
+    
+    def get_function_dependencies(self, func_name: str, max_depth: int = None) -> Dict[str, int]:
+        """
+        获取函数的所有依赖
+        
+        Args:
+            func_name: 函数名
+            max_depth: 最大递归深度
+            
+        Returns:
+            依赖函数名到深度的映射
+        """
+        return self.call_graph.get_all_dependencies(func_name, max_depth)
+    
+    def get_function_dependents(self, func_name: str, max_depth: int = None) -> Dict[str, int]:
+        """
+        获取依赖该函数的所有函数
+        
+        Args:
+            func_name: 函数名
+            max_depth: 最大递归深度
+            
+        Returns:
+            依赖该函数的函数名到深度的映射
+        """
+        return self.call_graph.get_all_dependents(func_name, max_depth)
+    
+    def get_direct_callees(self, func_name: str) -> set:
+        """获取函数直接调用的函数"""
+        return self.call_graph.get_direct_callees(func_name)
+    
+    def get_direct_callers(self, func_name: str) -> set:
+        """获取直接调用该函数的函数"""
+        return self.call_graph.get_direct_callers(func_name)
+    
+    def find_call_chains(self, from_func: str, to_func: str, max_depth: int = 10) -> List[List[str]]:
+        """查找从一个函数到另一个函数的调用链"""
+        return self.call_graph.get_call_chain(from_func, to_func, max_depth)
+    
+    def find_cycles(self) -> List[List[str]]:
+        """查找循环依赖"""
+        return self.call_graph.find_cycles()
+    
+    def get_external_dependencies(self) -> set:
+        """获取外部依赖（不在当前分析范围内的函数）"""
+        return self.call_graph.get_external_dependencies()
+    
+    def get_call_graph_summary(self) -> Dict:
+        """获取Call Graph摘要信息"""
+        return self.call_graph.get_graph_summary()
+    
+    def get_function_complexity_stats(self) -> Dict[str, Dict]:
+        """获取函数复杂度统计"""
+        return self.call_graph.get_function_complexity_stats()
  
