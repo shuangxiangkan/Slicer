@@ -14,7 +14,7 @@ from .function_info import FunctionInfo
 from .type_registry import TypeRegistry
 from .type_extractor import TypeExtractor
 from .config_parser import ConfigParser
-from .summary import AnalysisSummary
+# from .summary import AnalysisSummary  # 已移除，使用DisplayHelper替代
 
 # 配置logging
 logger = logging.getLogger(__name__)
@@ -44,81 +44,68 @@ class RepoAnalyzer:
         # 解析配置文件
         self.config_parser = ConfigParser(config_path)
     
-    def analyze(self, show_progress: bool = True) -> Dict:
+    def analyze(self, show_progress: bool = False, progress_callback=None) -> dict:
         """
-        根据配置文件分析代码库
+        执行代码分析
         
         Args:
-            show_progress: 是否显示进度信息
-            
+            show_progress: 是否显示进度（已废弃，使用progress_callback）
+            progress_callback: 进度回调函数，接收(message: str, stage: str)参数
+        
         Returns:
             分析结果字典
         """
         start_time = time.time()
         
-        if show_progress:
-            print("🔍 开始基于配置文件的代码分析")
-            self.config_parser.print_config_summary()
-            print("=" * 80)
+        if progress_callback:
+            progress_callback("🔍 开始基于配置文件的代码分析", "start")
+            progress_callback(self.config_parser.get_config_summary_text(), "config")
         
-        logger.info("开始基于配置文件的代码分析")
+        # 收集文件
+        if progress_callback:
+            progress_callback("📂 正在收集C/C++文件...", "files")
         
-        # 1. 收集所有文件
-        if show_progress:
-            print("📂 正在收集C/C++文件...")
-        
-        try:
-            files = self._collect_files()
-                
-        except Exception as e:
-            error_msg = f"收集文件时出错: {e}"
-            logger.error(error_msg)
-            if show_progress:
-                print(f"错误: {error_msg}")
-            return {}
+        files, error_msg = self._collect_files()
+        if error_msg:
+            error_msg = f"错误: {error_msg}"
+            if progress_callback:
+                progress_callback(error_msg, "error")
+            return {'error': error_msg}
         
         if not files:
-            logger.warning("未找到任何C/C++文件")
-            if show_progress:
-                print("❌ 未找到任何C/C++文件")
-            return {}
+            error_msg = "❌ 未找到任何C/C++文件"
+            if progress_callback:
+                progress_callback(error_msg, "error")
+            return {'error': error_msg}
         
-        self.processed_files = files
-        logger.info(f"找到 {len(files)} 个文件")
+        # 显示文件统计
+        if progress_callback:
+            file_stats = self._get_file_statistics(files)
+            progress_callback(self._format_file_stats(file_stats), "file_stats")
         
-        if show_progress:
-            # 使用summary模块显示文件统计
-            summary = AnalysisSummary([], {})
-            summary.print_file_stats(files)
+        # 提取类型定义
+        if progress_callback:
+            progress_callback("🔍 正在提取类型定义...", "types")
         
-        # 2. 提取类型定义
-        if show_progress:
-            print("🔍 正在提取类型定义...")
+        self._extract_types(files, progress_callback)
         
-        self._extract_types(files, show_progress)
+        # 提取函数
+        if progress_callback:
+            progress_callback("🔧 正在提取函数定义...", "functions")
         
-        # 3. 提取函数
-        if show_progress:
-            print("🔧 正在提取函数定义...")
+        self.all_functions = self._extract_functions(files, progress_callback)
         
-        self.all_functions, failed_files = self._extract_functions(files, show_progress)
+        processing_time = time.time() - start_time
         
-        # 4. 生成统计信息
-        duration = time.time() - start_time
-        self.analysis_stats = self._generate_statistics(files, failed_files, duration)
+        # 计算统计信息
+        stats = self._calculate_stats(files, processing_time)
         
-        if show_progress:
-            print("\n" + "=" * 80)
-            print("📊 分析完成！")
-            # 使用summary模块显示摘要
-            summary = AnalysisSummary(self.all_functions, self.analysis_stats)
-            summary.print_summary()
+        if progress_callback:
+            progress_callback("📊 分析完成！", "complete")
         
-        logger.info(f"分析完成，用时 {duration:.2f} 秒，找到 {len(self.all_functions)} 个函数")
-        
-        return self.analysis_stats
+        return stats
     
-    def _collect_files(self) -> List[str]:
+    def _collect_files(self) -> tuple[List[str], str]:
         """收集需要分析的文件"""
         all_files = []
         analysis_targets = self.config_parser.get_analysis_targets()
@@ -138,38 +125,40 @@ class RepoAnalyzer:
                 all_files.extend(files)
         
         # 应用排除规则
-        return self._apply_exclusions(all_files)
+        filtered_files = self._apply_exclusions(all_files)
+        
+        return filtered_files, ""
     
-    def _extract_functions(self, files: List[str], show_progress: bool = False) -> tuple[List[FunctionInfo], List]:
+    def _extract_functions(self, files: List[str], progress_callback=None) -> List[FunctionInfo]:
         """提取函数定义"""
         all_functions = []
         failed_files = []
         
         for i, file_path in enumerate(files, 1):
             try:
-                if show_progress:
-                    # 显示相对路径，更清晰
-                    rel_path = self._get_relative_path(file_path)
-                    print(f"  处理文件 {i}/{len(files)}: {rel_path}", end="")
+                rel_path = self._get_relative_path(file_path)
+                
+                if progress_callback:
+                    progress_callback(f"  处理文件 {i}/{len(files)}: {rel_path}", "function_progress")
                 
                 functions = self.function_extractor.extract_from_file(file_path)
                 all_functions.extend(functions)
                 
-                if show_progress:
+                if progress_callback:
                     # 分别显示定义和声明的数量
                     definitions = len([f for f in functions if not f.is_declaration])
                     declarations = len([f for f in functions if f.is_declaration])
-                    print(f" -> {definitions}定义 + {declarations}声明 = {len(functions)}函数")
+                    progress_callback(f" -> {definitions}定义 + {declarations}声明 = {len(functions)}函数", "function_result")
                 
                 logger.debug(f"处理文件 {file_path}: 找到 {len(functions)} 个函数")
                 
             except Exception as e:
                 failed_files.append((file_path, str(e)))
                 logger.error(f"处理文件 {file_path} 失败: {e}")
-                if show_progress:
-                    print(f" -> 失败: {e}")
+                if progress_callback:
+                    progress_callback(f" -> 失败: {e}", "function_error")
         
-        return all_functions, failed_files
+        return all_functions
     
     def _is_supported_file(self, file_path: str) -> bool:
         """检查是否为支持的C/C++文件"""
@@ -205,15 +194,16 @@ class RepoAnalyzer:
         
         return filtered_files
     
-    def _extract_types(self, files: List[str], show_progress: bool = False) -> None:
+    def _extract_types(self, files: List[str], progress_callback=None) -> None:
         """提取类型定义"""
         type_count = 0
         
         for i, file_path in enumerate(files, 1):
             try:
-                if show_progress:
-                    rel_path = self._get_relative_path(file_path)
-                    print(f"  分析类型 {i}/{len(files)}: {rel_path}", end="")
+                rel_path = self._get_relative_path(file_path)
+                
+                if progress_callback:
+                    progress_callback(f"  分析类型 {i}/{len(files)}: {rel_path}", "type_progress")
                 
                 # 读取文件内容
                 with open(file_path, 'r', encoding='utf-8') as f:
@@ -235,33 +225,33 @@ class RepoAnalyzer:
                 # 从预处理器指令中提取类型（如#define的类型别名）
                 self.type_extractor.extract_from_preprocessor(content)
                 
-                if show_progress:
-                    print(f" -> OK")
+                if progress_callback:
+                    progress_callback(f" -> OK", "type_result")
                 
             except Exception as e:
                 logger.error(f"提取类型定义失败 {file_path}: {e}")
-                if show_progress:
-                    print(f" -> 失败: {e}")
+                if progress_callback:
+                    progress_callback(f" -> 失败: {e}", "type_error")
         
         # 获取类型统计
         type_stats = self.type_registry.get_statistics()
         type_count = type_stats.get('total_types', 0)
         
-        if show_progress:
-            print(f"✅ 类型提取完成，找到 {type_count} 个类型定义")
-            self._print_type_summary()
+        if progress_callback:
+            progress_callback(f"✅ 类型提取完成，找到 {type_count} 个类型定义", "type_complete")
+            progress_callback(self._get_type_summary_text(), "type_summary")
     
-    def _print_type_summary(self):
-        """打印类型摘要"""
+    def _get_type_summary_text(self) -> str:
+        """获取类型摘要文本"""
         stats = self.type_registry.get_statistics()
         
-        print("📋 类型统计:")
-        print(f"  • 总计: {stats.get('total_types', 0)} 个类型")
-        print(f"  • typedef: {stats.get('typedef', 0)} 个")
-        print(f"  • 结构体: {stats.get('struct', 0)} 个")
-        print(f"  • 联合体: {stats.get('union', 0)} 个")
-        print(f"  • 枚举: {stats.get('enum', 0)} 个")
-        print(f"  • 指针typedef: {stats.get('pointer_typedefs', 0)} 个")
+        return (f"📋 类型统计:\n"
+                f"  • 总计: {stats.get('total_types', 0)} 个类型\n"
+                f"  • typedef: {stats.get('typedef', 0)} 个\n"
+                f"  • 结构体: {stats.get('struct', 0)} 个\n"
+                f"  • 联合体: {stats.get('union', 0)} 个\n"
+                f"  • 枚举: {stats.get('enum', 0)} 个\n"
+                f"  • 指针typedef: {stats.get('pointer_typedefs', 0)} 个")
     
     def _get_relative_path(self, file_path: str) -> str:
         """获取相对路径显示"""
@@ -273,7 +263,7 @@ class RepoAnalyzer:
             # 如果无法计算相对路径，返回文件名
             return os.path.basename(file_path)
     
-    def _generate_statistics(self, files: List[str], failed_files: List, duration: float) -> Dict:
+    def _calculate_stats(self, files: List[str], duration: float) -> Dict:
         """生成分析统计信息"""
         total_functions = len(self.all_functions)
         definitions = len([f for f in self.all_functions if not f.is_declaration])
@@ -294,15 +284,14 @@ class RepoAnalyzer:
         
         stats = {
             'total_files': len(files),
-            'processed_files': len(files) - len(failed_files),
-            'failed_files': len(failed_files),
+            'processed_files': len(files),
+            'failed_files': 0,  # 暂时简化，不追踪失败文件
             'total_functions': total_functions,
             'function_definitions': definitions,
             'function_declarations': declarations,
             'duplicate_functions': len(duplicate_functions),
             'processing_time': duration,
             'files_per_second': len(files) / duration if duration > 0 else 0,
-            'failed_file_list': failed_files,
             'duplicate_function_details': duplicate_functions,
             # 新增：类型统计信息
             'type_statistics': type_stats
@@ -323,9 +312,10 @@ class RepoAnalyzer:
         
         return matched_functions
     
-    def get_summary(self) -> AnalysisSummary:
-        """获取分析结果的展示对象"""
-        return AnalysisSummary(self.all_functions, self.analysis_stats)
+    # def get_summary(self) -> AnalysisSummary:
+    #     """获取分析结果的展示对象"""
+    #     return AnalysisSummary(self.all_functions, self.analysis_stats)
+    #     # 注意：此方法已废弃，请使用 DisplayHelper 类进行显示
     
     def get_functions(self) -> List[FunctionInfo]:
         """获取所有找到的函数"""
@@ -399,9 +389,30 @@ class RepoAnalyzer:
         """获取类型统计信息"""
         return self.type_registry.get_statistics()
     
-    def print_type_info(self, type_name: str):
-        """打印类型详细信息"""
-        self.type_registry.print_type_info(type_name)
+    def get_config_summary_text(self) -> str:
+        """获取配置摘要文本"""
+        return self.config_parser.get_config_summary_text()
+    
+    def _get_file_statistics(self, files: List[str]) -> dict:
+        """获取文件统计信息"""
+        total_files = len(files)
+        c_files = sum(1 for f in files if f.endswith(('.c',)))
+        cpp_files = sum(1 for f in files if f.endswith(('.cpp', '.cxx', '.cc')))
+        header_files = sum(1 for f in files if f.endswith(('.h', '.hpp', '.hxx', '.hh')))
+        
+        return {
+            'total_files': total_files,
+            'c_files': c_files,
+            'cpp_files': cpp_files,
+            'header_files': header_files
+        }
+    
+    def _format_file_stats(self, file_stats: dict) -> str:
+        """格式化文件统计信息"""
+        return (f"✅ 找到 {file_stats['total_files']} 个文件\n"
+                f"   - C文件: {file_stats['c_files']}\n"
+                f"   - C++文件: {file_stats['cpp_files']}\n"
+                f"   - 头文件: {file_stats['header_files']}")
     
     def export_all_types(self) -> Dict:
         """导出所有类型信息"""

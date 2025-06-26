@@ -107,16 +107,18 @@ class ConfigParser:
         else:
             return []
     
-    def print_config_summary(self):
-        """打印配置摘要"""
-        print("📋 配置文件摘要:")
-        print(f"   库路径: {self.get_library_path()}")
+    def get_config_summary_text(self) -> str:
+        """获取配置文件摘要文本"""
+        summary = "📋 配置文件摘要:\n"
+        summary += f"   库路径: {self.get_library_path()}\n"
         
         if self.is_include_mode():
-            print(f"   包含文件: {self.config['include_files']}")
-            print("   ➤ 只分析指定的文件")
+            summary += f"   包含文件: {self.config['include_files']}\n"
+            summary += "   ➤ 只分析指定的文件"
         elif self.is_exclude_mode():
-            print(f"   排除文件: {self.config['exclude_files']}")
-            print("   ➤ 分析整个库，排除指定的文件")
+            summary += f"   排除文件: {self.config['exclude_files']}\n"
+            summary += "   ➤ 分析整个库，排除指定的文件"
         else:
-            print("   ➤ 分析整个库（未指定包含或排除文件）") 
+            summary += "   ➤ 分析整个库（未指定包含或排除文件）"
+        
+        return summary 

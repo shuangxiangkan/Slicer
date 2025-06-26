@@ -269,37 +269,40 @@ class TypeRegistry:
         
         return stats
     
-    def print_type_info(self, type_name: str):
-        """打印类型详细信息"""
+    def get_type_info_dict(self, type_name: str) -> dict:
+        """获取类型详细信息字典"""
         type_info = self.lookup_type(type_name)
         
         if not type_info:
-            print(f"❌ 未找到类型: {type_name}")
-            return
+            return {
+                'found': False,
+                'name': type_name,
+                'error': f"未找到类型: {type_name}"
+            }
         
-        print(f"🔍 类型信息: {type_name}")
-        print(f"   种类: {type_info.kind.value}")
-        print(f"   是否指针: {type_info.is_pointer}")
-        
-        if type_info.pointer_level > 0:
-            print(f"   指针层级: {type_info.pointer_level}")
-        
-        if type_info.is_const:
-            print(f"   const修饰: 是")
+        result = {
+            'found': True,
+            'name': type_name,
+            'kind': type_info.kind.value,
+            'is_pointer': type_info.is_pointer,
+            'pointer_level': type_info.pointer_level if type_info.pointer_level > 0 else 0,
+            'is_const': type_info.is_const
+        }
         
         if type_info.kind == TypeKind.TYPEDEF:
-            print(f"   底层类型: {type_info.underlying_type}")
+            result['underlying_type'] = type_info.underlying_type
             final_type, is_final_pointer, final_pointer_level = type_info.get_final_type()
-            print(f"   最终类型: {final_type}")
-            print(f"   最终是否指针: {is_final_pointer}")
-            if final_pointer_level > 0:
-                print(f"   最终指针层级: {final_pointer_level}")
+            result['final_type'] = final_type
+            result['is_final_pointer'] = is_final_pointer
+            result['final_pointer_level'] = final_pointer_level if final_pointer_level > 0 else 0
         
         if type_info.members:
-            print(f"   成员数量: {len(type_info.members)}")
+            result['members_count'] = len(type_info.members)
         
         if type_info.enum_values:
-            print(f"   枚举值数量: {len(type_info.enum_values)}")
+            result['enum_values_count'] = len(type_info.enum_values)
+        
+        return result
     
     def export_types(self) -> dict:
         """导出所有类型信息"""

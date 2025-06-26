@@ -187,49 +187,49 @@ class FunctionInfo:
         
         return basic_info
     
-    def print_detailed_info(self):
-        """打印详细的函数信息"""
+    def get_detailed_info_dict(self) -> dict:
+        """
+        获取详细信息字典，用于外部显示
+        
+        Returns:
+            包含所有详细信息的字典
+        """
         func_type = "🔧 函数定义" if not self.is_declaration else "🔗 函数声明"
-        print(f"{func_type}: {self.name}")
-        print(f"📁 位置: {self.file_path}:{self.start_line}-{self.end_line}")
-        if self.scope:
-            print(f"📂 作用域: {self.scope}")
         
-        # 返回类型信息
-        print(f"↩️  返回类型: {self.return_type_details.get_type_signature()}")
-        if self.return_type_details.is_actually_pointer():
-            print(f"   └─ {self.return_type_details.get_pointer_analysis()}")
-        if self.return_type_details.is_const:
-            print(f"   └─ const修饰")
+        # 基本信息
+        info = {
+            'type': func_type,
+            'name': self.name,
+            'file_path': self.file_path,
+            'start_line': self.start_line,
+            'end_line': self.end_line,
+            'scope': self.scope,
+            'return_type': {
+                'signature': self.return_type_details.get_type_signature(),
+                'is_pointer': self.return_type_details.is_actually_pointer(),
+                'pointer_analysis': self.return_type_details.get_pointer_analysis() if self.return_type_details.is_actually_pointer() else None,
+                'is_const': self.return_type_details.is_const,
+                'type_chain': self.return_type_details.get_type_chain()
+            },
+            'parameters': [],
+            'parameter_summary': self.get_parameter_summary()
+        }
         
-        # 参数信息
+        # 参数详细信息
         if self.parameter_details:
-            print(f"📋 参数列表 ({len(self.parameter_details)} 个):")
             for i, param in enumerate(self.parameter_details, 1):
-                print(f"   {i}. {param.get_full_signature()}")
-                details = []
-                if param.is_actually_pointer():
-                    details.append(param.get_pointer_analysis())
-                if param.is_const:
-                    details.append("const")
-                if param.is_reference:
-                    details.append("引用")
-                if param.is_basic_type():
-                    details.append("基本类型")
-                else:
-                    details.append("自定义类型")
-                
-                # 类型链信息
-                type_chain = param.get_type_chain()
-                if len(type_chain) > 1:
-                    details.append(f"类型链: {' → '.join(type_chain)}")
-                
-                if details:
-                    print(f"      └─ {', '.join(details)}")
-        else:
-            print("📋 参数列表: 无参数")
+                param_info = {
+                    'index': i,
+                    'signature': param.get_full_signature(),
+                    'name': param.name,
+                    'type': param.param_type,
+                    'is_pointer': param.is_actually_pointer(),
+                    'pointer_analysis': param.get_pointer_analysis() if param.is_actually_pointer() else None,
+                    'is_const': param.is_const,
+                    'is_reference': param.is_reference,
+                    'is_basic_type': param.is_basic_type(),
+                    'type_chain': param.get_type_chain()
+                }
+                info['parameters'].append(param_info)
         
-        # 参数摘要
-        summary = self.get_parameter_summary()
-        if summary['total_params'] > 0:
-            print(f"📊 参数摘要: 指针参数:{summary['pointer_params']}, const参数:{summary['const_params']}, 基本类型:{summary['basic_type_params']}")  
+        return info  
