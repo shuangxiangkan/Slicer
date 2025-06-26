@@ -5,6 +5,7 @@
 
 from typing import List, Optional
 from .param_ret_info import ParameterInfo, ReturnTypeInfo
+from .type_registry import TypeRegistry
 
 
 class FunctionInfo:
@@ -14,7 +15,8 @@ class FunctionInfo:
                  start_line: int, end_line: int, file_path: str, 
                  is_declaration: bool = False, scope: str = "",
                  parameter_details: List[ParameterInfo] = None,
-                 return_type_details: ReturnTypeInfo = None):
+                 return_type_details: ReturnTypeInfo = None,
+                 type_registry: TypeRegistry = None):
         self.name = name
         self.return_type = return_type  # 保持向后兼容的简单字符串
         self.parameters = parameters    # 保持向后兼容的简单字符串列表
@@ -24,10 +26,11 @@ class FunctionInfo:
         self.is_declaration = is_declaration
         self.scope = scope
         self._cached_body = None  # 缓存函数体内容
+        self.type_registry = type_registry  # 类型注册表
         
         # 新增：详细的参数和返回类型信息
         self.parameter_details = parameter_details if parameter_details is not None else []
-        self.return_type_details = return_type_details if return_type_details is not None else ReturnTypeInfo(return_type)
+        self.return_type_details = return_type_details if return_type_details is not None else ReturnTypeInfo(return_type, type_registry)
         
         # 如果没有提供详细信息，自动解析
         if not self.parameter_details and self.parameters:
@@ -38,7 +41,7 @@ class FunctionInfo:
         self.parameter_details = []
         for param_str in self.parameters:
             if param_str and param_str.strip() and param_str.strip() != "void":
-                param_info = ParameterInfo(param_str)
+                param_info = ParameterInfo(param_str, type_registry=self.type_registry)
                 # 只添加有效的参数（非空参数）
                 if param_info.param_type or param_info.name:
                     self.parameter_details.append(param_info)
@@ -94,7 +97,7 @@ class FunctionInfo:
         }
         
         for param in self.parameter_details:
-            if param.is_pointer:
+            if param.is_actually_pointer():
                 summary['pointer_params'] += 1
             if param.is_const:
                 summary['const_params'] += 1
@@ -132,7 +135,7 @@ class FunctionInfo:
         if type_filter == "all":
             return self.parameter_details
         elif type_filter == "pointer":
-            return [p for p in self.parameter_details if p.is_pointer]
+            return [p for p in self.parameter_details if p.is_actually_pointer()]
         elif type_filter == "const":
             return [p for p in self.parameter_details if p.is_const]
         elif type_filter == "reference":
@@ -146,7 +149,7 @@ class FunctionInfo:
     
     def has_pointer_params(self) -> bool:
         """检查是否有指针参数"""
-        return any(param.is_pointer for param in self.parameter_details)
+        return any(param.is_actually_pointer() for param in self.parameter_details)
     
     def has_const_params(self) -> bool:
         """检查是否有const参数"""
@@ -154,7 +157,7 @@ class FunctionInfo:
     
     def has_pointer_return(self) -> bool:
         """检查返回值是否是指针"""
-        return self.return_type_details.is_pointer if self.return_type_details else False
+        return self.return_type_details.is_actually_pointer() if self.return_type_details else False
     
     def get_info_dict(self) -> dict:
         """获取函数信息的字典表示"""
@@ -194,8 +197,8 @@ class FunctionInfo:
         
         # 返回类型信息
         print(f"↩️  返回类型: {self.return_type_details.get_type_signature()}")
-        if self.return_type_details.is_pointer:
-            print(f"   └─ 指针层级: {self.return_type_details.pointer_level}")
+        if self.return_type_details.is_actually_pointer():
+            print(f"   └─ {self.return_type_details.get_pointer_analysis()}")
         if self.return_type_details.is_const:
             print(f"   └─ const修饰")
         
@@ -205,8 +208,8 @@ class FunctionInfo:
             for i, param in enumerate(self.parameter_details, 1):
                 print(f"   {i}. {param.get_full_signature()}")
                 details = []
-                if param.is_pointer:
-                    details.append(f"指针(层级:{param.pointer_level})")
+                if param.is_actually_pointer():
+                    details.append(param.get_pointer_analysis())
                 if param.is_const:
                     details.append("const")
                 if param.is_reference:
@@ -215,6 +218,11 @@ class FunctionInfo:
                     details.append("基本类型")
                 else:
                     details.append("自定义类型")
+                
+                # 类型链信息
+                type_chain = param.get_type_chain()
+                if len(type_chain) > 1:
+                    details.append(f"类型链: {' → '.join(type_chain)}")
                 
                 if details:
                     print(f"      └─ {', '.join(details)}")

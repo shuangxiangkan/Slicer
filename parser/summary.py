@@ -349,7 +349,7 @@ class AnalysisSummary:
                     param_types[param_type] = 0
                 param_types[param_type] += 1
                 
-                if param.is_pointer:
+                if param.is_actually_pointer():
                     pointer_params += 1
                 if param.is_const:
                     const_params += 1
@@ -397,19 +397,52 @@ class AnalysisSummary:
         
         # 指针层级分析
         pointer_levels = {}
+        typedef_pointer_levels = {}
+        total_pointer_levels = {}
+        
         for func in definitions:
             for param in func.parameter_details:
+                # 字面指针层级
                 if param.is_pointer:
                     level = param.pointer_level
                     if level not in pointer_levels:
                         pointer_levels[level] = 0
                     pointer_levels[level] += 1
+                
+                # typedef指针层级
+                if param.typedef_is_pointer:
+                    level = param.typedef_pointer_level
+                    if level not in typedef_pointer_levels:
+                        typedef_pointer_levels[level] = 0
+                    typedef_pointer_levels[level] += 1
+                
+                # 总指针层级
+                if param.is_actually_pointer():
+                    total_level = param.get_total_pointer_level()
+                    if total_level not in total_pointer_levels:
+                        total_pointer_levels[total_level] = 0
+                    total_pointer_levels[total_level] += 1
         
-        if pointer_levels:
+        if pointer_levels or typedef_pointer_levels or total_pointer_levels:
             print(f"\n指针层级分布:")
-            for level in sorted(pointer_levels.keys()):
-                count = pointer_levels[level]
-                print(f"   {level}级指针: {count} 个参数")
+            
+            if pointer_levels:
+                print(f"  字面指针层级:")
+                for level in sorted(pointer_levels.keys()):
+                    count = pointer_levels[level]
+                    print(f"     {level}级指针: {count} 个参数")
+            
+            if typedef_pointer_levels:
+                print(f"  typedef指针层级:")
+                for level in sorted(typedef_pointer_levels.keys()):
+                    count = typedef_pointer_levels[level]
+                    print(f"     {level}级指针: {count} 个参数")
+            
+            if total_pointer_levels:
+                print(f"  总指针层级:")
+                for level in sorted(total_pointer_levels.keys()):
+                    count = total_pointer_levels[level]
+                    print(f"     {level}级指针: {count} 个参数")
     
     def get_functions_by_criteria(self, **criteria) -> List[FunctionInfo]:
         """

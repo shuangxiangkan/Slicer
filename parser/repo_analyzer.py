@@ -11,6 +11,8 @@ from typing import List, Dict, Any, Optional
 from .file_finder import FileFinder
 from .function_extractor import FunctionExtractor
 from .function_info import FunctionInfo
+from .type_registry import TypeRegistry
+from .type_extractor import TypeExtractor
 from .config_parser import ConfigParser
 from .summary import AnalysisSummary
 
@@ -29,7 +31,12 @@ class RepoAnalyzer:
             config_path: 用户配置文件路径
         """
         self.file_finder = FileFinder()
-        self.function_extractor = FunctionExtractor()
+        
+        # 初始化类型注册表和相关组件
+        self.type_registry = TypeRegistry()
+        self.type_extractor = TypeExtractor(self.type_registry)
+        self.function_extractor = FunctionExtractor(self.type_registry)
+        
         self.all_functions = []
         self.analysis_stats = {}
         self.processed_files = []
@@ -84,13 +91,19 @@ class RepoAnalyzer:
             summary = AnalysisSummary([], {})
             summary.print_file_stats(files)
         
-        # 2. 提取函数
+        # 2. 提取类型定义
+        if show_progress:
+            print("🔍 正在提取类型定义...")
+        
+        self._extract_types(files, show_progress)
+        
+        # 3. 提取函数
         if show_progress:
             print("🔧 正在提取函数定义...")
         
         self.all_functions, failed_files = self._extract_functions(files, show_progress)
         
-        # 3. 生成统计信息
+        # 4. 生成统计信息
         duration = time.time() - start_time
         self.analysis_stats = self._generate_statistics(files, failed_files, duration)
         
@@ -192,6 +205,64 @@ class RepoAnalyzer:
         
         return filtered_files
     
+    def _extract_types(self, files: List[str], show_progress: bool = False) -> None:
+        """提取类型定义"""
+        type_count = 0
+        
+        for i, file_path in enumerate(files, 1):
+            try:
+                if show_progress:
+                    rel_path = self._get_relative_path(file_path)
+                    print(f"  分析类型 {i}/{len(files)}: {rel_path}", end="")
+                
+                # 读取文件内容
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                # 判断是否为C++文件
+                is_cpp = any(file_path.endswith(ext) for ext in ['.cpp', '.cxx', '.cc', '.hpp', '.hxx', '.hh'])
+                
+                # 选择合适的解析器
+                parser = self.function_extractor.cpp_parser if is_cpp else self.function_extractor.c_parser
+                
+                # 解析代码
+                tree = parser.parse(content.encode('utf-8'))
+                root_node = tree.root_node
+                
+                # 提取类型定义
+                self.type_extractor.extract_from_content(content, root_node, file_path)
+                
+                # 从预处理器指令中提取类型（如#define的类型别名）
+                self.type_extractor.extract_from_preprocessor(content)
+                
+                if show_progress:
+                    print(f" -> OK")
+                
+            except Exception as e:
+                logger.error(f"提取类型定义失败 {file_path}: {e}")
+                if show_progress:
+                    print(f" -> 失败: {e}")
+        
+        # 获取类型统计
+        type_stats = self.type_registry.get_statistics()
+        type_count = type_stats.get('total_types', 0)
+        
+        if show_progress:
+            print(f"✅ 类型提取完成，找到 {type_count} 个类型定义")
+            self._print_type_summary()
+    
+    def _print_type_summary(self):
+        """打印类型摘要"""
+        stats = self.type_registry.get_statistics()
+        
+        print("📋 类型统计:")
+        print(f"  • 总计: {stats.get('total_types', 0)} 个类型")
+        print(f"  • typedef: {stats.get('typedef', 0)} 个")
+        print(f"  • 结构体: {stats.get('struct', 0)} 个")
+        print(f"  • 联合体: {stats.get('union', 0)} 个")
+        print(f"  • 枚举: {stats.get('enum', 0)} 个")
+        print(f"  • 指针typedef: {stats.get('pointer_typedefs', 0)} 个")
+    
     def _get_relative_path(self, file_path: str) -> str:
         """获取相对路径显示"""
         try:
@@ -218,6 +289,9 @@ class RepoAnalyzer:
         
         duplicate_functions = {k: v for k, v in function_names.items() if len(v) > 1}
         
+        # 获取类型统计
+        type_stats = self.type_registry.get_statistics()
+        
         stats = {
             'total_files': len(files),
             'processed_files': len(files) - len(failed_files),
@@ -229,7 +303,9 @@ class RepoAnalyzer:
             'processing_time': duration,
             'files_per_second': len(files) / duration if duration > 0 else 0,
             'failed_file_list': failed_files,
-            'duplicate_function_details': duplicate_functions
+            'duplicate_function_details': duplicate_functions,
+            # 新增：类型统计信息
+            'type_statistics': type_stats
         }
         
         return stats
@@ -310,4 +386,24 @@ class RepoAnalyzer:
         
         return result
     
+    def get_type_registry(self) -> TypeRegistry:
+        """获取类型注册表"""
+        return self.type_registry
+    
+    def lookup_type(self, type_name: str) -> Optional[Dict]:
+        """查找类型信息"""
+        type_info = self.type_registry.lookup_type(type_name)
+        return type_info.to_dict() if type_info else None
+    
+    def get_type_statistics(self) -> Dict:
+        """获取类型统计信息"""
+        return self.type_registry.get_statistics()
+    
+    def print_type_info(self, type_name: str):
+        """打印类型详细信息"""
+        self.type_registry.print_type_info(type_name)
+    
+    def export_all_types(self) -> Dict:
+        """导出所有类型信息"""
+        return self.type_registry.export_types()
  

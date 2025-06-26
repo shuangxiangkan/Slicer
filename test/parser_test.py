@@ -75,14 +75,19 @@ def test_detailed_parameter_info(analyzer: RepoAnalyzer):
         # 返回类型详细信息
         ret_info = func.return_type_details
         print(f"↩️  返回类型: {ret_info.get_type_signature()}")
-        if ret_info.is_pointer:
-            print(f"   └─ 指针层级: {ret_info.pointer_level}")
+        if ret_info.is_actually_pointer():
+            print(f"   └─ {ret_info.get_pointer_analysis()}")
         if ret_info.is_const:
             print(f"   └─ const修饰")
         if ret_info.is_basic_type():
             print(f"   └─ 基本类型")
         else:
             print(f"   └─ 自定义类型")
+        
+        # 返回类型链信息
+        ret_type_chain = ret_info.get_type_chain()
+        if len(ret_type_chain) > 1:
+            print(f"   └─ 类型链: {' → '.join(ret_type_chain)}")
         
         # 参数详细信息
         if func.parameter_details:
@@ -92,8 +97,8 @@ def test_detailed_parameter_info(analyzer: RepoAnalyzer):
                 
                 # 参数特征
                 features = []
-                if param.is_pointer:
-                    features.append(f"指针(层级:{param.pointer_level})")
+                if param.is_actually_pointer():
+                    features.append(param.get_pointer_analysis())
                 if param.is_const:
                     features.append("const")
                 if param.is_reference:
@@ -102,6 +107,11 @@ def test_detailed_parameter_info(analyzer: RepoAnalyzer):
                     features.append("基本类型")
                 else:
                     features.append("自定义类型")
+                
+                # 类型链信息
+                type_chain = param.get_type_chain()
+                if len(type_chain) > 1:
+                    features.append(f"类型链: {' → '.join(type_chain)}")
                 
                 if features:
                     print(f"      └─ {', '.join(features)}")
@@ -127,13 +137,137 @@ def test_detailed_parameter_info(analyzer: RepoAnalyzer):
     summary.print_parameter_analysis()
 
 
+def test_pointer_classification(analyzer: RepoAnalyzer):
+    """测试功能4: 按指针参数和返回值数量分类函数"""
+    print(f"\n🎯 测试功能4: 按指针参数和返回值数量分类函数")
+    print("=" * 80)
+    
+    functions = analyzer.get_functions()
+    
+    # 只分析函数定义，跳过声明
+    definitions = [f for f in functions if not f.is_declaration]
+    
+    # 分类存储
+    pointer_categories = {
+        0: [],  # 0个指针
+        1: [],  # 1个指针
+        2: [],  # 2个指针
+        3: []   # 3个及以上指针
+    }
+    
+    # 对每个函数进行分类
+    for func in definitions:
+        # 计算指针参数数量
+        pointer_param_count = sum(1 for param in func.parameter_details if param.is_actually_pointer())
+        
+        # 计算指针返回值数量（0或1）
+        pointer_return_count = 1 if func.return_type_details.is_actually_pointer() else 0
+        
+        # 总指针数量
+        total_pointer_count = pointer_param_count + pointer_return_count
+        
+        # 分类
+        if total_pointer_count >= 3:
+            pointer_categories[3].append(func)
+        else:
+            pointer_categories[total_pointer_count].append(func)
+    
+    # 显示分类结果
+    print(f"📊 按指针数量分类统计:")
+    print(f"   总函数定义数: {len(definitions)}")
+    for category, funcs in pointer_categories.items():
+        if category == 3:
+            print(f"   {category}个及以上指针: {len(funcs)} 个函数")
+        else:
+            print(f"   {category}个指针: {len(funcs)} 个函数")
+    print()
+    
+    # 详细显示每个分类
+    for category, funcs in pointer_categories.items():
+        if not funcs:
+            continue
+            
+        if category == 3:
+            print(f"🔴 {category}个及以上指针参数或返回值的函数 ({len(funcs)} 个):")
+        else:
+            print(f"🟢 {category}个指针参数或返回值的函数 ({len(funcs)} 个):")
+        print("-" * 60)
+        
+        for i, func in enumerate(funcs, 1):
+            # 计算详细指针信息
+            pointer_params = [p for p in func.parameter_details if p.is_actually_pointer()]
+            has_pointer_return = func.return_type_details.is_actually_pointer()
+            
+            print(f"   [{i:2}] {func.get_detailed_signature()}")
+            print(f"        📁 {func.file_path}:{func.start_line}")
+            
+            # 显示指针详情
+            pointer_details = []
+            
+            if has_pointer_return:
+                ret_analysis = func.return_type_details.get_pointer_analysis()
+                pointer_details.append(f"返回值: {ret_analysis}")
+            
+            if pointer_params:
+                param_analyses = []
+                for param in pointer_params:
+                    param_analysis = f"{param.name}({param.get_pointer_analysis()})"
+                    param_analyses.append(param_analysis)
+                pointer_details.append(f"参数: {', '.join(param_analyses)}")
+            
+            if pointer_details:
+                print(f"        🎯 指针详情: {'; '.join(pointer_details)}")
+            
+            # 每5个函数加一个分隔线
+            if i % 5 == 0 and i < len(funcs):
+                print("        " + "·" * 40)
+        
+        print()
+    
+    # 统计摘要
+    print(f"📈 指针使用模式分析:")
+    print("-" * 40)
+    
+    # 最复杂的函数（指针最多）
+    if pointer_categories[3]:
+        most_complex = max(pointer_categories[3], 
+                          key=lambda f: len([p for p in f.parameter_details if p.is_actually_pointer()]) + 
+                                       (1 if f.return_type_details.is_actually_pointer() else 0))
+        pointer_count = len([p for p in most_complex.parameter_details if p.is_actually_pointer()]) + \
+                       (1 if most_complex.return_type_details.is_actually_pointer() else 0)
+        print(f"   指针最多的函数: {most_complex.name} ({pointer_count}个指针)")
+    
+    # 无指针函数分析
+    no_pointer_funcs = pointer_categories[0]
+    if no_pointer_funcs:
+        print(f"   无指针函数占比: {len(no_pointer_funcs)/len(definitions)*100:.1f}%")
+        
+        # 分析无指针函数的特点
+        basic_return_count = sum(1 for f in no_pointer_funcs if f.return_type_details.is_basic_type())
+        print(f"   无指针函数中返回基本类型的: {basic_return_count} 个 ({basic_return_count/len(no_pointer_funcs)*100:.1f}%)")
+    
+    # 指针密集度分析
+    total_pointer_usage = sum(len(funcs) * category for category, funcs in pointer_categories.items() if category < 3)
+    if pointer_categories[3]:
+        # 为3+类别估算平均指针数
+        avg_pointers_in_complex = sum(
+            len([p for p in f.parameter_details if p.is_actually_pointer()]) + 
+            (1 if f.return_type_details.is_actually_pointer() else 0)
+            for f in pointer_categories[3]
+        ) / len(pointer_categories[3])
+        total_pointer_usage += len(pointer_categories[3]) * avg_pointers_in_complex
+    
+    avg_pointers_per_func = total_pointer_usage / len(definitions) if definitions else 0
+    print(f"   平均每个函数指针数: {avg_pointers_per_func:.2f}")
+
+
 def test_library_analysis():
     """测试库文件分析功能"""
     print("🧪 库文件分析测试")
     print("=" * 80)
     
     # 使用test目录下的配置文件路径
-    config_path = os.path.join(os.path.dirname(__file__), "user_config.json")
+    config_path = os.path.join(os.path.dirname(__file__), "miniz_config.json")
     
     try:
         # 创建分析器实例
@@ -156,8 +290,11 @@ def test_library_analysis():
             # # 测试功能2: 根据函数名打印函数体
             # test_print_function_body(analyzer)
             
-            # 测试功能3: 详细的参数和返回值信息
-            test_detailed_parameter_info(analyzer)
+            # # 测试功能3: 详细的参数和返回值信息
+            # test_detailed_parameter_info(analyzer)
+            
+            # 测试功能4: 按指针参数和返回值数量分类函数
+            test_pointer_classification(analyzer)
             
         else:
             print("❌ 分析失败 - 无结果")

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import List, Optional, Dict
 import logging
 from .function_info import FunctionInfo
+from .type_registry import TypeRegistry
 
 # 配置logging
 logger = logging.getLogger(__name__)
@@ -18,7 +19,9 @@ logger = logging.getLogger(__name__)
 class FunctionExtractor:
     """C/C++函数提取器"""
     
-    def __init__(self):
+    def __init__(self, type_registry: TypeRegistry = None):
+        self.type_registry = type_registry
+        
         # 初始化C和C++解析器
         try:
             self.c_language = Language(tsc.language(), "c")
@@ -158,7 +161,8 @@ class FunctionExtractor:
                 end_line=end_line,
                 file_path=file_path,
                 is_declaration=False,
-                scope=scope
+                scope=scope,
+                type_registry=self.type_registry
             )
         
         except Exception as e:
@@ -210,7 +214,8 @@ class FunctionExtractor:
                 end_line=end_line,
                 file_path=file_path,
                 is_declaration=True,
-                scope=scope
+                scope=scope,
+                type_registry=self.type_registry
             )
         
         except Exception as e:
