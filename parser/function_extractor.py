@@ -143,10 +143,8 @@ class FunctionExtractor:
             if not func_name:
                 return None
             
-            # 获取返回类型
-            return_type = "void"  # 默认
-            if type_specifier:
-                return_type = content[type_specifier.start_byte:type_specifier.end_byte]
+            # 获取返回类型 - 改进的解析逻辑
+            return_type = self._parse_return_type(node, content)
             
             # 获取行号
             start_line = node.start_point[0] + 1
@@ -197,10 +195,8 @@ class FunctionExtractor:
             if not func_name:
                 return None
             
-            # 获取返回类型
-            return_type = "void"  # 默认
-            if type_specifier:
-                return_type = content[type_specifier.start_byte:type_specifier.end_byte]
+            # 获取返回类型 - 改进的解析逻辑
+            return_type = self._parse_return_type(node, content)
             
             # 获取行号
             start_line = node.start_point[0] + 1
@@ -231,6 +227,34 @@ class FunctionExtractor:
                     parameters.append(param_text)
         
         return parameters
+    
+    def _parse_return_type(self, function_node: Node, content: str) -> str:
+        """解析函数返回类型"""
+        try:
+            # 查找函数声明器的位置
+            declarator_start = None
+            for child in function_node.children:
+                if child.type == 'function_declarator':
+                    declarator_start = child.start_byte
+                    break
+            
+            if declarator_start is None:
+                return "void"
+            
+            # 返回类型是从函数开始到函数声明器之间的文本
+            return_type_text = content[function_node.start_byte:declarator_start].strip()
+            
+            # 清理返回类型文本
+            # 移除可能的存储类说明符和其他修饰符
+            return_type_text = return_type_text.replace('static', '').replace('inline', '').replace('extern', '')
+            return_type_text = return_type_text.replace('CJSON_PUBLIC(', '').replace(')', '')
+            return_type_text = ' '.join(return_type_text.split())  # 标准化空格
+            
+            return return_type_text if return_type_text else "void"
+            
+        except Exception as e:
+            logger.warning(f"解析返回类型时出错: {e}")
+            return "void"
     
     def _get_class_name(self, class_node: Node, content: str) -> str:
         """获取类名"""
