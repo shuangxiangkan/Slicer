@@ -261,4 +261,53 @@ class RepoAnalyzer:
     
     def get_processed_files(self) -> List[str]:
         """获取已处理的文件列表"""
-        return self.processed_files 
+        return self.processed_files
+    
+    def get_function_by_name(self, function_name: str, exact_match: bool = True) -> List[FunctionInfo]:
+        """
+        根据函数名获取函数信息
+        
+        Args:
+            function_name: 要查找的函数名
+            exact_match: 是否精确匹配，False时进行模糊匹配
+            
+        Returns:
+            匹配的函数信息列表
+        """
+        matches = []
+        for func in self.all_functions:
+            if exact_match:
+                if func.name == function_name:
+                    matches.append(func)
+            else:
+                if function_name.lower() in func.name.lower():
+                    matches.append(func)
+        return matches
+    
+    def get_function_body(self, function_name: str, exact_match: bool = True) -> Dict[str, str]:
+        """
+        根据函数名获取函数体内容
+        
+        Args:
+            function_name: 要查找的函数名
+            exact_match: 是否精确匹配
+            
+        Returns:
+            字典，键为函数的唯一标识，值为函数体内容
+        """
+        matches = self.get_function_by_name(function_name, exact_match)
+        result = {}
+        
+        for func in matches:
+            # 创建唯一标识：函数名_文件名_行号
+            import os
+            file_name = os.path.basename(func.file_path)
+            key = f"{func.name}_{file_name}_{func.start_line}"
+            
+            body = func.get_body()
+            if body is not None:
+                result[key] = body
+        
+        return result
+    
+ 

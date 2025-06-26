@@ -252,4 +252,130 @@ class AnalysisSummary:
         except Exception as e:
             error_msg = f"保存JSON报告失败: {e}"
             logger.error(error_msg)
-            print(f"❌ {error_msg}") 
+            print(f"❌ {error_msg}")
+
+    def print_function_body(self, function_name: str, functions: List[FunctionInfo], 
+                           exact_match: bool = True, show_metadata: bool = True) -> None:
+        """
+        打印函数体内容（格式化输出）
+        
+        Args:
+            function_name: 要查找的函数名
+            functions: 所有函数列表
+            exact_match: 是否精确匹配
+            show_metadata: 是否显示函数元信息
+        """
+        # 查找匹配的函数
+        matches = []
+        for func in functions:
+            if exact_match:
+                if func.name == function_name:
+                    matches.append(func)
+            else:
+                if function_name.lower() in func.name.lower():
+                    matches.append(func)
+        
+        if not matches:
+            print(f"❌ 未找到函数: {function_name}")
+            return
+        
+        print(f"🔍 找到 {len(matches)} 个匹配的函数:")
+        print("=" * 80)
+        
+        for i, func in enumerate(matches, 1):
+            func_type = "🔧 函数定义" if not func.is_declaration else "🔗 函数声明"
+            file_name = os.path.basename(func.file_path) if func.file_path else "Unknown"
+            
+            print(f"\n[{i}/{len(matches)}] {func_type}: {func.name}")
+            
+            if show_metadata:
+                print(f"📁 文件: {file_name}:{func.start_line}-{func.end_line}")
+                print(f"🏷️  签名: {func.get_signature()}")
+                if func.scope:
+                    print(f"📂 作用域: {func.scope}")
+            
+            print("=" * 60)
+            
+            body = func.get_body()
+            if body is not None:
+                print(body)
+            else:
+                print("❌ 无法读取函数体内容")
+            
+            print("=" * 60)
+            
+            # 如果有多个匹配且不是最后一个，询问是否继续
+            if i < len(matches):
+                response = input("\n按回车键继续显示下一个函数，或输入 'q' 退出: ")
+                if response.lower() == 'q':
+                    break
+
+    def export_function_bodies(self, function_names: List[str], functions: List[FunctionInfo], 
+                              output_file: str = None) -> Dict[str, str]:
+        """
+        导出多个函数的函数体到文件或返回字典
+        
+        Args:
+            function_names: 函数名列表
+            functions: 所有函数列表
+            output_file: 输出文件路径，如果为None则不保存文件
+            
+        Returns:
+            包含所有函数体的字典
+        """
+        import time
+        all_bodies = {}
+        
+        for func_name in function_names:
+            # 查找匹配的函数
+            for func in functions:
+                if func.name == func_name:
+                    # 创建唯一标识：函数名_文件名_行号
+                    file_name = os.path.basename(func.file_path)
+                    key = f"{func.name}_{file_name}_{func.start_line}"
+                    
+                    body = func.get_body()
+                    if body is not None:
+                        all_bodies[key] = body
+        
+        if output_file:
+            try:
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    f.write("# 函数体导出结果\n")
+                    f.write(f"# 导出时间: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                    f.write(f"# 总函数数: {len(all_bodies)}\n\n")
+                    
+                    for key, body in all_bodies.items():
+                        f.write(f"## {key}\n")
+                        f.write("```c\n")
+                        f.write(body)
+                        f.write("\n```\n\n")
+                
+                print(f"✅ 函数体已导出到: {output_file}")
+            except Exception as e:
+                print(f"❌ 导出失败: {e}")
+        
+        return all_bodies
+
+    def get_function_by_name(self, function_name: str, functions: List[FunctionInfo], 
+                            exact_match: bool = True) -> List[FunctionInfo]:
+        """
+        根据函数名获取函数信息
+        
+        Args:
+            function_name: 要查找的函数名
+            functions: 所有函数列表
+            exact_match: 是否精确匹配，False时进行模糊匹配
+            
+        Returns:
+            匹配的函数信息列表
+        """
+        matches = []
+        for func in functions:
+            if exact_match:
+                if func.name == function_name:
+                    matches.append(func)
+            else:
+                if function_name.lower() in func.name.lower():
+                    matches.append(func)
+        return matches
