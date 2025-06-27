@@ -120,16 +120,17 @@ class FunctionExtractor:
                                   scope: str, is_cpp: bool) -> Optional[FunctionInfo]:
         """解析函数定义"""
         try:
-            # 获取函数信息
-            declarator = None
-            type_specifier = None
+            # 递归查找函数声明器
+            def find_function_declarator(node):
+                if node.type == 'function_declarator':
+                    return node
+                for child in node.children:
+                    result = find_function_declarator(child)
+                    if result:
+                        return result
+                return None
             
-            for child in node.children:
-                if child.type == 'function_declarator':
-                    declarator = child
-                elif child.type in ['type_identifier', 'primitive_type', 'sized_type_specifier']:
-                    type_specifier = child
-            
+            declarator = find_function_declarator(node)
             if not declarator:
                 return None
             
@@ -173,16 +174,17 @@ class FunctionExtractor:
                                    scope: str, is_cpp: bool) -> Optional[FunctionInfo]:
         """解析函数声明"""
         try:
-            # 检查是否包含函数声明
-            declarator = None
-            type_specifier = None
+            # 递归查找函数声明器
+            def find_function_declarator(node):
+                if node.type == 'function_declarator':
+                    return node
+                for child in node.children:
+                    result = find_function_declarator(child)
+                    if result:
+                        return result
+                return None
             
-            for child in node.children:
-                if child.type == 'function_declarator':
-                    declarator = child
-                elif child.type in ['type_identifier', 'primitive_type', 'sized_type_specifier']:
-                    type_specifier = child
-            
+            declarator = find_function_declarator(node)
             if not declarator:
                 return None
             

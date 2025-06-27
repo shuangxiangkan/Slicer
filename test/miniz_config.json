@@ -2,7 +2,15 @@
   "library_path": "libraries/miniz",
   "include_files": [
     "miniz.c",
-    "miniz.h"
+    "miniz.h",
+    "miniz_tdef.c",
+    "miniz_tdef.h",
+    "miniz_tinfl.c",
+    "miniz_tinfl.h",
+    "miniz_zip.c",
+    "miniz_zip.h",
+    "miniz_zip_write.c",
+    "miniz_zip_write.h"
   ],
   "exclude_files": [],
   "analysis_targets": [

@@ -39,7 +39,7 @@ class CallGraphGenerator:
             return False
     
     def generate_function_callees_graph(self, func_name: str, output_file: str, 
-                                       max_depth: int = 2) -> bool:
+                                       max_depth: int = None) -> bool:
         """生成函数的所有callees图（直接和间接调用的函数）"""
         try:
             if func_name not in self.call_graph.functions:
@@ -53,13 +53,13 @@ class CallGraphGenerator:
             dependencies = self.analyzer.get_function_dependencies(func_name, max_depth)
             related_functions.update(dependencies.keys())
             
-            # 只保留在当前分析范围内的函数
-            existing_functions = set(self.call_graph.functions.keys())
-            related_functions = related_functions.intersection(existing_functions)
+            # 不再过滤外部函数，保留所有依赖
+            # existing_functions = set(self.call_graph.functions.keys())
+            # related_functions = related_functions.intersection(existing_functions)
             
             # 生成DOT内容
             dot_content = self._generate_dot_content(
-                title=f"Call Graph - {func_name} Callees",
+                title=f"Call Graph - {func_name} Callees (Total: {len(related_functions)-1})",
                 selected_functions=related_functions,
                 center_function=func_name
             )
@@ -76,7 +76,7 @@ class CallGraphGenerator:
             return False
     
     def generate_function_callers_graph(self, func_name: str, output_file: str, 
-                                       max_depth: int = 2) -> bool:
+                                       max_depth: int = None) -> bool:
         """生成函数的所有callers图（直接和间接调用该函数的函数）"""
         try:
             if func_name not in self.call_graph.functions:
@@ -90,13 +90,13 @@ class CallGraphGenerator:
             dependents = self.analyzer.get_function_dependents(func_name, max_depth)
             related_functions.update(dependents.keys())
             
-            # 只保留在当前分析范围内的函数
-            existing_functions = set(self.call_graph.functions.keys())
-            related_functions = related_functions.intersection(existing_functions)
+            # 不再过滤外部函数，保留所有调用者
+            # existing_functions = set(self.call_graph.functions.keys())
+            # related_functions = related_functions.intersection(existing_functions)
             
             # 生成DOT内容
             dot_content = self._generate_dot_content(
-                title=f"Call Graph - {func_name} Callers",
+                title=f"Call Graph - {func_name} Callers (Total: {len(related_functions)-1})",
                 selected_functions=related_functions,
                 center_function=func_name
             )
@@ -113,7 +113,7 @@ class CallGraphGenerator:
             return False
     
     def generate_function_call_graph(self, func_name: str, output_file: str, 
-                                   max_depth: int = 2) -> bool:
+                                   max_depth: int = None) -> bool:
         """生成函数的完整Call Graph（包含所有callers和callees）"""
         try:
             if func_name not in self.call_graph.functions:
@@ -131,13 +131,17 @@ class CallGraphGenerator:
             dependents = self.analyzer.get_function_dependents(func_name, max_depth)
             related_functions.update(dependents.keys())
             
-            # 只保留在当前分析范围内的函数
-            existing_functions = set(self.call_graph.functions.keys())
-            related_functions = related_functions.intersection(existing_functions)
+            # 不再过滤外部函数，保留所有相关函数
+            # existing_functions = set(self.call_graph.functions.keys())
+            # related_functions = related_functions.intersection(existing_functions)
+            
+            # 计算callees和callers数量
+            callees_count = len(dependencies)
+            callers_count = len(dependents)
             
             # 生成DOT内容
             dot_content = self._generate_dot_content(
-                title=f"Call Graph - {func_name} Complete",
+                title=f"Call Graph - {func_name} Complete ({callers_count} Callers + {callees_count} Callees)",
                 selected_functions=related_functions,
                 center_function=func_name
             )
@@ -173,9 +177,15 @@ class CallGraphGenerator:
         
         # 生成节点定义
         lines.append("    // Function nodes")
+        
+        # 获取所有函数定义，用于判断函数是否有函数体
+        all_functions = self.analyzer.get_functions()
+        functions_with_definition = {f.name: f for f in all_functions}
+        
         for func_name in sorted(selected_functions):
-            if func_name in self.call_graph.functions:
-                func_info = self.call_graph.functions[func_name]
+            if func_name in functions_with_definition:
+                # 有函数定义的函数：显示完整签名
+                func_info = functions_with_definition[func_name]
                 signature = self._get_function_signature(func_info)
                 
                 # 如果是中心函数，高亮显示
@@ -183,6 +193,12 @@ class CallGraphGenerator:
                     lines.append(f'    "{func_name}" [label=<{signature}>, style=filled, fillcolor=lightcoral];')
                 else:
                     lines.append(f'    "{func_name}" [label=<{signature}>];')
+            else:
+                # 真正的外部函数（如strlen等）：只显示函数名
+                if center_function and func_name == center_function:
+                    lines.append(f'    "{func_name}" [label=<<B>{func_name}</B>>, style=filled, fillcolor=lightcoral];')
+                else:
+                    lines.append(f'    "{func_name}" [label=<<B>{func_name}</B>>];')
         
         lines.append("")
         
@@ -191,10 +207,12 @@ class CallGraphGenerator:
         edges = set()
         for func_name in selected_functions:
             if func_name in self.call_graph.functions:
+                # 获取直接调用的函数
                 callees = self.analyzer.get_direct_callees(func_name)
                 for callee in callees:
                     if callee in selected_functions:
                         edges.add((func_name, callee))
+            # 对于外部函数，我们无法获取其调用关系，所以跳过
         
         for caller, callee in sorted(edges):
             lines.append(f'    "{caller}" -> "{callee}";')
@@ -222,13 +240,14 @@ class CallGraphGenerator:
         # 构建完整签名
         if not params:
             # 无参数函数
-            signature = f"{return_type} {func_name_bold} (void)"
+            signature = f"{return_type} {func_name_bold}"
+            signature += f"<BR/>()"
         elif len(params) == 1:
             # 单参数函数，在函数名和括号间添加空格
             signature = f"{return_type} {func_name_bold} ({params[0]})"
         else:
             # 多参数函数，每个参数换行显示
-            signature = f"{return_type} {func_name_bold}   (<BR/>"
+            signature = f"{return_type} {func_name_bold}<BR/>(<BR/>"
             for i, param in enumerate(params):
                 if i == 0:
                     signature += f"&nbsp;&nbsp;&nbsp;&nbsp;{param}"
