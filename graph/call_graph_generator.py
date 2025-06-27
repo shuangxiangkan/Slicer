@@ -180,9 +180,9 @@ class CallGraphGenerator:
                 
                 # 如果是中心函数，高亮显示
                 if center_function and func_name == center_function:
-                    lines.append(f'    "{func_name}" [label="{signature}", style=filled, fillcolor=lightcoral];')
+                    lines.append(f'    "{func_name}" [label=<{signature}>, style=filled, fillcolor=lightcoral];')
                 else:
-                    lines.append(f'    "{func_name}" [label="{signature}"];')
+                    lines.append(f'    "{func_name}" [label=<{signature}>];')
         
         lines.append("")
         
@@ -204,7 +204,7 @@ class CallGraphGenerator:
         return "\n".join(lines)
     
     def _get_function_signature(self, func_info) -> str:
-        """获取函数签名"""
+        """获取函数签名，函数名加粗显示，参数每行一个"""
         # 构建返回类型
         return_type = "void"
         if hasattr(func_info, 'return_type') and func_info.return_type:
@@ -216,21 +216,24 @@ class CallGraphGenerator:
             for param in func_info.parameters:
                 params.append(param.strip())
         
-        if not params:
-            param_str = "void"
-        else:
-            param_str = ", ".join(params)
+        # 构建函数名（加粗）
+        func_name_bold = f"<B>{func_info.name}</B>"
         
         # 构建完整签名
-        signature = f"{return_type} {func_info.name}({param_str})"
-        
-        # 处理长签名，避免节点过宽
-        if len(signature) > 60:
-            # 在逗号处换行
-            parts = signature.split(", ")
-            if len(parts) > 1:
-                signature = parts[0]
-                for part in parts[1:]:
-                    signature += ",\\n    " + part
+        if not params:
+            # 无参数函数
+            signature = f"{return_type} {func_name_bold} (void)"
+        elif len(params) == 1:
+            # 单参数函数，在函数名和括号间添加空格
+            signature = f"{return_type} {func_name_bold} ({params[0]})"
+        else:
+            # 多参数函数，每个参数换行显示
+            signature = f"{return_type} {func_name_bold}   (<BR/>"
+            for i, param in enumerate(params):
+                if i == 0:
+                    signature += f"&nbsp;&nbsp;&nbsp;&nbsp;{param}"
+                else:
+                    signature += f",<BR/>&nbsp;&nbsp;&nbsp;&nbsp;{param}"
+            signature += "<BR/>)"
         
         return signature 
