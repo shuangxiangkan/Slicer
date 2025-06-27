@@ -51,26 +51,117 @@ class FunctionInfo:
                     self.parameter_details.append(param_info)
     
     def parse_function_calls(self):
-        """解析函数体中的函数调用"""
+        """解析函数体中的函数调用 - 使用tree-sitter进行精确解析"""
         if self._parsed_calls or self.is_declaration:
             return
-        
-        import re
         
         body = self.get_body()
         if not body:
             self._parsed_calls = True
             return
         
+        try:
+            # 导入tree-sitter相关模块
+            import tree_sitter_c as tsc
+            import tree_sitter_cpp as tscpp
+            from tree_sitter import Language, Parser
+            
+            # 判断是否为C++文件
+            is_cpp = any(self.file_path.endswith(ext) for ext in ['.cpp', '.cxx', '.cc', '.hpp', '.hxx', '.hh'])
+            
+            # 初始化解析器
+            if is_cpp:
+                language = Language(tscpp.language(), "cpp")
+            else:
+                language = Language(tsc.language(), "c")
+            
+            parser = Parser()
+            parser.set_language(language)
+            
+            # 解析函数体
+            tree = parser.parse(body.encode('utf-8'))
+            root_node = tree.root_node
+            
+            # 递归查找函数调用
+            self._find_function_calls_recursive(root_node, body)
+            
+        except Exception as e:
+            # 如果tree-sitter解析失败，回退到正则表达式方法
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"tree-sitter解析失败，回退到正则表达式方法: {e}")
+            self._parse_function_calls_regex()
+        
+        self._parsed_calls = True
+    
+    def _find_function_calls_recursive(self, node, content: str):
+        """递归查找函数调用节点"""
+        # 检查当前节点是否为函数调用
+        if node.type == 'call_expression':
+            # 获取函数名
+            function_node = node.child_by_field_name('function')
+            if function_node:
+                func_name = self._extract_function_name(function_node, content)
+                if func_name and func_name != self.name:  # 排除递归调用
+                    # 过滤常见的宏调用
+                    if not self._is_likely_macro(func_name):
+                        self.callees.add(func_name)
+        
+        # 递归处理子节点
+        for child in node.children:
+            self._find_function_calls_recursive(child, content)
+    
+    def _extract_function_name(self, function_node, content: str) -> str:
+        """从函数调用节点中提取函数名"""
+        if function_node.type == 'identifier':
+            # 简单的函数调用: func_name()
+            return content[function_node.start_byte:function_node.end_byte]
+        elif function_node.type == 'field_expression':
+            # 成员函数调用: obj.func_name() 或 obj->func_name()
+            field_node = function_node.child_by_field_name('field')
+            if field_node and field_node.type == 'field_identifier':
+                return content[field_node.start_byte:field_node.end_byte]
+        elif function_node.type == 'subscript_expression':
+            # 可能是函数指针调用，暂时跳过
+            return None
+        elif function_node.type == 'parenthesized_expression':
+            # 括号包围的表达式，递归提取
+            inner_node = function_node.children[1] if len(function_node.children) > 1 else None
+            if inner_node:
+                return self._extract_function_name(inner_node, content)
+        elif function_node.type == 'cast_expression':
+            # 类型转换，不是函数调用
+            return None
+        
+        # 对于其他未知类型，尝试提取文本并进行基本验证
+        func_text = content[function_node.start_byte:function_node.end_byte].strip()
+        
+        # 基本验证：应该是有效的标识符
+        import re
+        if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', func_text):
+            return func_text
+        
+        return None
+    
+    def _parse_function_calls_regex(self):
+        """回退的正则表达式方法（保留原有逻辑作为备用）"""
+        import re
+        
+        body = self.get_body()
+        if not body:
+            return
+        
         # 函数调用的正则表达式
-        # 匹配形如 function_name( 的模式，但排除一些常见的非函数调用情况
         function_call_pattern = r'\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\('
         
-        # 需要排除的关键字
+        # 需要排除的关键字（扩展列表，包含常见宏）
         exclude_keywords = {
             'if', 'while', 'for', 'switch', 'sizeof', 'typeof', 
             'struct', 'union', 'enum', 'return', 'const', 'static',
-            'extern', 'inline', 'volatile', 'typedef'
+            'extern', 'inline', 'volatile', 'typedef',
+            # 添加常见的宏
+            'CJSON_PUBLIC', 'API', 'EXPORT', 'INLINE', 'FORCEINLINE',
+            'CALLBACK', 'WINAPI', 'STDCALL', 'CDECL', 'FASTCALL'
         }
         
         lines = body.split('\n')
@@ -103,15 +194,13 @@ class FunctionInfo:
             for match in matches:
                 func_name = match.group(1)
                 
-                # 排除关键字
-                if func_name.lower() in exclude_keywords:
+                # 排除关键字和宏
+                if func_name in exclude_keywords:
                     continue
                 
                 # 排除自己调用自己（递归调用的情况）
                 if func_name != self.name:
                     self.callees.add(func_name)
-        
-        self._parsed_calls = True
     
     def get_callees(self) -> set:
         """获取直接调用的函数列表"""
@@ -321,3 +410,17 @@ class FunctionInfo:
                 info['parameters'].append(param_info)
         
         return info  
+
+    def _is_likely_macro(self, name: str) -> bool:
+        """判断是否可能是宏调用"""
+        # 常见的宏命名模式
+        macro_patterns = [
+            # 全大写
+            lambda n: n.isupper() and len(n) > 2,
+            # 以特定前缀开头的大写宏
+            lambda n: any(n.startswith(prefix) for prefix in ['CJSON_', 'API_', 'EXPORT_', 'INLINE_']),
+            # 常见的宏名
+            lambda n: n in {'MACRO_CALL', 'DEBUG', 'ASSERT', 'TRACE', 'LOG', 'PRINT'}
+        ]
+        
+        return any(pattern(name) for pattern in macro_patterns)  

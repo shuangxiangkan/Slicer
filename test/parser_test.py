@@ -224,7 +224,8 @@ def test_call_graph_analysis(analyzer: RepoAnalyzer):
     print("=" * 80)
     
     # 测试几个具体的函数
-    test_functions = ["mz_compress2", "mz_deflateInit", "mz_uncompress2"]
+    # test_functions = ["mz_compress2", "mz_deflateInit", "mz_uncompress2"]
+    test_functions = ["cJSON_ParseWithLengthOpts"]
     
     for func_name in test_functions:
         print(f"\n🔍 分析函数: {func_name}")
@@ -248,10 +249,11 @@ def test_call_graph_analysis(analyzer: RepoAnalyzer):
         else:
             print(f"📲 被直接调用: 无")
         
-        # 所有依赖（限制深度避免输出过多）
-        all_deps = analyzer.get_function_dependencies(func_name, max_depth=3)
+        # 所有callees（直接和间接依赖）- 无深度限制，显示全部
+        all_deps = analyzer.get_function_dependencies(func_name, max_depth=None)
         if all_deps:
-            print(f"🌳 所有依赖 (深度≤3, {len(all_deps)} 个):")
+            print(f"🌳 所有Callees (直接+间接, {len(all_deps)} 个):")
+            
             # 按深度分组显示
             deps_by_depth = {}
             for dep, depth in all_deps.items():
@@ -259,11 +261,35 @@ def test_call_graph_analysis(analyzer: RepoAnalyzer):
                     deps_by_depth[depth] = []
                 deps_by_depth[depth].append(dep)
             
+            # 显示每个深度的全部依赖
             for depth in sorted(deps_by_depth.keys()):
                 deps = sorted(deps_by_depth[depth])
-                print(f"   深度{depth}: {', '.join(deps[:5])}" + ("..." if len(deps) > 5 else ""))
+                print(f"   深度{depth} ({len(deps)}个): ", end="")
+                
+                # 按行显示，每行最多显示6个函数名
+                for i, dep in enumerate(deps):
+                    if i > 0 and i % 6 == 0:
+                        print(f"\n   {'':>12}", end="")
+                    print(f"{dep}", end="")
+                    if i < len(deps) - 1:
+                        print(", ", end="")
+                print()  # 换行
+                
+            # 显示总体统计
+            print(f"   📊 统计: 总计{len(all_deps)}个函数，最大深度{max(all_deps.values())}")
+            
+            # 按字母顺序显示所有callees（便于查找）
+            print(f"   📝 按字母顺序: ", end="")
+            all_callees_sorted = sorted(all_deps.keys())
+            for i, callee in enumerate(all_callees_sorted):
+                if i > 0 and i % 8 == 0:
+                    print(f"\n   {'':>17}", end="")
+                print(f"{callee}", end="")
+                if i < len(all_callees_sorted) - 1:
+                    print(", ", end="")
+            print()  # 换行
         else:
-            print(f"🌳 所有依赖: 无")
+            print(f"🌳 所有Callees: 无")
         
         print()
     
@@ -365,7 +391,7 @@ def test_library_analysis():
     print("=" * 80)
     
     # 使用配置文件
-    config_file = "test/miniz_config.json"
+    config_file = "test/cjson_config.json"
     
     if not os.path.exists(config_file):
         print(f"❌ 配置文件不存在: {config_file}")
@@ -386,8 +412,8 @@ def test_library_analysis():
         # test_print_function_body(analyzer)
         # test_detailed_parameter_info(analyzer)
         # test_pointer_classification(analyzer)
-        # test_call_graph_analysis(analyzer)
-        test_dot_graph_generation(analyzer)
+        test_call_graph_analysis(analyzer)
+        # test_dot_graph_generation(analyzer)
         
     except Exception as e:
         print(f"❌ 分析失败: {e}")

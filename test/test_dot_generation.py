@@ -21,11 +21,11 @@ def test_simple_dot_generation():
     print("=" * 60)
     
     try:
-        # 使用现有的配置文件分析miniz库
-        analyzer = RepoAnalyzer("test/miniz_config.json")
+        # 使用现有的配置文件分析cjson库
+        analyzer = RepoAnalyzer("test/cjson_config.json")
         
-        print("📁 分析miniz库...")
-        analyzer.analyze("libraries/miniz")
+        print("📁 分析cjson库...")
+        analyzer.analyze("libraries/cJSON")
         
         # 创建图生成器
         generator = CallGraphGenerator(analyzer)
@@ -42,7 +42,8 @@ def test_simple_dot_generation():
             print("   ❌ 生成失败")
         
         # 2. 生成几个关键函数的三种Call Graph
-        test_functions = ["mz_compress2", "mz_uncompress2"]
+        # test_functions = ["mz_compress2", "mz_uncompress2"]
+        test_functions = ["cJSON_ParseWithOpts"]
         
         for func_name in test_functions:
             print(f"\n2. 生成函数 {func_name} 的三种Call Graph...")
@@ -95,7 +96,8 @@ def test_simple_dot_generation():
         
         # 输出一些关键函数的调用关系供验证
         key_checks = [
-            "mz_compress2", "mz_deflateInit2", "mz_compress"
+            # "mz_compress2", "mz_deflateInit2", "mz_compress"
+            "cJSON_ParseWithOpts"
         ]
         
         for func_name in key_checks:
