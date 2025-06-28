@@ -244,7 +244,7 @@ class CallGraphGenerator:
             signature += f"<BR/>()"
         elif len(params) == 1:
             # 单参数函数，在函数名和括号间添加空格
-            signature = f"{return_type} {func_name_bold} ({params[0]})"
+            signature = f"{return_type} {func_name_bold}<BR/>({params[0]})"
         else:
             # 多参数函数，每个参数换行显示
             signature = f"{return_type} {func_name_bold}<BR/>(<BR/>"
