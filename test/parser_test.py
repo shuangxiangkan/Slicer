@@ -391,7 +391,7 @@ def test_library_analysis():
     print("=" * 80)
     
     # 使用配置文件
-    config_file = "test/cjson_config.json"
+    config_file = "test/utf8_config.json"
     
     if not os.path.exists(config_file):
         print(f"❌ 配置文件不存在: {config_file}")
@@ -408,11 +408,11 @@ def test_library_analysis():
         analyzer.analyze()
         
         # 运行测试
-        # test_print_all_functions(analyzer)
+        test_print_all_functions(analyzer)
         # test_print_function_body(analyzer)
         # test_detailed_parameter_info(analyzer)
         # test_pointer_classification(analyzer)
-        test_call_graph_analysis(analyzer)
+        # test_call_graph_analysis(analyzer)
         # test_dot_graph_generation(analyzer)
         
     except Exception as e:

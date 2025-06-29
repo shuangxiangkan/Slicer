@@ -1,0 +1,7 @@
+{
+  "library_path": "/home/kansx/SVF-Tools/Slicer/benchmark/utf8",
+  "include_files": [
+    "utf8.h"
+  ],
+  "exclude_files": []
+} 

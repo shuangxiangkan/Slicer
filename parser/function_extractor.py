@@ -87,6 +87,14 @@ class FunctionExtractor:
                 functions.append(func_info)
             return
         
+        # 处理被误解析为表达式语句的函数声明
+        # 这种情况通常发生在tree-sitter无法正确解析复杂修饰符时
+        if node.type == 'expression_statement':
+            func_info = self._try_parse_misinterpreted_function_declaration(node, content, file_path, current_scope, is_cpp)
+            if func_info:
+                functions.append(func_info)
+                return
+        
         # 处理C++特有的结构
         if is_cpp:
             # 处理类定义
@@ -222,6 +230,111 @@ class FunctionExtractor:
         
         except Exception as e:
             return None
+    
+    def _try_parse_misinterpreted_function_declaration(self, node: Node, content: str, file_path: str, 
+                                                      scope: str, is_cpp: bool) -> Optional[FunctionInfo]:
+        """
+        尝试解析被误解析为expression_statement的函数声明
+        
+        这种情况通常发生在tree-sitter无法正确解析复杂修饰符时，
+        会将函数声明误认为是call_expression
+        """
+        try:
+            # 查找call_expression节点
+            def find_call_expression(node):
+                if node.type == 'call_expression':
+                    return node
+                for child in node.children:
+                    result = find_call_expression(child)
+                    if result:
+                        return result
+                return None
+            
+            call_expr = find_call_expression(node)
+            if not call_expr:
+                return None
+            
+            # 检查这是否可能是一个函数声明：
+            # 1. 必须以分号结尾
+            # 2. call_expression的第一个子节点应该是identifier（函数名）
+            # 3. 第二个子节点应该是argument_list（参数列表）
+            
+            # 检查是否以分号结尾
+            node_text = content[node.start_byte:node.end_byte].strip()
+            if not node_text.endswith(';'):
+                return None
+            
+            # 提取函数名
+            func_name = None
+            parameter_list_node = None
+            
+            for child in call_expr.children:
+                if child.type == 'identifier':
+                    func_name = content[child.start_byte:child.end_byte]
+                elif child.type == 'argument_list':
+                    parameter_list_node = child
+            
+            if not func_name or not parameter_list_node:
+                return None
+            
+            # 将argument_list转换为parameter_list进行解析
+            # argument_list和parameter_list在结构上相似，但语义不同
+            parameters = self._parse_misinterpreted_parameters(parameter_list_node, content)
+            
+            # 尝试推断返回类型
+            # 对于误解析的函数声明，很难准确提取返回类型
+            # 这里采用保守策略，标记为未知类型
+            return_type = "unknown"
+            
+            # 获取行号
+            start_line = node.start_point[0] + 1
+            end_line = node.end_point[0] + 1
+            
+            return FunctionInfo(
+                name=func_name,
+                return_type=return_type,
+                parameters=parameters,
+                start_line=start_line,
+                end_line=end_line,
+                file_path=file_path,
+                is_declaration=True,  # 以分号结尾的通常是声明
+                scope=scope,
+                type_registry=self.type_registry
+            )
+            
+        except Exception as e:
+            logger.debug(f"尝试解析误解析的函数声明时出错: {e}")
+            return None
+    
+    def _parse_misinterpreted_parameters(self, arg_list_node: Node, content: str) -> List[str]:
+        """
+        解析被误解析为argument_list的参数列表
+        
+        在误解析的情况下，参数可能被错误地分解，需要重新组装
+        """
+        parameters = []
+        
+        # 提取整个参数列表的文本，然后手动解析
+        # 这是因为误解析的AST结构可能不可靠
+        param_text = content[arg_list_node.start_byte:arg_list_node.end_byte]
+        
+        # 移除括号
+        if param_text.startswith('(') and param_text.endswith(')'):
+            param_text = param_text[1:-1].strip()
+        
+        if not param_text:
+            return parameters
+        
+        # 简单的参数分割（基于逗号）
+        # 这不是完美的解决方案，但对大多数情况有效
+        param_parts = param_text.split(',')
+        
+        for part in param_parts:
+            part = part.strip()
+            if part:
+                parameters.append(part)
+        
+        return parameters
     
     def _parse_parameters(self, param_list_node: Node, content: str) -> List[str]:
         """解析函数参数列表"""
