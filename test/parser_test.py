@@ -30,6 +30,51 @@ def test_print_all_functions(analyzer: RepoAnalyzer):
     print(f"   函数定义: {len(definitions)}")
     print(f"   函数声明: {len(declarations)}")
     
+    # 按函数名分组分析声明和定义的匹配情况
+    function_groups = {}
+    for func in functions:
+        if func.name not in function_groups:
+            function_groups[func.name] = []
+        function_groups[func.name].append(func)
+    
+    # 分析匹配情况
+    both_count = 0
+    only_declarations = []
+    only_definitions = []
+    
+    for func_name, funcs in function_groups.items():
+        has_declaration = any(func.is_declaration for func in funcs)
+        has_definition = any(not func.is_declaration for func in funcs)
+        
+        if has_declaration and has_definition:
+            both_count += 1
+        elif has_declaration and not has_definition:
+            # 只有声明没有定义
+            decl_func = next(func for func in funcs if func.is_declaration)
+            only_declarations.append((func_name, decl_func))
+        elif has_definition and not has_declaration:
+            # 只有定义没有声明  
+            def_func = next(func for func in funcs if not func.is_declaration)
+            only_definitions.append((func_name, def_func))
+    
+    print(f"\n🔍 声明与定义匹配分析:")
+    print(f"   既有声明又有定义: {both_count} 个函数")
+    print(f"   只有声明没有定义: {len(only_declarations)} 个函数")
+    print(f"   只有定义没有声明: {len(only_definitions)} 个函数")
+    print(f"   匹配率: {both_count/(both_count+len(only_declarations)+len(only_definitions))*100:.1f}%")
+    
+    # 显示只有声明没有定义的函数
+    if only_declarations:
+        print(f"\n❌ 只有声明没有定义的函数 ({len(only_declarations)} 个):")
+        for func_name, func in only_declarations:
+            print(f"   🔗 {func_name} - 声明在 {Path(func.file_path).name}:{func.start_line}")
+    
+    # 显示只有定义没有声明的函数
+    if only_definitions:
+        print(f"\n⚠️ 只有定义没有声明的函数 ({len(only_definitions)} 个):")
+        for func_name, func in only_definitions:
+            print(f"   🔧 {func_name} - 定义在 {Path(func.file_path).name}:{func.start_line}")
+    
     # 按文件分组显示
     file_groups = {}
     for func in functions:

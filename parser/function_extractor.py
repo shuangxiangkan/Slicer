@@ -95,6 +95,13 @@ class FunctionExtractor:
                 functions.append(func_info)
                 return
         
+        # 处理被误解析为ERROR+compound_statement的函数定义
+        # 在任何包含子节点的节点中都检查这个模式
+        found_definitions = self._try_parse_misinterpreted_function_definition(node, content, file_path, current_scope, is_cpp)
+        if found_definitions:
+            functions.extend(found_definitions)
+            # 注意：这里不return，因为节点可能包含多个函数
+        
         # 处理C++特有的结构
         if is_cpp:
             # 处理类定义
@@ -443,4 +450,115 @@ class FunctionExtractor:
             "function_declarations": len(declarations)
         }
         
-        return info 
+        return info
+    
+    def _try_parse_misinterpreted_function_definition(self, node: Node, content: str, file_path: str, 
+                                                      scope: str, is_cpp: bool) -> List[FunctionInfo]:
+        """
+        尝试解析被误解析的函数定义
+        
+        支持两种模式：
+        1. expression_statement节点(包含函数签名) + compound_statement节点(包含函数体)
+        2. ERROR节点(包含函数签名) + compound_statement节点(包含函数体)
+        
+        返回所有找到的函数定义列表
+        """
+        found_functions = []
+        
+        try:
+            # 查找所有可能的模式
+            for i, child in enumerate(node.children):
+                # 检查下一个兄弟节点是否为compound_statement
+                if i + 1 < len(node.children) and node.children[i + 1].type == 'compound_statement':
+                    
+                    signature_node = None
+                    compound_statement_node = node.children[i + 1]
+                    
+                    # 模式1: expression_statement + compound_statement
+                    if child.type == 'expression_statement':
+                        expr_text = content[child.start_byte:child.end_byte].strip()
+                        if self._looks_like_function_signature(expr_text):
+                            signature_node = child
+                    
+                    # 模式2: ERROR + compound_statement
+                    elif child.type == 'ERROR':
+                        # ERROR节点通常包含函数签名的误解析
+                        signature_node = child
+                    
+                    if signature_node:
+                        func_info = self._extract_function_from_signature_and_body(
+                            signature_node, compound_statement_node, content, file_path, scope
+                        )
+                        if func_info:
+                            found_functions.append(func_info)
+            
+        except Exception as e:
+            logger.debug(f"尝试解析误解析的函数定义时出错: {e}")
+        
+        return found_functions
+    
+    def _extract_function_from_signature_and_body(self, signature_node: Node, compound_statement_node: Node,
+                                                  content: str, file_path: str, scope: str) -> Optional[FunctionInfo]:
+        """从签名节点和函数体节点中提取函数信息"""
+        try:
+            # 从签名节点中提取函数信息
+            func_name = None
+            parameters = []
+            
+            # 在签名节点中查找call_expression
+            def find_call_expression(node):
+                if node.type == 'call_expression':
+                    return node
+                for child in node.children:
+                    result = find_call_expression(child)
+                    if result:
+                        return result
+                return None
+            
+            call_expr = find_call_expression(signature_node)
+            if not call_expr:
+                return None
+            
+            # 提取函数名和参数
+            for child in call_expr.children:
+                if child.type == 'identifier':
+                    func_name = content[child.start_byte:child.end_byte]
+                elif child.type == 'argument_list':
+                    parameters = self._parse_misinterpreted_parameters(child, content)
+            
+            if not func_name:
+                return None
+            
+            # 对于误解析的函数定义，返回类型很难准确提取
+            # 这里采用保守策略，标记为未知类型
+            return_type = "unknown"
+            
+            # 获取行号（从签名节点开始到compound_statement结束）
+            start_line = signature_node.start_point[0] + 1
+            end_line = compound_statement_node.end_point[0] + 1
+            
+            return FunctionInfo(
+                name=func_name,
+                return_type=return_type,
+                parameters=parameters,
+                start_line=start_line,
+                end_line=end_line,
+                file_path=file_path,
+                is_declaration=False,  # 有函数体的是定义
+                scope=scope,
+                type_registry=self.type_registry
+            )
+            
+        except Exception as e:
+            logger.debug(f"从签名和函数体提取函数信息时出错: {e}")
+            return None
+    
+    def _looks_like_function_signature(self, text: str) -> bool:
+        """检查文本是否看起来像函数签名"""
+        # 简单启发式检查：
+        # 1. 包含括号
+        # 2. 不以分号结尾（区别于声明）
+        # 3. 包含标识符模式
+        return ('(' in text and ')' in text and 
+                not text.strip().endswith(';') and
+                any(c.isalpha() or c == '_' for c in text)) 
