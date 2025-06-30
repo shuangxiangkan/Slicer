@@ -358,21 +358,25 @@ class FunctionExtractor:
     def _parse_return_type(self, function_node: Node, content: str) -> str:
         """解析函数返回类型"""
         try:
-            # 查找函数声明器的位置
-            declarator_start = None
-            for child in function_node.children:
-                if child.type == 'function_declarator':
-                    declarator_start = child.start_byte
-                    break
+            # 递归查找函数声明器的位置
+            def find_function_declarator(node):
+                if node.type == 'function_declarator':
+                    return node
+                for child in node.children:
+                    result = find_function_declarator(child)
+                    if result:
+                        return result
+                return None
             
-            if declarator_start is None:
+            declarator = find_function_declarator(function_node)
+            if declarator is None:
                 return "void"
             
             # 返回类型是从函数开始到函数声明器之间的文本
-            return_type_text = content[function_node.start_byte:declarator_start].strip()
+            return_type_text = content[function_node.start_byte:declarator.start_byte].strip()
             
             # 清理返回类型文本
-            # 移除可能的存储类说明符和其他修饰符
+            # 移除可能的存储类说明符和其他修饰符，保留utf8_weak等修饰符
             return_type_text = return_type_text.replace('static', '').replace('inline', '').replace('extern', '')
             return_type_text = return_type_text.replace('CJSON_PUBLIC(', '').replace(')', '')
             return_type_text = ' '.join(return_type_text.split())  # 标准化空格
