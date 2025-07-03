@@ -430,6 +430,267 @@ def test_dot_graph_generation(analyzer: RepoAnalyzer):
     print("   在线查看: https://dreampuf.github.io/GraphvizOnline/")
 
 
+def test_single_file_analyzer():
+    """测试单文件分析器功能"""
+    print("\n🔍 测试单文件分析器功能")
+    print("=" * 80)
+    
+    # 使用现有的single_file_example.c文件进行测试
+    test_file = "test/single_file_example.c"
+    
+    if not os.path.exists(test_file):
+        print(f"❌ 测试文件不存在: {test_file}")
+        return
+    
+    try:
+        # 创建分析器（直接传入C文件路径，RepoAnalyzer会自动识别）
+        analyzer = RepoAnalyzer(test_file)
+        
+        # 定义进度回调函数
+        def progress_callback(message, stage):
+            print(f"   {message}")
+        
+        print(f"📁 测试文件: {test_file}")
+        print("-" * 60)
+        
+        # 分析文件
+        stats = analyzer.analyze(progress_callback=progress_callback)
+        
+        if 'error' in stats:
+            print(f"❌ 分析失败: {stats['error']}")
+            return
+        
+        print(f"\n📊 分析结果统计:")
+        print("=" * 60)
+        
+        # 显示基本统计信息
+        print(f"文件信息:")
+        print(f"   文件名: {os.path.basename(test_file)}")
+        print(f"   文件数量: {stats['total_files']} 个")
+        print(f"   处理时间: {stats['processing_time']:.3f} 秒")
+        
+        print(f"\n函数统计:")
+        print(f"   总函数数: {stats['total_functions']}")
+        print(f"   函数定义: {stats['function_definitions']}")
+        print(f"   函数声明: {stats['function_declarations']}")
+        print(f"   重复函数: {stats['duplicate_functions']}")
+        
+        # 显示类型统计
+        type_stats = stats['type_statistics']
+        print(f"\n类型统计:")
+        print(f"   总类型数: {type_stats.get('total_types', 0)}")
+        print(f"   typedef: {type_stats.get('typedef', 0)}")
+        print(f"   结构体: {type_stats.get('struct', 0)}")
+        print(f"   联合体: {type_stats.get('union', 0)}")
+        print(f"   枚举: {type_stats.get('enum', 0)}")
+        
+        # 获取函数列表并显示详细信息
+        functions = analyzer.get_functions()
+        
+        print(f"\n📋 函数详细信息:")
+        print("=" * 60)
+        
+        for i, func in enumerate(functions, 1):
+            func_type = "🔧 定义" if not func.is_declaration else "🔗 声明"
+            print(f"{i}. {func_type} {func.name}")
+            print(f"   📍 位置: {func.start_line}-{func.end_line} 行")
+            print(f"   📝 签名: {func.get_signature()}")
+            print(f"   📝 详细签名: {func.get_detailed_signature()}")
+            
+            # 显示参数信息
+            if func.parameter_details:
+                print(f"   📋 参数 ({len(func.parameter_details)} 个):")
+                for j, param in enumerate(func.parameter_details, 1):
+                    print(f"      {j}. {param.get_full_signature()}")
+                    if param.is_actually_pointer():
+                        print(f"         └─ {param.get_pointer_analysis()}")
+            else:
+                print(f"   📋 参数: 无参数")
+            
+            # 显示返回类型信息
+            ret_info = func.return_type_details
+            print(f"   ↩️  返回: {ret_info.get_type_signature()}")
+            if ret_info.is_actually_pointer():
+                print(f"      └─ {ret_info.get_pointer_analysis()}")
+            
+            # 显示函数体（如果是定义）
+            if not func.is_declaration:
+                print(f"   📄 函数体:")
+                body = func.get_body()
+                if body:
+                    # 缩进显示函数体
+                    for line in body.split('\n'):
+                        print(f"      {line}")
+                else:
+                    print(f"      ❌ 无法读取函数体")
+            
+            print()
+        
+        # 测试Call Graph功能
+        print(f"🔗 Call Graph分析:")
+        print("=" * 60)
+        
+        call_graph = analyzer.get_call_graph()
+        
+        # 分析每个函数的调用关系
+        for func in functions:
+            if not func.is_declaration:  # 只分析函数定义
+                func_name = func.name
+                
+                # 获取直接调用的函数
+                direct_callees = analyzer.get_direct_callees(func_name)
+                
+                # 获取被哪些函数调用
+                direct_callers = analyzer.get_direct_callers(func_name)
+                
+                print(f"📍 函数: {func_name}")
+                print(f"   📞 直接调用: {list(direct_callees) if direct_callees else '无'}")
+                print(f"   📲 被调用: {list(direct_callers) if direct_callers else '无'}")
+        
+        # 测试特定函数的搜索功能
+        print(f"\n🔍 函数搜索测试:")
+        print("=" * 60)
+        
+        # 搜索包含"add"的函数
+        search_results = analyzer.search_functions("add", case_sensitive=False)
+        print(f"搜索 'add': 找到 {len(search_results)} 个函数")
+        for func in search_results:
+            print(f"   - {func.name} ({func.start_line} 行)")
+        
+        # 搜索包含"student"的函数
+        search_results = analyzer.search_functions("student", case_sensitive=False)
+        print(f"搜索 'student': 找到 {len(search_results)} 个函数")
+        for func in search_results:
+            print(f"   - {func.name} ({func.start_line} 行)")
+        
+        # 搜索包含"main"的函数
+        search_results = analyzer.search_functions("main", case_sensitive=False)
+        print(f"搜索 'main': 找到 {len(search_results)} 个函数")
+        for func in search_results:
+            print(f"   - {func.name} ({func.start_line} 行)")
+        
+        print(f"\n✅ 单文件分析器测试完成!")
+        
+    except Exception as e:
+        print(f"❌ 测试失败: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+def test_single_file_content_analyzer():
+    """测试单文件内容分析器功能"""
+    print("\n📝 测试单文件内容分析器功能")
+    print("=" * 80)
+    
+    # 创建临时文件进行测试
+    import tempfile
+    
+    test_content = """#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct {
+    int id;
+    char* name;
+} Person;
+
+int add(int a, int b) {
+    return a + b;
+}
+
+int multiply(int x, int y) {
+    int result = x * y;
+    return result;
+}
+
+void print_person(Person* p) {
+    if (p != NULL) {
+        printf("ID: %d, Name: %s\\n", p->id, p->name);
+    }
+}
+
+int main() {
+    Person person = {1, "Alice"};
+    int sum = add(5, 3);
+    int product = multiply(sum, 2);
+    
+    printf("Sum: %d, Product: %d\\n", sum, product);
+    print_person(&person);
+    
+    return 0;
+}
+"""
+    
+    try:
+        # 创建临时文件
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.c', delete=False) as tmp_file:
+            tmp_file.write(test_content)
+            tmp_file_path = tmp_file.name
+        
+        # 创建分析器
+        analyzer = RepoAnalyzer(tmp_file_path)
+        
+        # 定义进度回调函数
+        def progress_callback(message, stage):
+            print(f"   {message}")
+        
+        print(f"📝 测试内容分析 (临时文件: {os.path.basename(tmp_file_path)})")
+        print("-" * 60)
+        
+        # 分析内容
+        stats = analyzer.analyze(progress_callback=progress_callback)
+        
+        if 'error' in stats:
+            print(f"❌ 分析失败: {stats['error']}")
+            return
+        
+        print(f"\n📊 内容分析结果:")
+        print("=" * 60)
+        
+        # 显示基本统计信息
+        print(f"内容信息:")
+        print(f"   临时文件名: {os.path.basename(tmp_file_path)}")
+        print(f"   文件数量: {stats['total_files']} 个")
+        print(f"   处理时间: {stats['processing_time']:.3f} 秒")
+        
+        print(f"\n函数统计:")
+        print(f"   总函数数: {stats['total_functions']}")
+        print(f"   函数定义: {stats['function_definitions']}")
+        print(f"   函数声明: {stats['function_declarations']}")
+        
+        # 显示类型统计
+        type_stats = stats['type_statistics']
+        print(f"\n类型统计:")
+        print(f"   总类型数: {type_stats.get('total_types', 0)}")
+        print(f"   typedef: {type_stats.get('typedef', 0)}")
+        print(f"   结构体: {type_stats.get('struct', 0)}")
+        
+        # 显示找到的函数
+        functions = analyzer.get_functions()
+        print(f"\n📋 找到的函数:")
+        print("-" * 40)
+        
+        for i, func in enumerate(functions, 1):
+            func_type = "🔧 定义" if not func.is_declaration else "🔗 声明"
+            print(f"{i}. {func_type} {func.name}")
+            print(f"   📝 签名: {func.get_signature()}")
+        
+        print(f"\n✅ 内容分析器测试完成!")
+        
+        # 清理临时文件
+        os.unlink(tmp_file_path)
+        
+    except Exception as e:
+        print(f"❌ 测试失败: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # 确保临时文件被清理
+        try:
+            os.unlink(tmp_file_path)
+        except:
+            pass
+
+
 def test_library_analysis():
     """测试指定库的分析"""
     print("🚀 代码分析器测试")
@@ -469,7 +730,14 @@ def test_library_analysis():
 def main():
     """主函数"""
     try:
-        test_library_analysis()
+        # 测试单文件分析器
+        test_single_file_analyzer()
+        
+        # 测试单文件内容分析器  
+        test_single_file_content_analyzer()
+        
+        # 测试库级分析器（可选，注释掉以专注于单文件测试）
+        # test_library_analysis()
         
         print(f"\n🏁 测试完成")
         print("=" * 80)

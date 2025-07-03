@@ -21,15 +21,16 @@ from .call_graph import CallGraph
 logger = logging.getLogger(__name__)
 
 
+
 class RepoAnalyzer:
     """代码仓库分析器（核心分析功能）"""
     
-    def __init__(self, config_path: str):
+    def __init__(self, config_or_file_path: str):
         """
         初始化分析器
         
         Args:
-            config_path: 用户配置文件路径
+            config_or_file_path: 配置文件路径或C/C++文件路径
         """
         self.file_finder = FileFinder()
         
@@ -45,8 +46,31 @@ class RepoAnalyzer:
         self.analysis_stats = {}
         self.processed_files = []
         
-        # 解析配置文件
-        self.config_parser = ConfigParser(config_path)
+        # 智能识别输入类型
+        self.is_single_file_mode = self._is_cpp_file(config_or_file_path)
+        self.input_file_path = config_or_file_path
+        
+        if self.is_single_file_mode:
+            # 单文件模式：直接设置文件信息
+            self.single_file_path = os.path.abspath(config_or_file_path)
+            self.config_parser = None
+        else:
+            # 配置文件模式：解析配置文件
+            self.config_parser = ConfigParser(config_or_file_path)
+    
+    def _is_cpp_file(self, file_path: str) -> bool:
+        """检查是否为C/C++文件"""
+        if not os.path.exists(file_path):
+            return False
+        
+        if not os.path.isfile(file_path):
+            return False
+        
+        # 检查文件扩展名
+        supported_extensions = {'.c', '.h', '.cpp', '.cxx', '.cc', '.hpp', '.hxx', '.hh'}
+        file_ext = Path(file_path).suffix.lower()
+        return file_ext in supported_extensions
+    
     
     def analyze(self, show_progress: bool = False, progress_callback=None) -> dict:
         """
@@ -62,8 +86,11 @@ class RepoAnalyzer:
         start_time = time.time()
         
         if progress_callback:
-            progress_callback("🔍 开始基于配置文件的代码分析", "start")
-            progress_callback(self.config_parser.get_config_summary_text(), "config")
+            if self.is_single_file_mode:
+                progress_callback("🔍 开始单文件代码分析", "start")
+            else:
+                progress_callback("🔍 开始基于配置文件的代码分析", "start")
+            progress_callback(self._get_config_summary_text(), "config")
         
         # 收集文件
         if progress_callback:
@@ -111,6 +138,11 @@ class RepoAnalyzer:
     
     def _collect_files(self) -> tuple[List[str], str]:
         """收集需要分析的文件"""
+        if self.is_single_file_mode:
+            # 单文件模式：直接返回单个文件
+            return [self.single_file_path], ""
+        
+        # 配置文件模式：原有逻辑
         all_files = []
         analysis_targets = self.config_parser.get_analysis_targets()
         
@@ -184,6 +216,10 @@ class RepoAnalyzer:
     
     def _apply_exclusions(self, files: List[str]) -> List[str]:
         """应用排除规则过滤文件"""
+        if self.is_single_file_mode:
+            # 单文件模式：无排除规则
+            return files
+            
         exclude_targets = self.config_parser.get_exclude_targets()
         if not exclude_targets:
             return files
@@ -273,6 +309,10 @@ class RepoAnalyzer:
     
     def _get_relative_path(self, file_path: str) -> str:
         """获取相对路径显示"""
+        if self.is_single_file_mode:
+            # 单文件模式：返回文件名
+            return os.path.basename(file_path)
+            
         try:
             # 尝试相对于库路径
             library_path = self.config_parser.get_library_path()
@@ -409,7 +449,17 @@ class RepoAnalyzer:
     
     def get_config_summary_text(self) -> str:
         """获取配置摘要文本"""
-        return self.config_parser.get_config_summary_text()
+        return self._get_config_summary_text()
+    
+    def _get_config_summary_text(self) -> str:
+        """获取配置摘要文本（内部方法）"""
+        if self.is_single_file_mode:
+            return (f"📋 单文件分析模式:\n"
+                    f"   文件路径: {self.single_file_path}\n"
+                    f"   文件名: {os.path.basename(self.single_file_path)}\n"
+                    f"   ➤ 分析单个C/C++文件")
+        else:
+            return self.config_parser.get_config_summary_text()
     
     def _get_file_statistics(self, files: List[str]) -> dict:
         """获取文件统计信息"""
