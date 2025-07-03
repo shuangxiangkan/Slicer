@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """
-C/C++ 代码解析器模块
-
-提供文件查找、函数提取和仓库分析功能
+Parser包 - C/C++代码解析和分析工具
 """
 
 import logging
@@ -11,20 +9,63 @@ import sys
 from .file_finder import FileFinder
 from .function_extractor import FunctionExtractor, FunctionInfo
 from .repo_analyzer import RepoAnalyzer
+from .header_analyzer import HeaderAnalyzer
 
 # 版本信息
 __version__ = "1.0.0"
 __author__ = "Parser Team"
 
-# 导出的类
+# 公开的API
 __all__ = [
     'FileFinder',
     'FunctionExtractor', 
     'FunctionInfo',
     'RepoAnalyzer',
+    'HeaderAnalyzer',
     'setup_logging'
 ]
 
+# 包的简介
+__doc__ = """
+Parser包提供了强大的C/C++代码分析功能：
+
+主要功能：
+- 基于tree-sitter的语法分析
+- 函数提取与分析（定义/声明）
+- 类型系统分析（typedef/struct/union/enum）
+- 调用图构建与分析
+- 头文件include关系分析
+- 复杂度和依赖关系分析
+
+主要类：
+- RepoAnalyzer: 完整的代码仓库分析器
+- HeaderAnalyzer: 专门的头文件include分析器
+
+支持的文件类型：
+- C文件: .c, .h
+- C++文件: .cpp, .cxx, .cc, .hpp, .hxx, .hh
+- 其他: .h++, .inc
+
+使用示例：
+
+1. 分析单个文件：
+   analyzer = RepoAnalyzer("example.c")
+   result = analyzer.analyze()
+
+2. 基于配置文件分析：
+   analyzer = RepoAnalyzer("config.json")
+   result = analyzer.analyze()
+
+3. 分析头文件include关系：
+   header_analyzer = HeaderAnalyzer()
+   result = header_analyzer.analyze_file("example.h")
+   
+   # 或通过RepoAnalyzer：
+   analyzer = RepoAnalyzer("example.h")
+   header_result = analyzer.analyze_headers()
+
+更多详细信息请参考各个类的文档。
+"""
 
 def setup_logging(level=logging.INFO, format_string=None):
     """

@@ -15,6 +15,7 @@ from .type_registry import TypeRegistry
 from .type_extractor import TypeExtractor
 from .config_parser import ConfigParser
 from .call_graph import CallGraph
+from .header_analyzer import HeaderAnalyzer
 # from .summary import AnalysisSummary  # 已移除，使用DisplayHelper替代
 
 # 配置logging
@@ -545,4 +546,38 @@ class RepoAnalyzer:
     def get_function_complexity_stats(self) -> Dict[str, Dict]:
         """获取函数复杂度统计"""
         return self.call_graph.get_function_complexity_stats()
+    
+    def analyze_headers(self, target_files: List[str] = None, show_progress: bool = False, 
+                       progress_callback=None) -> dict:
+        """
+        分析头文件的include关系
+        
+        Args:
+            target_files: 指定要分析的头文件列表（可选）
+            show_progress: 是否显示进度
+            progress_callback: 进度回调函数
+            
+        Returns:
+            头文件分析结果
+        """
+        analyzer = HeaderAnalyzer()
+        
+        if self.is_single_file_mode:
+            # 单文件模式：委托给HeaderAnalyzer
+            return analyzer.analyze_from_single_file_mode(self.single_file_path, progress_callback)
+        else:
+            # repo模式：委托给HeaderAnalyzer
+            return analyzer.analyze_from_repo(self.config_parser, target_files, progress_callback)
+    
+
+    
+    def search_includes(self, header_results: dict, pattern: str) -> List[dict]:
+        """在头文件分析结果中搜索include"""
+        analyzer = HeaderAnalyzer()
+        return analyzer.search_includes(header_results, pattern)
+    
+    def get_include_dependency_graph(self, header_results: dict) -> Dict[str, List[str]]:
+        """获取include依赖关系图"""
+        analyzer = HeaderAnalyzer()
+        return analyzer.get_dependency_graph(header_results)
  
