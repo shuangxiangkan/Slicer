@@ -39,6 +39,10 @@ class FunctionInfo:
         # API相关信息
         self._api_keywords_cache = {}  # 缓存API关键字检查结果: {keyword: bool}
         
+        # 注释相关信息
+        self.comments = ""  # 函数注释内容
+        self._cached_comments = None  # 缓存注释内容
+        
         # 如果没有提供详细信息，自动解析
         if not self.parameter_details and self.parameters:
             self._parse_parameter_details()
@@ -265,6 +269,153 @@ class FunctionInfo:
         except Exception as e:
             return None
     
+    def get_comments(self, force_reload: bool = False, max_lines_above: int = 20) -> str:
+        """
+        获取函数注释内容
+        
+        Args:
+            force_reload: 是否强制重新加载，忽略缓存
+            max_lines_above: 向上搜索注释的最大行数
+            
+        Returns:
+            函数注释字符串，如果无法读取或没有注释则返回空字符串
+        """
+        if self._cached_comments is not None and not force_reload:
+            return self._cached_comments
+        
+        try:
+            with open(self.file_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            # 从函数开始行向上搜索注释
+            start_idx = max(0, self.start_line - 1)  # 转换为0-based索引
+            search_start = max(0, start_idx - max_lines_above)
+            
+            comments = []
+            in_block_comment = False
+            block_comment_lines = []
+            
+            # 从搜索起始位置到函数开始位置，向上搜索注释
+            for i in range(start_idx - 1, search_start - 1, -1):
+                if i < 0 or i >= len(lines):
+                    continue
+                    
+                line = lines[i].rstrip()
+                stripped_line = line.strip()
+                
+                # 跳过空行（在注释块中间允许空行）
+                if not stripped_line:
+                    if comments or in_block_comment:
+                        comments.insert(0, "")
+                    continue
+                
+                # 处理单行注释
+                if stripped_line.startswith('//'):
+                    comment_text = stripped_line[2:].strip()
+                    comments.insert(0, comment_text)
+                    continue
+                
+                # 处理块注释结束
+                if '*/' in stripped_line and not in_block_comment:
+                    in_block_comment = True
+                    block_comment_lines = []
+                    
+                    # 处理单行的块注释
+                    if '/*' in stripped_line:
+                        start_pos = stripped_line.find('/*')
+                        end_pos = stripped_line.find('*/')
+                        if start_pos < end_pos:
+                            comment_text = stripped_line[start_pos + 2:end_pos].strip()
+                            if comment_text:
+                                comments.insert(0, comment_text)
+                            in_block_comment = False
+                            continue
+                    
+                    # 多行块注释的结束行
+                    if stripped_line.endswith('*/'):
+                        comment_part = stripped_line[:-2].strip()
+                        if comment_part.startswith('*'):
+                            comment_part = comment_part[1:].strip()
+                        if comment_part:
+                            block_comment_lines.insert(0, comment_part)
+                        continue
+                
+                # 处理块注释内容
+                if in_block_comment:
+                    comment_line = stripped_line
+                    if comment_line.startswith('*'):
+                        comment_line = comment_line[1:].strip()
+                    if comment_line or block_comment_lines:  # 保留非空行或已有内容时的空行
+                        block_comment_lines.insert(0, comment_line)
+                    
+                    # 检查是否是块注释开始
+                    if '/*' in line:
+                        start_pos = line.find('/*')
+                        before_comment = line[:start_pos].strip()
+                        # 如果/*前面还有其他内容（非空白），则停止搜索
+                        if before_comment:
+                            break
+                        
+                        comment_start = line[start_pos + 2:].strip()
+                        if comment_start.startswith('*'):
+                            comment_start = comment_start[1:].strip()
+                        if comment_start:
+                            block_comment_lines.insert(0, comment_start)
+                        
+                        # 块注释搜集完成
+                        comments = block_comment_lines + comments
+                        in_block_comment = False
+                        block_comment_lines = []
+                        continue
+                else:
+                    # 遇到非注释行，停止搜索
+                    break
+            
+            # 处理未完成的块注释（从文件开头开始的块注释）
+            if in_block_comment and block_comment_lines:
+                comments = block_comment_lines + comments
+            
+            # 清理注释内容
+            cleaned_comments = []
+            for comment in comments:
+                cleaned_comment = comment.strip()
+                if cleaned_comment:
+                    cleaned_comments.append(cleaned_comment)
+            
+            comment_text = '\n'.join(cleaned_comments) if cleaned_comments else ""
+            self._cached_comments = comment_text
+            return comment_text
+            
+        except Exception as e:
+            self._cached_comments = ""
+            return ""
+    
+    def has_comments(self) -> bool:
+        """检查函数是否有注释"""
+        return bool(self.get_comments().strip())
+    
+    def get_comment_summary(self) -> dict:
+        """获取注释摘要信息"""
+        comments = self.get_comments()
+        if not comments:
+            return {
+                'has_comments': False,
+                'total_lines': 0,
+                'non_empty_lines': 0,
+                'comment_length': 0
+            }
+        
+        lines = comments.split('\n')
+        non_empty_lines = [line for line in lines if line.strip()]
+        
+        return {
+            'has_comments': True,
+            'total_lines': len(lines),
+            'non_empty_lines': len(non_empty_lines),
+            'comment_length': len(comments),
+            'preview': comments[:100] + '...' if len(comments) > 100 else comments
+        }
+    
     def get_parameter_summary(self) -> dict:
         """获取参数摘要信息"""
         summary = {
@@ -362,7 +513,10 @@ class FunctionInfo:
             'parameter_summary': self.get_parameter_summary(),
             'has_pointer_params': self.has_pointer_params(),
             'has_const_params': self.has_const_params(),
-            'has_pointer_return': self.has_pointer_return()
+            'has_pointer_return': self.has_pointer_return(),
+            'comments': self.get_comments(),
+            'comment_summary': self.get_comment_summary(),
+            'has_comments': self.has_comments()
         })
         
         return basic_info
@@ -392,7 +546,10 @@ class FunctionInfo:
                 'type_chain': self.return_type_details.get_type_chain()
             },
             'parameters': [],
-            'parameter_summary': self.get_parameter_summary()
+            'parameter_summary': self.get_parameter_summary(),
+            'comments': self.get_comments(),
+            'comment_summary': self.get_comment_summary(),
+            'has_comments': self.has_comments()
         }
         
         # 参数详细信息

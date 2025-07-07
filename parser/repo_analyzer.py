@@ -424,6 +424,123 @@ class RepoAnalyzer:
         """获取所有找到的函数"""
         return self.all_functions
     
+    def get_function_complete_comments(self, function_name: str) -> str:
+        """
+        获取函数的完整注释（包括声明和定义的注释）
+        
+        Args:
+            function_name: 函数名
+            
+        Returns:
+            合并后的完整注释字符串
+        """
+        # 找到所有同名函数（声明和定义）
+        matching_functions = [func for func in self.all_functions if func.name == function_name]
+        
+        if not matching_functions:
+            return ""
+        
+        all_comments = []
+        seen_comments = set()  # 避免重复注释
+        
+        # 优先处理声明，因为声明通常在头文件中有更详细的API文档
+        declarations = [func for func in matching_functions if func.is_declaration]
+        definitions = [func for func in matching_functions if not func.is_declaration]
+        
+        # 首先收集声明的注释
+        for func in declarations:
+            comments = func.get_comments()
+            if comments and comments not in seen_comments:
+                all_comments.append({
+                    'type': '声明',
+                    'file': func.file_path,
+                    'line': func.start_line,
+                    'content': comments
+                })
+                seen_comments.add(comments)
+        
+        # 然后收集定义的注释
+        for func in definitions:
+            comments = func.get_comments()
+            if comments and comments not in seen_comments:
+                all_comments.append({
+                    'type': '定义',
+                    'file': func.file_path,
+                    'line': func.start_line,
+                    'content': comments
+                })
+                seen_comments.add(comments)
+        
+        # 合并注释
+        if not all_comments:
+            return ""
+        elif len(all_comments) == 1:
+            return all_comments[0]['content']
+        else:
+            # 多个注释时，组合显示
+            combined_comments = []
+            for comment_info in all_comments:
+                import os
+                file_name = os.path.basename(comment_info['file'])
+                header = f"=== {comment_info['type']} ({file_name}:{comment_info['line']}) ==="
+                combined_comments.append(header)
+                combined_comments.append(comment_info['content'])
+                combined_comments.append("")  # 空行分隔
+            
+            return '\n'.join(combined_comments).rstrip()
+    
+    def get_function_comment_summary(self, function_name: str) -> dict:
+        """
+        获取函数注释的详细摘要信息
+        
+        Args:
+            function_name: 函数名
+            
+        Returns:
+            包含注释统计和源信息的字典
+        """
+        matching_functions = [func for func in self.all_functions if func.name == function_name]
+        
+        if not matching_functions:
+            return {
+                'function_exists': False,
+                'total_instances': 0,
+                'declarations_with_comments': 0,
+                'definitions_with_comments': 0,
+                'total_comment_length': 0,
+                'has_any_comments': False
+            }
+        
+        declarations = [func for func in matching_functions if func.is_declaration]
+        definitions = [func for func in matching_functions if not func.is_declaration]
+        
+        declarations_with_comments = [func for func in declarations if func.has_comments()]
+        definitions_with_comments = [func for func in definitions if func.has_comments()]
+        
+        complete_comments = self.get_function_complete_comments(function_name)
+        
+        return {
+            'function_exists': True,
+            'total_instances': len(matching_functions),
+            'declarations': len(declarations),
+            'definitions': len(definitions),
+            'declarations_with_comments': len(declarations_with_comments),
+            'definitions_with_comments': len(definitions_with_comments),
+            'total_comment_length': len(complete_comments),
+            'has_any_comments': bool(complete_comments),
+            'complete_comments': complete_comments,
+            'comment_sources': [
+                {
+                    'type': '声明' if func.is_declaration else '定义',
+                    'file': func.file_path,
+                    'line': func.start_line,
+                    'has_comments': func.has_comments(),
+                    'comment_length': len(func.get_comments()) if func.has_comments() else 0
+                }
+                for func in matching_functions
+            ]
+        }
+    
     def get_stats(self) -> Dict[str, Any]:
         """获取分析统计信息"""
         return self.analysis_stats

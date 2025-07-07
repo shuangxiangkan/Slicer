@@ -67,7 +67,7 @@ def test_api_extraction():
                     for i, func in enumerate(api_functions):
                         func_type = "声明" if func.is_declaration else "定义"
                         print(f"  {i+1:2d}. {func.name} ({func_type})")
-                    
+                        
                 else:
                     print("未找到包含该关键字的函数")
                     
