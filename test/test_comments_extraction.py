@@ -22,7 +22,7 @@ def test_comments_extraction():
     test_configs = {
         'cJSON': {
             'config_file': 'test/cjson_config.json',
-            'sample_functions': ['cJSON_Parse', 'cJSON_Delete', 'cJSON_Print', 'cJSON_GetArraySize']
+            'sample_functions': ['cJSON_Parse', 'cJSON_Delete', 'cJSON_ParseWithLength', 'cJSON_GetArraySize']
         },
         'utf8': {
             'config_file': 'test/utf8_config.json', 
