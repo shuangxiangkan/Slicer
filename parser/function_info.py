@@ -36,6 +36,9 @@ class FunctionInfo:
         self.callees = set()  # 直接调用的函数名集合
         self._parsed_calls = False  # 是否已解析过函数调用
         
+        # API相关信息
+        self._api_keywords_cache = {}  # 缓存API关键字检查结果: {keyword: bool}
+        
         # 如果没有提供详细信息，自动解析
         if not self.parameter_details and self.parameters:
             self._parse_parameter_details()
@@ -423,4 +426,54 @@ class FunctionInfo:
             lambda n: n in {'MACRO_CALL', 'DEBUG', 'ASSERT', 'TRACE', 'LOG', 'PRINT'}
         ]
         
-        return any(pattern(name) for pattern in macro_patterns)  
+        return any(pattern(name) for pattern in macro_patterns)
+    
+    def contains_api_keyword(self, api_keyword: str) -> bool:
+        """
+        检查函数是否包含指定的API关键字
+        
+        Args:
+            api_keyword: API关键字（如 "CJSON_PUBLIC", "API", "EXPORT" 等）
+            
+        Returns:
+            是否包含API关键字
+        """
+        # 检查缓存
+        if api_keyword in self._api_keywords_cache:
+            return self._api_keywords_cache[api_keyword]
+        
+        # 获取函数的完整文本
+        function_text = self.get_body()
+        
+        # 检查是否包含关键字
+        result = function_text is not None and api_keyword in function_text
+        
+        # 缓存结果
+        self._api_keywords_cache[api_keyword] = result
+        
+        return result
+    
+    def is_api_function(self, api_keyword: str) -> bool:
+        """
+        判断函数是否是API函数（包含指定关键字）
+        
+        Args:
+            api_keyword: API关键字
+            
+        Returns:
+            是否是API函数
+        """
+        return self.contains_api_keyword(api_keyword)
+    
+    def get_api_keywords(self) -> List[str]:
+        """
+        获取已检查过的API关键字列表
+        
+        Returns:
+            已检查的API关键字列表（包含该关键字的）
+        """
+        return [keyword for keyword, contains in self._api_keywords_cache.items() if contains]
+    
+    def clear_api_cache(self):
+        """清除API关键字缓存"""
+        self._api_keywords_cache.clear()  

@@ -359,22 +359,66 @@ class RepoAnalyzer:
         return stats
     
     def search_functions(self, pattern: str, case_sensitive: bool = False) -> List[FunctionInfo]:
-        """搜索函数"""
-        if not case_sensitive:
-            pattern = pattern.lower()
+        """
+        搜索函数名匹配指定模式的函数
         
-        matched_functions = []
-        for func in self.all_functions:
-            search_text = func.name if case_sensitive else func.name.lower()
-            if pattern in search_text:
-                matched_functions.append(func)
+        Args:
+            pattern: 搜索模式（支持正则表达式）
+            case_sensitive: 是否大小写敏感
+            
+        Returns:
+            匹配的函数列表
+        """
+        import re
+        matches = []
         
-        return matched_functions
+        flags = 0 if case_sensitive else re.IGNORECASE
+        try:
+            regex = re.compile(pattern, flags)
+            for func in self.all_functions:
+                if regex.search(func.name):
+                    matches.append(func)
+        except re.error:
+            # 如果正则表达式无效，回退到简单字符串匹配
+            pattern_lower = pattern.lower() if not case_sensitive else pattern
+            for func in self.all_functions:
+                func_name = func.name.lower() if not case_sensitive else func.name
+                if pattern_lower in func_name:
+                    matches.append(func)
+        
+        return matches
     
-    # def get_summary(self) -> AnalysisSummary:
-    #     """获取分析结果的展示对象"""
-    #     return AnalysisSummary(self.all_functions, self.analysis_stats)
-    #     # 注意：此方法已废弃，请使用 DisplayHelper 类进行显示
+    def get_api_functions(self, api_keyword: str, include_declarations: bool = True, 
+                         include_definitions: bool = True) -> List[FunctionInfo]:
+        """
+        根据关键字提取API函数
+        
+        Args:
+            api_keyword: API关键字（如 "CJSON_PUBLIC", "API", "EXPORT" 等）
+            include_declarations: 是否包含函数声明
+            include_definitions: 是否包含函数定义
+            
+        Returns:
+            包含API关键字的函数列表
+        """
+        if not self.all_functions:
+            logger.warning("尚未进行函数分析，请先调用analyze()方法")
+            return []
+        
+        api_functions = []
+        
+        for func in self.all_functions:
+            # 根据用户选择过滤函数类型
+            if func.is_declaration and not include_declarations:
+                continue
+            if not func.is_declaration and not include_definitions:
+                continue
+            
+            # 使用FunctionInfo的方法检查是否包含API关键字
+            if func.is_api_function(api_keyword):
+                api_functions.append(func)
+        
+        return api_functions
     
     def get_functions(self) -> List[FunctionInfo]:
         """获取所有找到的函数"""

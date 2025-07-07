@@ -36,6 +36,7 @@ Parser包提供了强大的C/C++代码分析功能：
 - 调用图构建与分析
 - 头文件include关系分析
 - 复杂度和依赖关系分析
+- API函数提取（基于关键字识别）
 
 主要类：
 - RepoAnalyzer: 完整的代码仓库分析器
@@ -63,6 +64,18 @@ Parser包提供了强大的C/C++代码分析功能：
    # 或通过RepoAnalyzer：
    analyzer = RepoAnalyzer("example.h")
    header_result = analyzer.analyze_headers()
+
+4. 提取API函数（基于关键字）：
+   analyzer = RepoAnalyzer("cjson_library")
+   analyzer.analyze()
+   
+   # 提取包含特定关键字的API函数
+   api_functions = analyzer.get_api_functions("CJSON_PUBLIC")
+   
+   # 显示API函数信息
+   print(f"找到 {len(api_functions)} 个API函数")
+   for func in api_functions:
+       print(f"- {func.name} ({'声明' if func.is_declaration else '定义'})")
 
 更多详细信息请参考各个类的文档。
 """
