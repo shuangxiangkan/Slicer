@@ -11,6 +11,7 @@ from .function_extractor import FunctionExtractor, FunctionInfo
 from .repo_analyzer import RepoAnalyzer
 from .header_analyzer import HeaderAnalyzer
 
+
 # 版本信息
 __version__ = "1.0.0"
 __author__ = "Parser Team"
@@ -37,6 +38,7 @@ Parser包提供了强大的C/C++代码分析功能：
 - 头文件include关系分析
 - 复杂度和依赖关系分析
 - API函数提取（基于关键字识别）
+- 函数调用关系分析
 
 主要类：
 - RepoAnalyzer: 完整的代码仓库分析器
@@ -76,6 +78,18 @@ Parser包提供了强大的C/C++代码分析功能：
    print(f"找到 {len(api_functions)} 个API函数")
    for func in api_functions:
        print(f"- {func.name} ({'声明' if func.is_declaration else '定义'})")
+
+5. 函数调用关系分析：
+   analyzer = RepoAnalyzer("config.json")
+   analyzer.analyze()
+   
+   # 获取函数的调用者
+   callers_info = analyzer.get_function_callers("malloc")
+   print(f"函数 {callers_info['function_name']} 被 {callers_info['caller_count']} 个函数调用")
+   
+   # 获取函数的依赖关系
+   dependencies = analyzer.get_function_dependencies("main", max_depth=3)
+   dependents = analyzer.get_function_dependents("malloc", max_depth=2)
 
 更多详细信息请参考各个类的文档。
 """

@@ -16,6 +16,7 @@ from .type_extractor import TypeExtractor
 from .config_parser import ConfigParser
 from .call_graph import CallGraph
 from .header_analyzer import HeaderAnalyzer
+
 # from .summary import AnalysisSummary  # 已移除，使用DisplayHelper替代
 
 # 配置logging
@@ -741,4 +742,33 @@ class RepoAnalyzer:
         """获取include依赖关系图"""
         analyzer = HeaderAnalyzer()
         return analyzer.get_dependency_graph(header_results)
+    
+    # ===== 函数调用关系接口 =====
+    
+    def get_function_callers(self, function_name: str) -> List[str]:
+        """
+        获取调用指定函数的所有直接调用者
+        
+        Args:
+            function_name: 要查找调用者的函数名
+            
+        Returns:
+            直接调用者函数名列表，如果函数不存在或未构建Call Graph则返回空列表
+            
+        Example:
+            # 获取malloc的所有调用者
+            callers = analyzer.get_function_callers("malloc")
+            print(f"malloc 被 {len(callers)} 个函数调用")
+            for caller in callers:
+                print(f"  - {caller}")
+        """
+        if not self.call_graph._graph_built:
+            return []
+        
+        if function_name not in self.call_graph.functions:
+            return []
+        
+        # 获取直接调用者并排序
+        direct_callers = self.get_direct_callers(function_name)
+        return sorted(list(direct_callers))
  
