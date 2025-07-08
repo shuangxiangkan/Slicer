@@ -6,6 +6,11 @@
 from typing import List, Optional
 from .param_ret_info import ParameterInfo, ReturnTypeInfo
 from .type_registry import TypeRegistry
+import tree_sitter_c as tsc
+import tree_sitter_cpp as tscpp
+from tree_sitter import Language, Parser
+import logging
+import re
 
 
 class FunctionInfo:
@@ -69,9 +74,6 @@ class FunctionInfo:
         
         try:
             # 导入tree-sitter相关模块
-            import tree_sitter_c as tsc
-            import tree_sitter_cpp as tscpp
-            from tree_sitter import Language, Parser
             
             # 判断是否为C++文件
             is_cpp = any(self.file_path.endswith(ext) for ext in ['.cpp', '.cxx', '.cc', '.hpp', '.hxx', '.hh'])
@@ -94,7 +96,6 @@ class FunctionInfo:
             
         except Exception as e:
             # 如果tree-sitter解析失败，回退到正则表达式方法
-            import logging
             logger = logging.getLogger(__name__)
             logger.warning(f"tree-sitter解析失败，回退到正则表达式方法: {e}")
             self._parse_function_calls_regex()
@@ -144,7 +145,6 @@ class FunctionInfo:
         func_text = content[function_node.start_byte:function_node.end_byte].strip()
         
         # 基本验证：应该是有效的标识符
-        import re
         if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', func_text):
             return func_text
         
@@ -152,7 +152,6 @@ class FunctionInfo:
     
     def _parse_function_calls_regex(self):
         """回退的正则表达式方法（保留原有逻辑作为备用）"""
-        import re
         
         body = self.get_body()
         if not body:

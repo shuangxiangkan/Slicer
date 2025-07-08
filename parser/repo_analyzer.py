@@ -6,6 +6,7 @@
 import time
 import logging
 import os
+import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from .file_finder import FileFinder
@@ -16,8 +17,6 @@ from .type_extractor import TypeExtractor
 from .config_parser import ConfigParser
 from .call_graph import CallGraph
 from .header_analyzer import HeaderAnalyzer
-
-# from .summary import AnalysisSummary  # 已移除，使用DisplayHelper替代
 
 # 配置logging
 logger = logging.getLogger(__name__)
@@ -370,7 +369,6 @@ class RepoAnalyzer:
         Returns:
             匹配的函数列表
         """
-        import re
         matches = []
         
         flags = 0 if case_sensitive else re.IGNORECASE
@@ -481,7 +479,6 @@ class RepoAnalyzer:
             # 多个注释时，组合显示
             combined_comments = []
             for comment_info in all_comments:
-                import os
                 file_name = os.path.basename(comment_info['file'])
                 header = f"=== {comment_info['type']} ({file_name}:{comment_info['line']}) ==="
                 combined_comments.append(header)
@@ -587,7 +584,6 @@ class RepoAnalyzer:
         
         for func in matches:
             # 创建唯一标识：函数名_文件名_行号
-            import os
             file_name = os.path.basename(func.file_path)
             key = f"{func.name}_{file_name}_{func.start_line}"
             

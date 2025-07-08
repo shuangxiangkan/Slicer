@@ -4,6 +4,7 @@
 """
 
 import logging
+import re
 from typing import List, Optional
 from tree_sitter import Node
 
@@ -53,9 +54,6 @@ class TypeExtractor:
         try:
             # 获取完整的typedef文本
             typedef_text = content[node.start_byte:node.end_byte].strip()
-            
-            # 简单但更可靠的解析：使用正则表达式
-            import re
             
             # 匹配 typedef 语句: typedef [type] [name];
             typedef_match = re.match(r'typedef\s+(.+?)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*;', typedef_text, re.DOTALL)
