@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 from typing import List, Dict, Any
+from .file_finder import FileFinder
 
 
 class ConfigParser:
@@ -85,14 +86,22 @@ class ConfigParser:
         
         Returns:
             包含模式：返回要分析的文件列表
-            排除模式或分析全部模式：返回整个库路径
+            排除模式：返回整个库的文件 - 被排除的文件
+            分析全部模式：返回整个库的所有文件
         """
         if self.is_include_mode():
             # 包含模式：只分析指定的文件
             return self.get_target_files()
+        elif self.is_exclude_mode():
+            # 排除模式：整个库的文件 - 被排除的文件
+            finder = FileFinder()
+            all_files = finder.find_files(self.get_library_path(), recursive=True)
+            exclude_files = set(self.get_target_files())  # get_target_files在排除模式下返回要排除的文件
+            return [f for f in all_files if f not in exclude_files]
         else:
-            # 排除模式或分析全部模式：分析整个库
-            return [self.get_library_path()]
+            # 分析全部模式：分析整个库的所有文件
+            finder = FileFinder()
+            return finder.find_files(self.get_library_path(), recursive=True)
     
     def get_exclude_targets(self) -> List[str]:
         """

@@ -1,8 +1,6 @@
 {
   "library_path": "/home/kansx/SVF-Tools/Slicer/benchmark/cJSON",
   "include_files": [
-    "cJSON.c",
-    "cJSON.h"
   ],
   "exclude_files": []
 } 
