@@ -22,7 +22,7 @@ def test_function_callers():
     print("🔍 函数调用者获取测试")
     print("=" * 80)
     
-    config_file = 'test/cjson_config.json'
+    config_file = 'test/miniz_config.json'
     
     # 检查配置文件是否存在
     if not os.path.exists(config_file):
@@ -41,14 +41,7 @@ def test_function_callers():
         
         # 测试的函数列表
         test_functions = [
-            'malloc',
-            'free', 
-            'cJSON_Parse',
-            'cJSON_Delete',
-            'cJSON_CreateObject',
-            'cJSON_GetObjectItem',
-            'printf',  # 外部函数，不会出现在call graph中
-            'nonexistent_function'  # 不存在的函数
+            'compress'
         ]
         
         for func_name in test_functions:

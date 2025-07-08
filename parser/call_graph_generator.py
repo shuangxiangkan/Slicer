@@ -183,22 +183,24 @@ class CallGraphGenerator:
         functions_with_definition = {f.name: f for f in all_functions}
         
         for func_name in sorted(selected_functions):
+            escaped_name = self._escape_dot_string(func_name)
+            
             if func_name in functions_with_definition:
                 # 有函数定义的函数：显示完整签名
                 func_info = functions_with_definition[func_name]
-                signature = self._get_function_signature(func_info)
+                signature = self._get_function_signature_simple(func_info)
                 
                 # 如果是中心函数，高亮显示
                 if center_function and func_name == center_function:
-                    lines.append(f'    "{func_name}" [label=<{signature}>, style=filled, fillcolor=lightcoral];')
+                    lines.append(f'    "{escaped_name}" [label="{signature}", style=filled, fillcolor=lightcoral];')
                 else:
-                    lines.append(f'    "{func_name}" [label=<{signature}>];')
+                    lines.append(f'    "{escaped_name}" [label="{signature}"];')
             else:
                 # 真正的外部函数（如strlen等）：只显示函数名
                 if center_function and func_name == center_function:
-                    lines.append(f'    "{func_name}" [label=<<B>{func_name}</B>>, style=filled, fillcolor=lightcoral];')
+                    lines.append(f'    "{escaped_name}" [label="{escaped_name}", style=filled, fillcolor=lightcoral];')
                 else:
-                    lines.append(f'    "{func_name}" [label=<<B>{func_name}</B>>];')
+                    lines.append(f'    "{escaped_name}" [label="{escaped_name}"];')
         
         lines.append("")
         
@@ -215,12 +217,63 @@ class CallGraphGenerator:
             # 对于外部函数，我们无法获取其调用关系，所以跳过
         
         for caller, callee in sorted(edges):
-            lines.append(f'    "{caller}" -> "{callee}";')
+            escaped_caller = self._escape_dot_string(caller)
+            escaped_callee = self._escape_dot_string(callee)
+            lines.append(f'    "{escaped_caller}" -> "{escaped_callee}";')
         
         lines.append("}")
         
         return "\n".join(lines)
     
+    def _escape_dot_string(self, text: str) -> str:
+        """转义DOT字符串中的特殊字符"""
+        # 转义引号和反斜杠
+        text = text.replace('\\', '\\\\')
+        text = text.replace('"', '\\"')
+        text = text.replace('\n', '\\n')
+        text = text.replace('\r', '\\r')
+        text = text.replace('\t', '\\t')
+        return text
+    
+    def _get_function_signature_simple(self, func_info) -> str:
+        """获取简化的函数签名，适用于DOT格式"""
+        # 构建返回类型
+        return_type = "void"
+        if hasattr(func_info, 'return_type') and func_info.return_type:
+            return_type = func_info.return_type.strip()
+        
+        # 构建参数列表
+        params = []
+        if hasattr(func_info, 'parameters') and func_info.parameters:
+            for param in func_info.parameters:
+                clean_param = param.strip()
+                # 移除过长的参数描述，只保留类型和名称
+                if len(clean_param) > 30:
+                    clean_param = clean_param[:27] + "..."
+                params.append(clean_param)
+        
+        # 构建简化的函数签名
+        func_name = func_info.name
+        
+        # 限制参数显示长度
+        if not params:
+            signature = f"{return_type} {func_name}()"
+        elif len(params) == 1:
+            signature = f"{return_type} {func_name}({params[0]})"
+        elif len(params) <= 3:
+            params_str = ", ".join(params)
+            if len(params_str) > 60:
+                # 如果参数太长，分行显示
+                signature = f"{return_type} {func_name}(\\n  " + "\\n  ".join(params) + "\\n)"
+            else:
+                signature = f"{return_type} {func_name}({params_str})"
+        else:
+            # 参数太多，只显示前2个
+            signature = f"{return_type} {func_name}({params[0]}, {params[1]}, ...)"
+        
+        # 转义DOT字符串
+        return self._escape_dot_string(signature)
+
     def _get_function_signature(self, func_info) -> str:
         """获取函数签名，函数名加粗显示，参数每行一个"""
         # 构建返回类型

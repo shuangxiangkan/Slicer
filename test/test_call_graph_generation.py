@@ -11,7 +11,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from parser.repo_analyzer import RepoAnalyzer
-from graph.call_graph_generator import CallGraphGenerator
+from parser.call_graph_generator import CallGraphGenerator
 
 
 def test_simple_dot_generation():
@@ -26,7 +26,7 @@ def test_simple_dot_generation():
         analyzer = RepoAnalyzer("test/zlib_config.json")
         
         print("📁 分析miniz库...")
-        analyzer.analyze("libraries/miniz")
+        analyzer.analyze()
         
         # 创建图生成器
         generator = CallGraphGenerator(analyzer)
@@ -83,14 +83,19 @@ def test_simple_dot_generation():
         print("-" * 30)
         print("💡 查看DOT文件:")
         print("   - 仓库图: cat test/repo_call_graph.dot")
-        print("   - 函数callees: cat test/mz_compress2_callees.dot")
-        print("   - 函数callers: cat test/mz_compress2_callers.dot")
-        print("   - 函数完整图: cat test/mz_compress2_complete.dot")
+        print("   - 函数callees: cat test/compress_callees.dot")
+        print("   - 函数callers: cat test/compress_callers.dot")
+        print("   - 函数完整图: cat test/compress_complete.dot")
         print("\n   转换为图片:")
-        print("   - dot -Tpng test/mz_compress2_callees.dot -o test/mz_compress2_callees.png")
-        print("   - dot -Tpng test/mz_compress2_callers.dot -o test/mz_compress2_callers.png")
-        print("   - dot -Tpng test/mz_compress2_complete.dot -o test/mz_compress2_complete.png")
+        print("   - dot -Tpng test/compress_callees.dot -o test/compress_callees.png")
+        print("   - dot -Tpng test/compress_callers.dot -o test/compress_callers.png")
+        print("   - dot -Tpng test/compress_complete.dot -o test/compress_complete.png")
         print("\n   在线查看: https://dreampuf.github.io/GraphvizOnline/")
+        print("\n✅ DOT修复说明:")
+        print("   - 移除HTML标签，简化函数签名显示")
+        print("   - 添加字符转义，确保特殊字符正确处理")
+        print("   - 限制参数长度，避免节点过大")
+        print("   - 现在生成的DOT文件可以正常被Graphviz渲染")
         
         print(f"\n🔍 验证Call Graph正确性:")
         print("-" * 30)
