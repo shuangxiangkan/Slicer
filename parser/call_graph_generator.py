@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-简化的Call Graph DOT文件生成器
+Call Graph DOT文件生成器
 """
 
 import os
-from typing import Set, Dict, List
+from typing import Set
 from parser.repo_analyzer import RepoAnalyzer
 
 
 class CallGraphGenerator:
-    """简化的Call Graph DOT文件生成器"""
+    """Call Graph DOT文件生成器"""
     
     def __init__(self, analyzer: RepoAnalyzer):
         self.analyzer = analyzer

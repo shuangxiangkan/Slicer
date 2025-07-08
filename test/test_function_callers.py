@@ -22,7 +22,7 @@ def test_function_callers():
     print("🔍 函数调用者获取测试")
     print("=" * 80)
     
-    config_file = 'test/miniz_config.json'
+    config_file = 'benchmarks/configs/miniz_config.json'
     
     # 检查配置文件是否存在
     if not os.path.exists(config_file):
@@ -95,7 +95,7 @@ def test_call_graph_info():
     print("📊 Call Graph信息测试")
     print("=" * 80)
     
-    config_file = 'test/cjson_config.json'
+    config_file = 'benchmarks/configs/cjson_config.json'
     
     if not os.path.exists(config_file):
         print(f"❌ 配置文件不存在: {config_file}")

@@ -21,15 +21,15 @@ def test_api_extraction():
     # 测试配置
     test_configs = {
         'cJSON': {
-            'config_file': 'test/cjson_config.json',
+            'config_file': 'benchmarks/configs/cjson_config.json',
             'api_keywords': ['CJSON_PUBLIC']
         },
         'miniz': {
-            'config_file': 'test/miniz_config.json', 
+            'config_file': 'benchmarks/configs/miniz_config.json', 
             'api_keywords': ['MINIZ_EXPORT']
         },
         'zlib': {
-            'config_file': 'test/zlib_config.json',
+            'config_file': 'benchmarks/configs/zlib_config.json',
             'api_keywords': ['ZEXPORT']
         }
     }

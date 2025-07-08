@@ -146,7 +146,7 @@ def main():
     print("=" * 80)
     
     # 目标文件
-    target_file = "test/single_file_example.c"
+    target_file = "benchmarks/test/single_file_example.c"
     
     if not os.path.exists(target_file):
         print(f"❌ 文件不存在: {target_file}")

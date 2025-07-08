@@ -21,15 +21,15 @@ def test_comments_extraction():
     # 测试配置
     test_configs = {
         'cJSON': {
-            'config_file': 'test/cjson_config.json',
+            'config_file': 'benchmarks/configs/cjson_config.json',
             'sample_functions': ['cJSON_Parse', 'cJSON_Delete', 'cJSON_ParseWithLength', 'cJSON_GetArraySize']
         },
         'utf8': {
-            'config_file': 'test/utf8_config.json', 
+            'config_file': 'benchmarks/configs/utf8_config.json', 
             'sample_functions': ['utf8len', 'utf8cpy', 'utf8str', 'utf8chr']
         },
         'zlib': {
-            'config_file': 'test/zlib_config.json',
+            'config_file': 'benchmarks/configs/zlib_config.json',
             'sample_functions': ['deflate', 'inflate', 'compress', 'uncompress']
         }
     }

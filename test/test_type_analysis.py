@@ -18,7 +18,7 @@ def test_miniz_type_analysis():
     print("=" * 80)
     
     # 使用miniz配置文件路径
-    config_path = os.path.join(os.path.dirname(__file__), "miniz_config.json")
+    config_path = os.path.join(os.path.dirname(__file__), "benchmarks/configs/miniz_config.json")
     
     try:
         # 初始化分析器

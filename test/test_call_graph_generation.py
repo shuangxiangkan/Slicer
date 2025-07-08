@@ -23,7 +23,7 @@ def test_simple_dot_generation():
     try:
         # 使用现有的配置文件分析cjson库
         # analyzer = RepoAnalyzer("test/cjson_config.json")
-        analyzer = RepoAnalyzer("test/zlib_config.json")
+        analyzer = RepoAnalyzer("benchmarks/configs/zlib_config.json")
         
         print("📁 分析miniz库...")
         analyzer.analyze()
