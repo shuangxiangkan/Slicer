@@ -213,3 +213,4 @@ analysis_reports/
 
 libraries/
 benchmark/*
+slice_results/

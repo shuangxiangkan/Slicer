@@ -3,7 +3,7 @@
 Slicer包 - C/C++代码切片工具
 """
 
-from .slice import slice_function_by_variable
+from .function_slicer import slice_function_by_variable
 
 # 版本信息
 __version__ = "1.0.0"
