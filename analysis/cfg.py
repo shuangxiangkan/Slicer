@@ -5,10 +5,8 @@
 基于tree-sitter构建函数级控制流图
 """
 
-import html
-from graphviz import Digraph
 from typing import List, Tuple, Optional
-from .utils import BaseAnalyzer, Node, Graph, Edge, text
+from .utils import BaseAnalyzer, Node, Graph, Edge, text, visualize_cfg
 
 
 
@@ -248,44 +246,7 @@ class CFG(BaseAnalyzer):
     def see_cfg(self, code: str, filename: str = 'CFG', pdf: bool = True, dot_format: bool = True, view: bool = False):
         """可视化CFG"""
         self.construct_cfg(code)
-
-        dot = Digraph(comment=filename, strict=True)
-        dot.attr(rankdir='TB')
-        dot.attr('node', fontname='Arial')
-        dot.attr('edge', fontname='Arial')
-
-        for cfg in self.cfgs:
-            for node in cfg.nodes:
-                # 对于函数定义，显示完整签名
-                if node.type == 'function_definition':
-                    label = f"<{html.escape(node.text)}<SUB>{node.line}</SUB>>"
-                    dot.node(str(node.id), label=label, shape='ellipse', style='filled', fillcolor='lightblue')
-                else:
-                    # 使用不同字体显示节点类型，源代码用正常字体
-                    type_label = f"<I>{node.type}</I>"  # 斜体显示节点类型
-                    code_label = html.escape(node.text)
-                    label = f"<{type_label}<BR/>{code_label}<SUB>{node.line}</SUB>>"
-                    if node.is_branch:
-                        dot.node(str(node.id), shape='diamond', label=label)
-                    else:
-                        dot.node(str(node.id), shape='rectangle', label=label)
-
-            for node_id, edges in cfg.edges.items():
-                for edge in edges:
-                    source_id = edge.id  # 这里edge.id实际上是source
-                    target_id = node_id  # 当前节点是target
-                    label = edge.label if edge.label else ''
-                    dot.edge(str(source_id), str(target_id), label=label)
-
-        # 保存.dot文件
-        if dot_format:
-            with open(f"{filename}.dot", 'w') as f:
-                f.write(dot.source)
-
-        # 生成PDF文件
-        if pdf:
-            dot.render(filename, view=view, cleanup=True)
-
+        visualize_cfg(self.cfgs, filename, pdf, dot_format, view)
         return self.cfgs
 
 

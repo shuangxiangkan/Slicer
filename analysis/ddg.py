@@ -5,11 +5,9 @@
 基于CFG构建数据依赖图
 """
 
-import html
-from graphviz import Digraph
 from typing import List, Dict, Set
 from .cfg import CFG
-from .utils import Graph, Edge, Node
+from .utils import Graph, Edge, Node, visualize_ddg
 
 
 class DDG(CFG):
@@ -146,47 +144,7 @@ class DDG(CFG):
     def see_ddg(self, code: str, filename: str = 'DDG', pdf: bool = True, dot_format: bool = True, view: bool = False):
         """可视化DDG"""
         self.construct_ddg(code)
-
-        dot = Digraph(comment=filename, strict=True)
-        dot.attr(rankdir='TB')
-        dot.attr('node', fontname='Arial')
-        dot.attr('edge', fontname='Arial')
-
-        for ddg in self.ddgs:
-            # 添加节点
-            for node in ddg.nodes:
-                # 对于函数定义，显示完整签名
-                if node.type == 'function_definition':
-                    label = f"<{html.escape(node.text)}<SUB>{node.line}</SUB>>"
-                    dot.node(str(node.id), label=label, shape='ellipse', style='filled', fillcolor='lightblue')
-                else:
-                    # 使用不同字体显示节点类型，源代码用正常字体
-                    type_label = f"<I>{node.type}</I>"  # 斜体显示节点类型
-                    code_label = html.escape(node.text)
-                    label = f"<{type_label}<BR/>{code_label}<SUB>{node.line}</SUB>>"
-                    if node.is_branch:
-                        dot.node(str(node.id), shape='diamond', label=label)
-                    else:
-                        dot.node(str(node.id), shape='rectangle', label=label)
-
-            # 添加数据依赖边
-            for node_id, edges in ddg.edges.items():
-                for edge in edges:
-                    if edge.type == 'DDG':
-                        target_id = edge.id
-                        var_label = ', '.join(edge.token) if edge.token else ''
-                        dot.edge(str(node_id), str(target_id),
-                                label=var_label, style='dotted', color='red')
-
-        # 保存.dot文件
-        if dot_format:
-            with open(f"{filename}.dot", 'w') as f:
-                f.write(dot.source)
-
-        # 生成PDF文件
-        if pdf:
-            dot.render(filename, view=view, cleanup=True)
-
+        visualize_ddg(self.ddgs, filename, pdf, dot_format, view)
         return self.ddgs
     
     def get_data_dependencies(self, code: str) -> List[Dict]:

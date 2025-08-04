@@ -5,12 +5,10 @@
 结合控制流图(CFG)和数据依赖图(DDG)构建程序依赖图
 """
 
-import html
-from graphviz import Digraph
 from typing import List, Dict
 from .cfg import CFG
 from .ddg import DDG
-from .utils import Graph, Edge, Node
+from .utils import Graph, Edge, Node, visualize_pdg
 
 
 class CDG(CFG):
@@ -133,57 +131,7 @@ class PDG(CFG):
     def see_pdg(self, code: str, filename: str = 'PDG', pdf: bool = True, dot_format: bool = True, view: bool = False):
         """可视化PDG"""
         self.construct_pdg(code)
-
-        dot = Digraph(comment=filename, strict=True)
-        dot.attr(rankdir='TB')
-        dot.attr('node', fontname='Arial')
-        dot.attr('edge', fontname='Arial')
-
-        for pdg in self.pdgs:
-            # 添加节点
-            for node in pdg.nodes:
-                # 对于函数定义，显示完整签名
-                if node.type == 'function_definition':
-                    label = f"<{html.escape(node.text)}<SUB>{node.line}</SUB>>"
-                    dot.node(str(node.id), label=label, shape='ellipse', style='filled', fillcolor='lightblue')
-                else:
-                    # 使用不同字体显示节点类型，源代码用正常字体
-                    type_label = f"<I>{node.type}</I>"  # 斜体显示节点类型
-                    code_label = html.escape(node.text)
-                    label = f"<{type_label}<BR/>{code_label}<SUB>{node.line}</SUB>>"
-                    if node.is_branch:
-                        dot.node(str(node.id), shape='diamond', label=label)
-                    else:
-                        dot.node(str(node.id), shape='rectangle', label=label)
-
-            # 添加边
-            for node_id, edges in pdg.edges.items():
-                for edge in edges:
-                    target_id = edge.id
-
-                    if edge.type == 'DDG':
-                        # 数据依赖边：红色虚线
-                        var_label = ', '.join(edge.token) if edge.token else ''
-                        dot.edge(str(node_id), str(target_id),
-                                label=var_label, style='dotted', color='red')
-                    elif edge.type == 'CDG':
-                        # 控制依赖边：蓝色实线
-                        dot.edge(str(node_id), str(target_id),
-                                color='blue', style='solid')
-                    else:
-                        # 控制流边：黑色实线
-                        label = edge.label if edge.label else ''
-                        dot.edge(str(node_id), str(target_id), label=label)
-
-        # 保存.dot文件
-        if dot_format:
-            with open(f"{filename}.dot", 'w') as f:
-                f.write(dot.source)
-
-        # 生成PDF文件
-        if pdf:
-            dot.render(filename, view=view, cleanup=True)
-
+        visualize_pdg(self.pdgs, filename, pdf, dot_format, view)
         return self.pdgs
     
     def get_dependencies(self, code: str) -> List[Dict]:
