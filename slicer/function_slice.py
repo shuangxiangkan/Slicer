@@ -244,9 +244,13 @@ class FunctionLevelSlicer:
 
         # 递归查找依赖，直到没有新的依赖为止
         changed = True
-        while changed:
+        iteration = 0
+        max_iterations = 10  # 防止无限循环
+
+        while changed and iteration < max_iterations:
             changed = False
             old_size = len(extended_lines)
+            iteration += 1
 
             # 提取当前切片中使用的变量
             used_variables = set()
@@ -257,10 +261,8 @@ class FunctionLevelSlicer:
                     import re
                     identifiers = re.findall(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b', line)
                     for identifier in identifiers:
-                        # 过滤掉关键字、类型和函数名
-                        if identifier not in ['int', 'char', 'float', 'double', 'unsigned', 'size_t',
-                                            'if', 'else', 'while', 'for', 'return', 'sizeof', 'const',
-                                            'void', 'static', 'extern', 'auto', 'register']:
+                        # 过滤掉C/C++关键字和常见类型
+                        if not self._is_keyword_or_builtin_type(identifier):
                             used_variables.add(identifier)
 
             # 查找这些变量的定义
@@ -268,23 +270,121 @@ class FunctionLevelSlicer:
                 if line_num not in extended_lines:
                     # 查找变量声明
                     for var in used_variables:
-                        # 改进的声明模式匹配
-                        patterns = [
-                            rf'\b(?:int|char|float|double|unsigned|size_t|const)\s+.*\b{var}\b\s*=',
-                            rf'\b(?:int|char|float|double|unsigned|size_t|const)\s+\*?\s*{var}\b\s*=',
-                            rf'\b{var}\b\s*=.*(?:int|char|float|double)',  # 类型推断
-                        ]
-                        for pattern in patterns:
-                            if re.search(pattern, line):
-                                extended_lines.add(line_num)
-                                changed = True
-                                break
+                        if self._is_variable_declaration(line, var):
+                            extended_lines.add(line_num)
+                            changed = True
 
             # 检查是否有新的行被添加
             if len(extended_lines) == old_size:
                 changed = False
 
         return extended_lines
+
+    def _is_keyword_or_builtin_type(self, identifier: str) -> bool:
+        """
+        检查标识符是否为C/C++关键字或内置类型
+        Args:
+            identifier: 要检查的标识符
+        Returns:
+            如果是关键字或内置类型返回True，否则返回False
+        """
+        # C/C++关键字
+        keywords = {
+            'auto', 'break', 'case', 'char', 'const', 'continue', 'default', 'do',
+            'double', 'else', 'enum', 'extern', 'float', 'for', 'goto', 'if',
+            'int', 'long', 'register', 'return', 'short', 'signed', 'sizeof', 'static',
+            'struct', 'switch', 'typedef', 'union', 'unsigned', 'void', 'volatile', 'while',
+            # C++关键字
+            'class', 'private', 'protected', 'public', 'virtual', 'inline', 'template',
+            'typename', 'namespace', 'using', 'try', 'catch', 'throw', 'new', 'delete',
+            'this', 'operator', 'friend', 'explicit', 'mutable', 'bool', 'true', 'false',
+            # 常见类型
+            'size_t', 'ptrdiff_t', 'wchar_t', 'NULL'
+        }
+
+        # 常见的宏和修饰符
+        common_macros = {
+            'EXPORT', 'INLINE', 'STATIC', 'EXTERN', 'CONST', 'VOLATILE',
+            'RESTRICT', 'NORETURN', 'DEPRECATED', 'UNUSED', 'PACKED'
+        }
+
+        return identifier in keywords or identifier in common_macros
+
+    def _is_variable_declaration(self, line: str, var_name: str) -> bool:
+        """
+        检查一行代码是否包含指定变量的声明
+        Args:
+            line: 代码行
+            var_name: 变量名
+        Returns:
+            如果包含变量声明返回True，否则返回False
+        """
+        import re
+
+        # 清理行内容，去掉注释
+        clean_line = re.sub(r'//.*$', '', line.strip())
+        clean_line = re.sub(r'/\*.*?\*/', '', clean_line)
+
+        # 如果行为空或只是注释，跳过
+        if not clean_line.strip():
+            return False
+
+        # 通用的变量声明模式
+        patterns = [
+            # 基本模式：类型 变量名 [= 值];
+            rf'\b[\w:]+\s+{re.escape(var_name)}\b\s*[=;,]',
+            # 指针模式：类型 *变量名 [= 值];
+            rf'\b[\w:]+\s*\*+\s*{re.escape(var_name)}\b\s*[=;,]',
+            # 引用模式：类型 &变量名 [= 值];
+            rf'\b[\w:]+\s*&\s*{re.escape(var_name)}\b\s*[=;,]',
+            # 常量模式：const 类型 变量名 [= 值];
+            rf'\bconst\s+[\w:]+\s+{re.escape(var_name)}\b\s*[=;,]',
+            # 多个修饰符：static const 类型 变量名 [= 值];
+            rf'\b(?:static|extern|inline|volatile|register|auto)\s+(?:[\w:]+\s+)*{re.escape(var_name)}\b\s*[=;,]',
+            # 复杂类型：struct/union/enum 类型名 变量名;
+            rf'\b(?:struct|union|enum|class)\s+[\w:]+\s+{re.escape(var_name)}\b\s*[=;,]',
+            # 函数指针等复杂声明
+            rf'\b[\w:]+\s*\(\s*\*\s*{re.escape(var_name)}\s*\)',
+            # 模板类型：std::vector<int> 变量名;
+            rf'\b[\w:]+<[^>]+>\s*[&*]*\s*{re.escape(var_name)}\b\s*[=;,]',
+            # 多变量声明：int a, b, c;
+            rf'\b[\w:]+\s+(?:\w+\s*,\s*)*{re.escape(var_name)}\b\s*[=;,]',
+            # auto类型：auto 变量名 = 值;
+            rf'\bauto\s+{re.escape(var_name)}\b\s*[=;]',
+        ]
+
+        for pattern in patterns:
+            if re.search(pattern, clean_line):
+                # 额外检查：确保不是函数调用或其他非声明语句
+                if not self._is_likely_function_call_or_assignment(clean_line, var_name):
+                    return True
+
+        return False
+
+    def _is_likely_function_call_or_assignment(self, line: str, var_name: str) -> bool:
+        """
+        检查是否可能是函数调用或赋值语句而非声明
+        Args:
+            line: 代码行
+            var_name: 变量名
+        Returns:
+            如果可能是函数调用或赋值返回True
+        """
+        import re
+
+        # 如果变量名前面有赋值操作符，可能是赋值而非声明
+        if re.search(rf'{re.escape(var_name)}\s*=', line):
+            # 检查是否在行首或类型声明后，如果是则可能是声明中的初始化
+            if re.search(rf'^\s*[\w:]+\s+.*{re.escape(var_name)}\s*=', line):
+                return False  # 这是声明中的初始化
+            else:
+                return True   # 这是赋值语句
+
+        # 如果变量名后面紧跟括号，可能是函数调用
+        if re.search(rf'{re.escape(var_name)}\s*\(', line):
+            return True
+
+        return False
 
     def _build_complete_function_slice(self, function_code: str, related_lines: Set[int]) -> str:
         """

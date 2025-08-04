@@ -214,3 +214,4 @@ analysis_reports/
 libraries/
 benchmark/*
 slice_results/
+static_program_analysis_by_tree_sitter/
