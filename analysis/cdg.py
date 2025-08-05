@@ -263,8 +263,21 @@ class CDG(CFG):
     
     def _build_control_dependencies_from_cfg(self, cfg: Graph, cdg: Graph):
         """基于CFG构建控制依赖关系"""
+        # 找到函数定义节点作为根节点
+        function_node = None
+        for node in cfg.nodes:
+            if node.type == 'function_definition':
+                function_node = node
+                break
+        
+        if not function_node:
+            return
+        
         # 找到所有分支节点
         branch_nodes = [node for node in cfg.nodes if node.is_branch]
+        
+        # 跟踪已经有控制依赖的节点
+        controlled_nodes_set = set()
         
         for branch_node in branch_nodes:
             # 找到该分支节点控制的所有节点
@@ -277,6 +290,18 @@ class CDG(CFG):
                     if branch_node.id not in cdg.edges:
                         cdg.edges[branch_node.id] = []
                     cdg.edges[branch_node.id].append(edge)
+                    controlled_nodes_set.add(controlled_node.id)
+        
+        # 将所有没有控制依赖的节点连接到函数根节点
+        # 这样确保CDG是连通的，以函数签名为根
+        for node in cfg.nodes:
+            if node.id != function_node.id and node.id not in controlled_nodes_set:
+                # 对于分支节点和普通节点，都连接到函数根节点
+                label = 'branch' if node.is_branch else 'entry'
+                edge = Edge(node.id, label, 'CDG')
+                if function_node.id not in cdg.edges:
+                    cdg.edges[function_node.id] = []
+                cdg.edges[function_node.id].append(edge)
     
     def _find_controlled_nodes_in_cfg(self, cfg: Graph, branch_node: Node) -> List[Node]:
         """在CFG中找到被分支节点控制的所有节点"""

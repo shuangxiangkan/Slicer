@@ -292,10 +292,9 @@ def visualize_cfg(cfgs: List[Graph], filename: str = 'CFG', pdf: bool = True, do
                 label = f"<{html.escape(node.text)}<SUB>{node.line}</SUB>>"
                 dot.node(str(node.id), label=label, shape='ellipse', style='filled', fillcolor='lightblue')
             else:
-                # 使用不同字体显示节点类型，源代码用正常字体
-                type_label = f"<I>{node.type}</I>"  # 斜体显示节点类型
+                # 只显示源代码，不显示节点类型
                 code_label = html.escape(node.text)
-                label = f"<{type_label}<BR/>{code_label}<SUB>{node.line}</SUB>>"
+                label = f"<{code_label}<SUB>{node.line}</SUB>>"
                 if node.is_branch:
                     dot.node(str(node.id), shape='diamond', label=label)
                 else:
@@ -335,10 +334,9 @@ def visualize_ddg(ddgs: List[Graph], filename: str = 'DDG', pdf: bool = True, do
                 label = f"<{html.escape(node.text)}<SUB>{node.line}</SUB>>"
                 dot.node(str(node.id), label=label, shape='ellipse', style='filled', fillcolor='lightblue')
             else:
-                # 使用不同字体显示节点类型，源代码用正常字体
-                type_label = f"<I>{node.type}</I>"  # 斜体显示节点类型
+                # 只显示源代码，不显示节点类型
                 code_label = html.escape(node.text)
-                label = f"<{type_label}<BR/>{code_label}<SUB>{node.line}</SUB>>"
+                label = f"<{code_label}<SUB>{node.line}</SUB>>"
                 if node.is_branch:
                     dot.node(str(node.id), shape='diamond', label=label)
                 else:
@@ -381,10 +379,9 @@ def visualize_pdg(pdgs: List[Graph], filename: str = 'PDG', pdf: bool = True, do
                 label = f"<{html.escape(node.text)}<SUB>{node.line}</SUB>>"
                 dot.node(str(node.id), label=label, shape='ellipse', style='filled', fillcolor='lightblue')
             else:
-                # 使用不同字体显示节点类型，源代码用正常字体
-                type_label = f"<I>{node.type}</I>"  # 斜体显示节点类型
+                # 只显示源代码，不显示节点类型
                 code_label = html.escape(node.text)
-                label = f"<{type_label}<BR/>{code_label}<SUB>{node.line}</SUB>>"
+                label = f"<{code_label}<SUB>{node.line}</SUB>>"
                 if node.is_branch:
                     dot.node(str(node.id), shape='diamond', label=label)
                 else:
@@ -435,15 +432,15 @@ def visualize_cdg(cdgs: List[Graph], filename: str = 'CDG', pdf: bool = True, do
     for cdg in cdgs:
         # 添加节点
         for node in cdg.nodes:
-            # 对于函数定义，显示完整签名
+            # 对于函数定义，显示完整签名（作为根节点，特别突出）
             if node.type == 'function_definition':
-                label = f"<{html.escape(node.text)}<SUB>{node.line}</SUB>>"
-                dot.node(str(node.id), label=label, shape='ellipse', style='filled', fillcolor='lightblue')
+                label = f"<<B>ROOT</B><BR/>{html.escape(node.text)}<SUB>{node.line}</SUB>>"
+                dot.node(str(node.id), label=label, shape='ellipse', style='filled', 
+                        fillcolor='lightgreen', fontsize='14', width='2.0')
             else:
-                # 使用不同字体显示节点类型，源代码用正常字体
-                type_label = f"<I>{node.type}</I>"  # 斜体显示节点类型
+                # 只显示源代码，不显示节点类型
                 code_label = html.escape(node.text)
-                label = f"<{type_label}<BR/>{code_label}<SUB>{node.line}</SUB>>"
+                label = f"<{code_label}<SUB>{node.line}</SUB>>"
                 if node.is_branch:
                     dot.node(str(node.id), shape='diamond', label=label, style='filled', fillcolor='yellow')
                 else:
@@ -453,10 +450,25 @@ def visualize_cdg(cdgs: List[Graph], filename: str = 'CDG', pdf: bool = True, do
         for node_id, edges in cdg.edges.items():
             for edge in edges:
                 if edge.type == 'CDG':
-                    # 控制依赖边：蓝色实线，从控制节点指向依赖节点
+                    # 控制依赖边：从控制节点指向依赖节点
                     source_id = node_id  # 控制节点
                     target_id = edge.id  # 被控制节点
-                    dot.edge(str(source_id), str(target_id), color='blue', style='solid')
+                    
+                    # 根据边的标签设置不同的样式
+                    if edge.label == 'entry':
+                        # 函数入口到普通节点：绿色粗线
+                        dot.edge(str(source_id), str(target_id), 
+                                color='green', style='solid', penwidth='2', 
+                                label='entry')
+                    elif edge.label == 'branch':
+                        # 函数入口到分支节点：橙色粗线
+                        dot.edge(str(source_id), str(target_id), 
+                                color='orange', style='solid', penwidth='2', 
+                                label='branch')
+                    else:
+                        # 分支控制依赖：蓝色实线
+                        dot.edge(str(source_id), str(target_id), 
+                                color='blue', style='solid', penwidth='1')
 
     # 保存.dot文件
     if dot_format:
