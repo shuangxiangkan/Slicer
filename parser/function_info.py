@@ -92,7 +92,7 @@ class FunctionInfo:
             root_node = tree.root_node
             
             # 递归查找函数调用
-            self._find_function_calls_recursive(root_node, body)
+            self._find_function_calls_recursive(root_node)
             
         except Exception as e:
             # 如果tree-sitter解析失败，回退到正则表达式方法
@@ -102,14 +102,14 @@ class FunctionInfo:
         
         self._parsed_calls = True
     
-    def _find_function_calls_recursive(self, node, content: str):
+    def _find_function_calls_recursive(self, node):
         """递归查找函数调用节点"""
         # 检查当前节点是否为函数调用
         if node.type == 'call_expression':
             # 获取函数名
             function_node = node.child_by_field_name('function')
             if function_node:
-                func_name = self._extract_function_name(function_node, content)
+                func_name = self._extract_function_name(function_node)
                 if func_name and func_name != self.name:  # 排除递归调用
                     # 过滤常见的宏调用
                     if not self._is_likely_macro(func_name):
@@ -117,38 +117,43 @@ class FunctionInfo:
         
         # 递归处理子节点
         for child in node.children:
-            self._find_function_calls_recursive(child, content)
+            self._find_function_calls_recursive(child)
     
-    def _extract_function_name(self, function_node, content: str) -> str:
+    def _extract_function_name(self, function_node) -> str:
         """从函数调用节点中提取函数名"""
-        if function_node.type == 'identifier':
-            # 简单的函数调用: func_name()
-            return content[function_node.start_byte:function_node.end_byte]
-        elif function_node.type == 'field_expression':
-            # 成员函数调用: obj.func_name() 或 obj->func_name()
-            field_node = function_node.child_by_field_name('field')
-            if field_node and field_node.type == 'field_identifier':
-                return content[field_node.start_byte:field_node.end_byte]
-        elif function_node.type == 'subscript_expression':
-            # 可能是函数指针调用，暂时跳过
+        try:
+            if function_node.type == 'identifier':
+                # 简单的函数调用: func_name()
+                return function_node.text.decode('utf-8').strip()
+            elif function_node.type == 'field_expression':
+                # 成员函数调用: obj.func_name() 或 obj->func_name()
+                field_node = function_node.child_by_field_name('field')
+                if field_node and field_node.type == 'field_identifier':
+                    return field_node.text.decode('utf-8').strip()
+            elif function_node.type == 'subscript_expression':
+                # 可能是函数指针调用，暂时跳过
+                return None
+            elif function_node.type == 'parenthesized_expression':
+                # 括号包围的表达式，递归提取
+                inner_node = function_node.children[1] if len(function_node.children) > 1 else None
+                if inner_node:
+                    return self._extract_function_name(inner_node)
+            elif function_node.type == 'cast_expression':
+                # 类型转换，不是函数调用
+                return None
+            
+            # 对于其他未知类型，尝试提取文本并进行基本验证
+            func_text = function_node.text.decode('utf-8').strip()
+            
+            # 基本验证：应该是有效的标识符
+            if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', func_text):
+                return func_text
+            
             return None
-        elif function_node.type == 'parenthesized_expression':
-            # 括号包围的表达式，递归提取
-            inner_node = function_node.children[1] if len(function_node.children) > 1 else None
-            if inner_node:
-                return self._extract_function_name(inner_node, content)
-        elif function_node.type == 'cast_expression':
-            # 类型转换，不是函数调用
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.warning(f"提取函数名时出错: {e}")
             return None
-        
-        # 对于其他未知类型，尝试提取文本并进行基本验证
-        func_text = content[function_node.start_byte:function_node.end_byte].strip()
-        
-        # 基本验证：应该是有效的标识符
-        if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', func_text):
-            return func_text
-        
-        return None
     
     def _parse_function_calls_regex(self):
         """回退的正则表达式方法（保留原有逻辑作为备用）"""

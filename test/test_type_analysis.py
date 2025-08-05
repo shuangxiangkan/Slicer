@@ -17,8 +17,8 @@ def test_miniz_type_analysis():
     print("🔍 开始测试miniz库的类型分析功能")
     print("=" * 80)
     
-    # 使用miniz配置文件路径
-    config_path = os.path.join(os.path.dirname(__file__), "benchmarks/configs/miniz_config.json")
+    # 使用miniz配置文件路径 - 修复路径问题
+    config_path = os.path.join(os.path.dirname(__file__), "../benchmarks/configs/miniz_config.json")
     
     try:
         # 初始化分析器
@@ -51,7 +51,25 @@ def test_miniz_type_analysis():
         
         for type_name in test_types:
             print(f"\n--- 类型: {type_name} ---")
-            analyzer.print_type_info(type_name)
+            
+            # 显示类型信息
+            type_kind = type_registry.get_type_kind(type_name)
+            type_info = type_registry.lookup_type(type_name)
+            
+            if type_info:
+                print(f"   类型种类: {type_kind.value}")
+                if type_kind.value == "typedef":
+                    print(f"   typedef: {type_name} -> {type_info.underlying_type}")
+                elif type_kind.value == "struct":
+                    print(f"   结构体: {type_name}")
+                elif type_kind.value == "enum":
+                    print(f"   枚举: {type_name}")
+                elif type_kind.value == "union":
+                    print(f"   联合体: {type_name}")
+                elif type_kind.value == "basic":
+                    print(f"   基本类型: {type_name}")
+            else:
+                print(f"   未知类型: {type_name}")
             
             # 测试指针检查
             is_pointer, pointer_level = type_registry.is_pointer_type(type_name)
