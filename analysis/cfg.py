@@ -72,6 +72,18 @@ class CFG(BaseAnalyzer):
                 in_nodes = out_nodes
             return CFG, in_nodes
 
+        elif node.type == 'else_clause':
+            # 处理else子句，递归解析其内容
+            CFG = []
+            # else子句通常包含一个子节点（可能是compound_statement或单个语句）
+            if node.child_count > 1:  # else { ... } 或 else statement
+                for child in node.children:
+                    if child.type not in ['else']:  # 跳过'else'关键字
+                        cfg, out_nodes = self.create_cfg(child, in_nodes)
+                        CFG.extend(cfg)
+                        in_nodes = out_nodes
+            return CFG, in_nodes
+        
         elif node.type not in ['if_statement', 'while_statement', 'for_statement', 'switch_statement', 'case_statement', 'translation_unit', 'do_statement']:
             # 如果是普通的语句
             edge = self.get_edge(in_nodes)

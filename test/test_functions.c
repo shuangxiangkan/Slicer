@@ -1,16 +1,77 @@
-// 测试函数集合
-// 用于CFG/DDG/PDG分析测试
+// 测试函数集合 - 用于CDG/DDG/PDG分析
+#include <stdio.h>
 
-// 简单顺序函数
-int add(int a, int b) {
-    int result = a + b;
-    return result;
+// http://zhuanlan.zhihu.com/p/572554127
+int zhihu() {
+    int i;
+    scanf("%d", &i);
+
+    if (i == 1) {
+        printf("POS:\n");
+    } else {
+        i = 1;
+    }
+
+    printf("%d\n", i);
+    return 0;
 }
 
-// 简单条件函数
-int max(int a, int b) {
+// https://uditagarwal.in/
+int fuzzware() {
+    int a = 10;
+    int b, c;
 
-    
+    while (a > 0) {
+        a = a - 1;
+    }
+
+    b = 3;
+
+    if (a * b) {
+        a = 10;
+    } else {
+        if (b) {
+            b = 0;
+        } else {
+            b = 1;
+        }
+    }
+
+    c = a + b;
+
+    printf("a = %d, b = %d, c = %d\n", a, b, c);
+    return 0;
+}
+
+// https://home.cs.colorado.edu/~kena/classes/5828/s99/lectures/lecture25.pdf
+int lecture25() {
+    int X, Y;
+    scanf("%d", &X);
+    scanf("%d", &Y);
+
+    while (X > 10) {
+        X = X - 10;
+        if (X == 10) {
+            break;
+        }
+    }
+
+    if (Y < 20 && X % 2 == 0) {
+        Y = Y + 20;
+    } else {
+        Y = Y - 20;
+    }
+
+    return 2 * X + Y;
+}
+
+// 简单的加法函数
+int add(int a, int b) {
+    return a + b;
+}
+
+// 带条件的最大值函数
+int max(int a, int b) {
     if (a > b) {
         return a;
     } else {
@@ -18,54 +79,40 @@ int max(int a, int b) {
     }
 }
 
-// 简单循环函数
+// 带循环的求和函数
 int sum(int n) {
-    int total = 0;
+    int result = 0;
     int i = 1;
     while (i <= n) {
-        total = total + i;
+        result = result + i;
         i = i + 1;
-    }
-    return total;
-}
-
-// 简单嵌套函数
-int factorial(int n) {
-    int result = 1;
-    if (n > 0) {
-        int i = 1;
-        while (i <= n) {
-            result = result * i;
-            i = i + 1;
-        }
     }
     return result;
 }
 
-// 更复杂的函数
-int fibonacci(int n) {
+// 递归阶乘函数
+int factorial(int n) {
     if (n <= 1) {
-        return n;
+        return 1;
+    } else {
+        return n * factorial(n - 1);
     }
-    
-    int a = 0;
-    int b = 1;
-    int i = 2;
-    
-    while (i <= n) {
-        int temp = a + b;
-        a = b;
-        b = temp;
-        i = i + 1;
-    }
-    
-    return b;
 }
 
-// 带switch的函数
-int grade_to_points(char grade) {
-    int points = 0;
+// 斐波那契数列（带更复杂的控制结构）
+int fibonacci(int n) {
+    if (n <= 0) {
+        return 0;
+    } else if (n == 1) {
+        return 1;
+    } else {
+        return fibonacci(n - 1) + fibonacci(n - 2);
+    }
+}
 
+// 成绩转换函数（带switch语句）
+int grade_to_points(char grade) {
+    int points;
     switch (grade) {
         case 'A':
             points = 4;
@@ -83,15 +130,15 @@ int grade_to_points(char grade) {
             points = 0;
             break;
     }
-
     return points;
 }
 
-// 带for循环的函数
+// 数组求和函数（带for循环）
 int array_sum(int arr[], int size) {
-    int total = 0;
-    for (int i = 0; i < size; i++) {
-        total = total + arr[i];
+    int sum = 0;
+    int i;
+    for (i = 0; i < size; i++) {
+        sum = sum + arr[i];
     }
-    return total;
+    return sum;
 }

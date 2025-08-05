@@ -7,84 +7,9 @@
 
 from typing import List, Dict
 from .cfg import CFG
+from .cdg import CDG
 from .ddg import DDG
 from .utils import Graph, Edge, Node, visualize_pdg
-
-
-class CDG(CFG):
-    """控制依赖图构建器"""
-    
-    def __init__(self, language: str = "c"):
-        """初始化CDG构建器"""
-        super().__init__(language)
-        self.cdgs: List[Graph] = []
-    
-    def construct_cdg(self, code: str):
-        """构建控制依赖图"""
-        if self.check_syntax(code):
-            print('Syntax Error')
-            return
-        
-        # 首先构建CFG
-        cfgs = self.see_cfg(code, pdf=False)
-        
-        self.cdgs = []
-        for cfg in cfgs:
-            cdg = Graph()
-            
-            # 复制CFG的节点到CDG
-            for node in cfg.nodes:
-                cdg.add_node(node)
-            
-            # 构建控制依赖边
-            self._build_control_dependencies(cfg, cdg)
-            
-            self.cdgs.append(cdg)
-    
-    def _build_control_dependencies(self, cfg: Graph, cdg: Graph):
-        """构建控制依赖关系"""
-        # 简化的控制依赖分析
-        # 对于每个分支节点，其控制的语句都依赖于它
-        
-        for node in cfg.nodes:
-            if node.is_branch:
-                # 找到这个分支节点控制的所有节点
-                controlled_nodes = self._find_controlled_nodes(cfg, node)
-                
-                for controlled_node in controlled_nodes:
-                    if controlled_node.id != node.id:
-                        edge = Edge(controlled_node.id, '', 'CDG')
-                        cdg.edges.setdefault(node.id, []).append(edge)
-    
-    def _find_controlled_nodes(self, cfg: Graph, branch_node: Node) -> List[Node]:
-        """找到被分支节点控制的所有节点"""
-        controlled = []
-        
-        # 简化实现：找到分支节点后面的所有节点，直到遇到汇合点
-        branch_line = branch_node.line
-        
-        # 找到分支结构的结束位置（简化：通过缩进或者特定模式）
-        for node in cfg.nodes:
-            if node.line > branch_line:
-                # 简单的启发式：如果节点在分支后面，认为被控制
-                # 实际应该通过支配树等算法来精确计算
-                if self._is_in_branch_scope(branch_node, node):
-                    controlled.append(node)
-        
-        return controlled
-    
-    def _is_in_branch_scope(self, branch_node: Node, target_node: Node) -> bool:
-        """判断目标节点是否在分支节点的作用域内"""
-        # 简化实现：基于行号和节点类型的启发式判断
-        if target_node.line <= branch_node.line:
-            return False
-        
-        # 如果目标节点是return语句，且在分支后面，认为被控制
-        if target_node.type == 'return_statement':
-            return True
-        
-        # 其他简化的判断逻辑
-        return target_node.line < branch_node.line + 10  # 简化的范围判断
 
 
 class PDG(CFG):

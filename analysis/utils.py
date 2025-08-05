@@ -121,21 +121,25 @@ class Node:
         parent = identifier_node.parent
         if not parent:
             return False
-        
+
         # 变量声明
         if parent.type in ['declaration', 'init_declarator']:
             return True
-        
+
+        # 函数参数
+        if parent.type == 'parameter_declaration':
+            return True
+
         # 赋值表达式的左侧
         if parent.type == 'assignment_expression':
             left = parent.child_by_field_name('left')
             if left and self._contains_node(left, identifier_node):
                 return True
-        
+
         # 更新表达式 (++, --)
         if parent.type == 'update_expression':
             return True
-        
+
         return False
     
     def _contains_node(self, parent, target):
@@ -202,6 +206,29 @@ class Graph:
         for node in self.nodes:
             self.defs[node.id] = node.defs
             self.uses[node.id] = node.uses
+    
+    def reverse(self):
+        """返回反向图"""
+        reversed_graph = Graph()
+        
+        # 复制所有节点
+        for node in self.nodes:
+            reversed_graph.add_node(node)
+        
+        # 反向所有边
+        for source_id, edges in self.edges.items():
+            for edge in edges:
+                target_id = edge.id
+                # 创建反向边
+                reversed_edge = Edge(source_id, edge.label, edge.type)
+                reversed_edge.token = edge.token
+                
+                # 添加到反向图中
+                if target_id not in reversed_graph.edges:
+                    reversed_graph.edges[target_id] = []
+                reversed_graph.edges[target_id].append(reversed_edge)
+        
+        return reversed_graph
 
 
 class BaseAnalyzer:
@@ -321,8 +348,8 @@ def visualize_ddg(ddgs: List[Graph], filename: str = 'DDG', pdf: bool = True, do
         for node_id, edges in ddg.edges.items():
             for edge in edges:
                 if edge.type == 'DDG':
-                    source_id = edge.id
-                    target_id = node_id
+                    source_id = node_id  # 定义节点（存储边的节点）
+                    target_id = edge.id  # 使用节点（边对象中的ID）
                     var_label = ', '.join(edge.token) if edge.token else ''
                     dot.edge(str(source_id), str(target_id),
                             label=var_label, style='dotted', color='red')
@@ -366,22 +393,70 @@ def visualize_pdg(pdgs: List[Graph], filename: str = 'PDG', pdf: bool = True, do
         # 添加边
         for node_id, edges in pdg.edges.items():
             for edge in edges:
-                source_id = edge.id
-                target_id = node_id
-
                 if edge.type == 'DDG':
                     # 数据依赖边：红色虚线
+                    source_id = node_id  # 定义节点
+                    target_id = edge.id  # 使用节点
                     var_label = ', '.join(edge.token) if edge.token else ''
                     dot.edge(str(source_id), str(target_id),
                             label=var_label, style='dotted', color='red')
                 elif edge.type == 'CDG':
                     # 控制依赖边：蓝色实线
+                    source_id = edge.id
+                    target_id = node_id
                     dot.edge(str(source_id), str(target_id),
                             color='blue', style='solid')
                 else:
                     # 控制流边：黑色实线
+                    source_id = edge.id
+                    target_id = node_id
                     label = edge.label if edge.label else ''
                     dot.edge(str(source_id), str(target_id), label=label)
+
+    # 保存.dot文件
+    if dot_format:
+        with open(f"{filename}.dot", 'w') as f:
+            f.write(dot.source)
+
+    # 生成PDF文件
+    if pdf:
+        dot.render(filename, view=view, cleanup=True)
+
+    return dot
+
+
+def visualize_cdg(cdgs: List[Graph], filename: str = 'CDG', pdf: bool = True, dot_format: bool = True, view: bool = False):
+    """可视化控制依赖图"""
+    dot = Digraph(comment=filename, strict=True)
+    dot.attr(rankdir='TB')
+    dot.attr('node', fontname='Arial')
+    dot.attr('edge', fontname='Arial')
+
+    for cdg in cdgs:
+        # 添加节点
+        for node in cdg.nodes:
+            # 对于函数定义，显示完整签名
+            if node.type == 'function_definition':
+                label = f"<{html.escape(node.text)}<SUB>{node.line}</SUB>>"
+                dot.node(str(node.id), label=label, shape='ellipse', style='filled', fillcolor='lightblue')
+            else:
+                # 使用不同字体显示节点类型，源代码用正常字体
+                type_label = f"<I>{node.type}</I>"  # 斜体显示节点类型
+                code_label = html.escape(node.text)
+                label = f"<{type_label}<BR/>{code_label}<SUB>{node.line}</SUB>>"
+                if node.is_branch:
+                    dot.node(str(node.id), shape='diamond', label=label, style='filled', fillcolor='yellow')
+                else:
+                    dot.node(str(node.id), shape='rectangle', label=label)
+
+        # 添加控制依赖边
+        for node_id, edges in cdg.edges.items():
+            for edge in edges:
+                if edge.type == 'CDG':
+                    # 控制依赖边：蓝色实线，从控制节点指向依赖节点
+                    source_id = node_id  # 控制节点
+                    target_id = edge.id  # 被控制节点
+                    dot.edge(str(source_id), str(target_id), color='blue', style='solid')
 
     # 保存.dot文件
     if dot_format:
