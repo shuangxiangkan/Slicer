@@ -28,7 +28,7 @@ class DDG(CFG):
             return
         
         # 首先构建CFG
-        cfgs = self.see_cfg(code, pdf=False)
+        cfgs = self.see_cfg(code, pdf=False, dot_format=False)
         
         self.ddgs = []
         for cfg in cfgs:

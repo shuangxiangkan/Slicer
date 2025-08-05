@@ -197,7 +197,7 @@ class CDG(CFG):
             return [], []
         
         # 构建CFG
-        cfgs = self.see_cfg(code, pdf=False)
+        cfgs = self.see_cfg(code, pdf=False, dot_format=False)
         
         # 创建反向CFG
         reverse_cfgs = []
@@ -244,7 +244,7 @@ class CDG(CFG):
             return []
         
         # 构建CFG
-        cfgs = self.see_cfg(code, pdf=False)
+        cfgs = self.see_cfg(code, pdf=False, dot_format=False)
         
         self.cdgs = []
         for cfg in cfgs:
