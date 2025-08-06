@@ -7,7 +7,9 @@
 
 from typing import List, Dict, Set
 from .cfg import CFG
-from .utils import Graph, Edge, Node, visualize_ddg
+from .graph import Graph, Edge
+from .ast_nodes import Node
+from .visualization import visualize_ddg
 
 
 class DDG(CFG):
@@ -44,102 +46,64 @@ class DDG(CFG):
             self.ddgs.append(ddg)
     
     def _build_data_dependencies(self, cfg: Graph, ddg: Graph):
-        """构建数据依赖关系"""
-        defs = cfg.defs
-        uses = cfg.uses
+        """
+        参考DDG.py实现，按照正确的算法构建数据依赖关系
         
-        # 数据依赖的三种情况：
-        # 1. def X to use Y: X定义变量v，Y使用变量v
-        # 2. use X to def Y: X使用变量v，Y定义变量v  
-        # 3. def X to def Y: X定义变量v，Y定义变量v
+        算法参考：https://home.cs.colorado.edu/~kena/classes/5828/s99/lectures/lecture25.pdf 第19页
+        """
+        edge = {}  # (source_id, target_id) -> {变量集合}
         
-        # 情况1: def X to use Y
-        for x_id in defs:
-            if x_id not in uses:
+        # 转换CFG的defs/uses结构：从 {node_id: set(variables)} 到 {variable: [node_ids]}
+        defs = {}  # 变量名 -> 定义该变量的节点ID列表
+        uses = {}  # 变量名 -> 使用该变量的节点ID列表
+        
+        for node_id, vars_set in cfg.defs.items():
+            for var in vars_set:
+                if var not in defs:
+                    defs[var] = []
+                defs[var].append(node_id)
+        
+        for node_id, vars_set in cfg.uses.items():
+            for var in vars_set:
+                if var not in uses:
+                    uses[var] = []
+                uses[var].append(node_id)
+        
+        # 情况1: def X to use Y (def节点到use节点)
+        for X in defs:
+            if X not in uses:
                 continue
+            def_nodes = defs[X]
+            use_nodes = uses[X]
             
-            x_defs = defs[x_id]
-            for y_id in uses:
-                if x_id == y_id:
-                    continue
-                
-                y_uses = uses[y_id]
-                
-                # 检查是否有共同变量
-                common_vars = x_defs.intersection(y_uses)
-                if common_vars and self._has_path_without_redefinition(cfg, x_id, y_id, common_vars):
-                    # 添加数据依赖边
-                    edge = Edge(y_id, '', 'DDG')
-                    edge.token = list(common_vars)
-                    ddg.edges.setdefault(x_id, []).append(edge)
+            for d in def_nodes:
+                for u in use_nodes:
+                    if d == u:  # 跳过同一个节点
+                        continue
+                    
+                    # 检查从d到u的所有路径，是否至少有一条路径没有中间重定义
+                    paths = cfg.findAllPath(d, u)
+                    for path in paths:
+                        is_arrival = True
+                        for n in path[1:-1]:  # 检查路径中间节点
+                            node = cfg.id_to_nodes[n]
+                            if X in node.defs:
+                                is_arrival = False
+                                break
+                        if is_arrival:  # 找到至少一条无中间重定义的路径
+                            edge.setdefault((d, u), set())
+                            edge[(d, u)].add(X)
+                            break  # 找到一条就够了
         
-        # 情况2: use X to def Y
-        for x_id in uses:
-            x_uses = uses[x_id]
-            for y_id in defs:
-                if x_id == y_id:
-                    continue
-                
-                y_defs = defs[y_id]
-                
-                # 检查是否有共同变量
-                common_vars = x_uses.intersection(y_defs)
-                if common_vars and self._has_path_without_redefinition(cfg, x_id, y_id, common_vars):
-                    # 添加数据依赖边
-                    edge = Edge(y_id, '', 'DDG')
-                    edge.token = list(common_vars)
-                    ddg.edges.setdefault(x_id, []).append(edge)
+        # 注释掉情况2和情况3，先只测试经典的def→use依赖
+        # 情况2: use X to def Y (use节点到def节点) - 反向依赖/输出依赖
+        # 情况3: def X to def Y (def节点到def节点) - 写后写依赖
         
-        # 情况3: def X to def Y
-        for x_id in defs:
-            x_defs = defs[x_id]
-            for y_id in defs:
-                if x_id == y_id:
-                    continue
-                
-                y_defs = defs[y_id]
-                
-                # 检查是否有共同变量
-                common_vars = x_defs.intersection(y_defs)
-                if common_vars and self._has_path_without_redefinition(cfg, x_id, y_id, common_vars):
-                    # 添加数据依赖边
-                    edge = Edge(y_id, '', 'DDG')
-                    edge.token = list(common_vars)
-                    ddg.edges.setdefault(x_id, []).append(edge)
-    
-    def _has_path_without_redefinition(self, cfg: Graph, start_id: int, end_id: int, variables: Set[str]) -> bool:
-        """
-        检查从start_id到end_id是否存在路径，且路径上没有重新定义variables中的变量
-        简化实现：假设如果两个节点在同一个函数中，就认为存在路径
-        """
-        # 简化的路径检查：检查是否在同一个CFG中
-        start_node = cfg.id_to_nodes.get(start_id)
-        end_node = cfg.id_to_nodes.get(end_id)
-        
-        if not start_node or not end_node:
-            return False
-        
-        # 简化：如果start节点的行号小于end节点，认为存在路径
-        if start_node.line < end_node.line:
-            # 检查中间是否有重新定义
-            return self._check_no_redefinition_between(cfg, start_id, end_id, variables)
-        
-        return False
-    
-    def _check_no_redefinition_between(self, cfg: Graph, start_id: int, end_id: int, variables: Set[str]) -> bool:
-        """检查两个节点之间是否没有重新定义指定变量"""
-        start_line = cfg.id_to_nodes[start_id].line
-        end_line = cfg.id_to_nodes[end_id].line
-        
-        # 检查中间的节点是否重新定义了变量
-        for node in cfg.nodes:
-            if start_line < node.line < end_line:
-                # 检查这个节点是否定义了我们关心的变量
-                node_defs = cfg.defs.get(node.id, set())
-                if variables.intersection(node_defs):
-                    return False
-        
-        return True
+        # 构建DDG边 - 注意这里要转换为入边结构
+        for (source_id, target_id), vars_set in edge.items():
+            ddg_edge = Edge(source_id, '', 'DDG')
+            ddg_edge.token = list(vars_set)
+            ddg.edges.setdefault(target_id, []).append(ddg_edge)
     
     def see_ddg(self, code: str, filename: str = 'DDG', pdf: bool = True, dot_format: bool = True, view: bool = False):
         """可视化DDG"""

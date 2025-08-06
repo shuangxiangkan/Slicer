@@ -62,7 +62,19 @@ int lecture25() {
         Y = Y - 20;
     }
 
-    return 2 * X + Y;
+    return 2 * X + Y;   
+}
+
+
+void fuzzware_ddg() {
+    int a = 1;
+    int b = 2;
+    int c = b;
+    while (c > a) {
+        a = a + 1;
+        c = c + 2;
+    }
+    int d = c;
 }
 
 // // 简单的加法函数

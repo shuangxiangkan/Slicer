@@ -7,8 +7,9 @@
 
 from typing import List, Dict, Set, Optional
 from .cfg import CFG
-from .utils import Graph, Edge, Node, visualize_cdg
-import html
+from .graph import Graph, Edge
+from .ast_nodes import Node
+from .visualization import visualize_cdg
 
 
 class Tree:
@@ -307,15 +308,39 @@ class CDG(CFG):
         """在CFG中找到被分支节点控制的所有节点"""
         controlled = []
         
-        # 找到以分支节点为源的所有边（即分支节点控制的节点）
+        # 找到以分支节点为源的所有边
         for target_id, edges in cfg.edges.items():
             for edge in edges:
                 if edge.id == branch_node.id:  # 分支节点是这条边的源
                     target_node = cfg.id_to_nodes.get(target_id)
                     if target_node and target_node != branch_node:
-                        controlled.append(target_node)
+                        # 根据分支类型和边标签判断是否为真正的控制依赖
+                        if self._is_true_control_dependency(branch_node, edge):
+                            controlled.append(target_node)
+                            # 对于真正被控制的节点，递归找到其传递控制的节点
+                            transitive = self._find_transitively_controlled(cfg, target_node, branch_node)
+                            controlled.extend(transitive)
         
         return controlled
+    
+    def _is_true_control_dependency(self, branch_node: Node, edge) -> bool:
+        """判断是否为真正的控制依赖关系"""
+        branch_type = branch_node.type
+        edge_label = edge.label if hasattr(edge, 'label') else ''
+        
+        if branch_type in ['while_statement', 'for_statement']:
+            # 对于循环：只有进入循环体的边（通常是Y）才是控制依赖
+            # 退出循环的边（通常是N）不是控制依赖，因为退出后的语句无论如何都会执行
+            return edge_label == 'Y'
+        elif branch_type == 'if_statement':
+            # 对于if语句：then分支（Y）和else分支（N）都是控制依赖
+            return edge_label in ['Y', 'N']
+        elif branch_type == 'switch_statement':
+            # 对于switch语句：所有case都是控制依赖
+            return True
+        else:
+            # 其他分支类型（如三元运算符等）
+            return edge_label in ['Y', 'N']
     
     def _find_transitively_controlled(self, cfg: Graph, start_node: Node, original_branch: Node) -> List[Node]:
         """递归找到传递控制的节点"""

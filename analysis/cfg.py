@@ -6,7 +6,10 @@
 """
 
 from typing import List, Tuple, Optional
-from .utils import BaseAnalyzer, Node, Graph, Edge, text, visualize_cfg
+from .base import BaseAnalyzer
+from .ast_nodes import Node, text
+from .graph import Graph, Edge
+from .visualization import visualize_cfg
 
 
 
