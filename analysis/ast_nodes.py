@@ -6,11 +6,7 @@ AST节点处理模块
 """
 
 from typing import Set
-
-
-def text(node) -> str:
-    """获取节点的文本内容"""
-    return node.text.decode('utf-8')
+from .utils import text
 
 
 class Node:

@@ -7,9 +7,10 @@
 
 from typing import List, Tuple, Optional
 from .base import BaseAnalyzer
-from .ast_nodes import Node, text
+from .ast_nodes import Node
 from .graph import Graph, Edge
 from .visualization import visualize_cfg
+from .utils import text
 
 
 
