@@ -6,7 +6,7 @@
 """
 
 from typing import List, Dict, Set
-from .ast_nodes import Node
+from .node import Node
 
 
 class Edge:

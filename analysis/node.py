@@ -98,6 +98,13 @@ class Node:
             else:
                 uses.add(text(identifier))
         
+        # 特殊处理：函数调用中的参数既被视为定义也被视为使用（保守做法）
+        if node.type == 'call_expression':
+            function_call_params = self._get_function_call_parameters(node)
+            for param_var in function_call_params:
+                defs.add(param_var)
+                uses.add(param_var)
+        
         return defs, uses
     
     def _get_branch_condition_def_use_info(self, branch_node):
@@ -193,8 +200,16 @@ class Node:
             return False
 
         # 变量声明
-        if parent.type in ['declaration', 'init_declarator']:
+        if parent.type == 'declaration':
             return True
+        
+        # 初始化声明器 - 只有被声明的变量是定义，初始化表达式中的变量是使用
+        if parent.type == 'init_declarator':
+            # 检查是否是声明的变量（通常是第一个子节点）
+            declarator = parent.child_by_field_name('declarator')
+            if declarator and self._contains_node(declarator, identifier_node):
+                return True
+            return False
 
         # 函数参数
         if parent.type == 'parameter_declaration':
@@ -228,6 +243,25 @@ class Node:
                                 return True
 
         return False
+    
+    def _get_function_call_parameters(self, call_node):
+        """获取函数调用中的参数变量（用于保守的def/use分析）"""
+        param_vars = set()
+        
+        # 查找参数列表
+        argument_list = call_node.child_by_field_name('arguments')
+        if argument_list:
+            for arg in argument_list.children:
+                if arg.type != ',':
+                    # 提取参数中的变量
+                    arg_identifiers = self._get_all_identifiers(arg)
+                    for identifier in arg_identifiers:
+                        var_name = text(identifier)
+                        # 排除字符串字面量和数字
+                        if var_name and not var_name.startswith('"') and not var_name.isdigit():
+                            param_vars.add(var_name)
+        
+        return param_vars
     
     def _contains_node(self, parent, target):
         """检查父节点是否包含目标节点"""

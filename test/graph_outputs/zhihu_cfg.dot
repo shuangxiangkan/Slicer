@@ -1,0 +1,22 @@
+// /Users/shuangxiangkan/Tools/Slicer/test/graph_outputs/zhihu_cfg
+strict digraph {
+	rankdir=TB
+	node [fontname=Arial]
+	edge [fontname=Arial]
+	687267 [label=<int i;<SUB>2</SUB>> shape=rectangle]
+	972163 [label=<scanf(&quot;%d&quot;, &amp;i);<SUB>3</SUB>> shape=rectangle]
+	457538 [label=<if(i == 1)<SUB>5</SUB>> shape=diamond]
+	697205 [label=<printf(&quot;POS:\n&quot;);<SUB>6</SUB>> shape=rectangle]
+	687795 [label=<i = 1;<SUB>8</SUB>> shape=rectangle]
+	441566 [label=<printf(&quot;%d\n&quot;, i);<SUB>11</SUB>> shape=rectangle]
+	525819 [label=<return 0;<SUB>12</SUB>> shape=rectangle]
+	298061 [label=<int zhihu()<SUB>1</SUB>> fillcolor=lightblue shape=ellipse style=filled]
+	298061 -> 687267 [label=""]
+	687267 -> 972163 [label=""]
+	972163 -> 457538 [label=""]
+	457538 -> 697205 [label=Y]
+	457538 -> 687795 [label=N]
+	697205 -> 441566 [label=""]
+	687795 -> 441566 [label=""]
+	441566 -> 525819 [label=""]
+}

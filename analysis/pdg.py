@@ -10,7 +10,7 @@ from .cfg import CFG
 from .cdg import CDG
 from .ddg import DDG
 from .graph import Graph, Edge
-from .ast_nodes import Node
+from .node import Node
 from .visualization import visualize_pdg
 
 

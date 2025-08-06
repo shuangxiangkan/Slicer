@@ -1,0 +1,22 @@
+// /Users/shuangxiangkan/Tools/Slicer/test/graph_outputs/ware_cfg
+strict digraph {
+	rankdir=TB
+	node [fontname=Arial]
+	edge [fontname=Arial]
+	493512 [label=<int a = 1;<SUB>2</SUB>> shape=rectangle]
+	696507 [label=<int b = 2;<SUB>3</SUB>> shape=rectangle]
+	166446 [label=<int c = b;<SUB>4</SUB>> shape=rectangle]
+	289256 [label=<while(c &gt; a)<SUB>5</SUB>> shape=diamond]
+	372722 [label=<a = a + 1;<SUB>6</SUB>> shape=rectangle]
+	542435 [label=<c = c + 2;<SUB>7</SUB>> shape=rectangle]
+	319910 [label=<int d = c;<SUB>9</SUB>> shape=rectangle]
+	882173 [label=<void ware()<SUB>1</SUB>> fillcolor=lightblue shape=ellipse style=filled]
+	882173 -> 493512 [label=""]
+	493512 -> 696507 [label=""]
+	696507 -> 166446 [label=""]
+	166446 -> 289256 [label=""]
+	542435 -> 289256 [label=""]
+	289256 -> 372722 [label=Y]
+	372722 -> 542435 [label=""]
+	289256 -> 319910 [label=N]
+}

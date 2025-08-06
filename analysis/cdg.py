@@ -8,7 +8,7 @@
 from typing import List, Dict, Set, Optional
 from .cfg import CFG
 from .graph import Graph, Edge
-from .ast_nodes import Node
+from .node import Node
 from .visualization import visualize_cdg
 
 

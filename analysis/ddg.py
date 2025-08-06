@@ -8,7 +8,7 @@
 from typing import List, Dict, Set
 from .cfg import CFG
 from .graph import Graph, Edge
-from .ast_nodes import Node
+from .node import Node
 from .visualization import visualize_ddg
 
 
@@ -47,9 +47,15 @@ class DDG(CFG):
     
     def _build_data_dependencies(self, cfg: Graph, ddg: Graph):
         """
-        参考DDG.py实现，按照正确的算法构建数据依赖关系
-        
         算法参考：https://home.cs.colorado.edu/~kena/classes/5828/s99/lectures/lecture25.pdf 第19页
+        
+        数据依赖的三种情况：
+        1. X contains a definition of v and Y a use of v (def → use), True Dependence / Read After Write, RAW
+        2. X contains a use of v and Y a definition of v (use → def), Anti Dependence / Write After Read, WAR
+        3. X contains a definition of v and Y a definition of v (def → def), Output Dependence / Write After Write,WAW
+        
+        针对程序切片, 只考虑True Dependence, 即RAW依赖, 其他依赖关系主要在并行优化时使用。
+        当前实现：只构建真实依赖（def → use），反依赖和输出依赖已注释。
         """
         edge = {}  # (source_id, target_id) -> {变量集合}
         
@@ -95,9 +101,56 @@ class DDG(CFG):
                             edge[(d, u)].add(X)
                             break  # 找到一条就够了
         
-        # 注释掉情况2和情况3，先只测试经典的def→use依赖
         # 情况2: use X to def Y (use节点到def节点) - 反向依赖/输出依赖
+        # 注释：程序切片通常只考虑真实依赖，反依赖主要用于并行化分析
+        # for X in uses:
+        #     if X not in defs:
+        #         continue
+        #     use_nodes = uses[X]
+        #     def_nodes = defs[X]
+        #     
+        #     for u in use_nodes:
+        #         for d in def_nodes:
+        #             if u == d:  # 跳过同一个节点
+        #                 continue
+        #             
+        #             # 检查从u到d的所有路径，是否至少有一条路径没有中间重定义
+        #             paths = cfg.findAllPath(u, d)
+        #             for path in paths:
+        #                 is_arrival = True
+        #                 for n in path[1:-1]:  # 检查路径中间节点
+        #                     node = cfg.id_to_nodes[n]
+        #                     if X in node.defs:
+        #                         is_arrival = False
+        #                         break
+        #                 if is_arrival:  # 找到至少一条无中间重定义的路径
+        #                     edge.setdefault((u, d), set())
+        #                     edge[(u, d)].add(X)
+        #                     break  # 找到一条就够了
+        
         # 情况3: def X to def Y (def节点到def节点) - 写后写依赖
+        # 注释：程序切片通常只考虑真实依赖，输出依赖主要用于并行化分析
+        # for X in defs:
+        #     def_nodes = defs[X]
+        #     
+        #     for d1 in def_nodes:
+        #         for d2 in def_nodes:
+        #             if d1 == d2:  # 跳过同一个节点
+        #                 continue
+        #             
+        #             # 检查从d1到d2的所有路径，是否至少有一条路径没有中间重定义
+        #             paths = cfg.findAllPath(d1, d2)
+        #             for path in paths:
+        #                 is_arrival = True
+        #                 for n in path[1:-1]:  # 检查路径中间节点
+        #                     node = cfg.id_to_nodes[n]
+        #                     if X in node.defs:
+        #                         is_arrival = False
+        #                         break
+        #                 if is_arrival:  # 找到至少一条无中间重定义的路径
+        #                     edge.setdefault((d1, d2), set())
+        #                     edge[(d1, d2)].add(X)
+        #                     break  # 找到一条就够了
         
         # 构建DDG边 - 注意这里要转换为入边结构
         for (source_id, target_id), vars_set in edge.items():
