@@ -26,24 +26,32 @@ class DDG(CFG):
         参考算法：https://home.cs.colorado.edu/~kena/classes/5828/s99/lectures/lecture25.pdf
         """
         if self.check_syntax(code):
-            print('Syntax Error')
-            return
+            print('⚠️  DDG构建警告: 检测到语法错误，但将继续尝试构建DDG')
+            # 不直接返回，继续尝试构建DDG
         
-        # 首先构建CFG
-        cfgs = self.see_cfg(code, pdf=False, dot_format=False)
-        
-        self.ddgs = []
-        for cfg in cfgs:
-            ddg = Graph()
+        try:
+            # 首先构建CFG
+            cfgs = self.see_cfg(code, pdf=False, dot_format=False)
             
-            # 复制CFG的节点到DDG
-            for node in cfg.nodes:
-                ddg.add_node(node)
-            
-            # 构建数据依赖边
-            self._build_data_dependencies(cfg, ddg)
-            
-            self.ddgs.append(ddg)
+            self.ddgs = []
+            for cfg in cfgs:
+                try:
+                    ddg = Graph()
+                    
+                    # 复制CFG的节点到DDG
+                    for node in cfg.nodes:
+                        ddg.add_node(node)
+                    
+                    # 构建数据依赖边
+                    self._build_data_dependencies(cfg, ddg)
+                    
+                    self.ddgs.append(ddg)
+                except Exception as e:
+                    print(f'⚠️  DDG构建警告: CFG处理失败: {e}')
+                    continue
+        except Exception as e:
+            print(f'⚠️  DDG构建警告: 代码解析失败: {e}')
+            self.ddgs = []
     
     def _build_data_dependencies(self, cfg: Graph, ddg: Graph):
         """

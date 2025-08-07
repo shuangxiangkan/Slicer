@@ -24,36 +24,44 @@ class PDG(CFG):
     
     def construct_pdg(self, code: str):
         """构建程序依赖图"""
-        # 构建CDG和DDG
-        cdg = CDG(self.language_name)
-        ddg = DDG(self.language_name)
-        
-        cdg.construct_cdg(code)
-        ddg.construct_ddg(code)
-        
-        self.pdgs = []
-        
-        # 合并CDG和DDG
-        for cdg_graph, ddg_graph in zip(cdg.cdgs, ddg.ddgs):
-            pdg = Graph()
+        try:
+            # 构建CDG和DDG
+            cdg = CDG(self.language_name)
+            ddg = DDG(self.language_name)
             
-            # 复制所有节点
-            for node in cdg_graph.nodes:
-                pdg.add_node(node)
+            cdg.construct_cdg(code)
+            ddg.construct_ddg(code)
             
-            # 复制控制依赖边
-            for node_id, edges in cdg_graph.edges.items():
-                pdg.edges.setdefault(node_id, [])
-                for edge in edges:
-                    pdg.edges[node_id].append(edge)
+            self.pdgs = []
             
-            # 添加数据依赖边
-            for node_id, edges in ddg_graph.edges.items():
-                pdg.edges.setdefault(node_id, [])
-                for edge in edges:
-                    pdg.edges[node_id].append(edge)
-            
-            self.pdgs.append(pdg)
+            # 合并CDG和DDG
+            for cdg_graph, ddg_graph in zip(cdg.cdgs, ddg.ddgs):
+                try:
+                    pdg = Graph()
+                    
+                    # 复制所有节点
+                    for node in cdg_graph.nodes:
+                        pdg.add_node(node)
+                    
+                    # 复制控制依赖边
+                    for node_id, edges in cdg_graph.edges.items():
+                        pdg.edges.setdefault(node_id, [])
+                        for edge in edges:
+                            pdg.edges[node_id].append(edge)
+                    
+                    # 添加数据依赖边
+                    for node_id, edges in ddg_graph.edges.items():
+                        pdg.edges.setdefault(node_id, [])
+                        for edge in edges:
+                            pdg.edges[node_id].append(edge)
+                    
+                    self.pdgs.append(pdg)
+                except Exception as e:
+                    print(f'⚠️  PDG构建警告: 图合并失败: {e}')
+                    continue
+        except Exception as e:
+            print(f'⚠️  PDG构建警告: CDG/DDG构建失败: {e}')
+            self.pdgs = []
     
     def see_pdg(self, code: str, filename: str = 'PDG', pdf: bool = True, dot_format: bool = True, view: bool = False):
         """可视化PDG"""

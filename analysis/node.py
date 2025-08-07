@@ -57,13 +57,6 @@ class Node:
             
             if tree_sitter_node.type != 'switch_statement':
                 self.is_branch = True
-        elif tree_sitter_node.type == 'do_statement':
-            condition = tree_sitter_node.child_by_field_name("condition")
-            if condition:
-                self.text = f'while{text(condition)}'
-            else:
-                self.text = 'do-while'
-            self.is_branch = True
         elif tree_sitter_node.type == 'case_statement':
             node_text = ''
             for child in tree_sitter_node.children:
@@ -74,6 +67,9 @@ class Node:
             self.is_branch = True
         else:
             self.text = text(tree_sitter_node)
+
+        if tree_sitter_node.parent and tree_sitter_node.parent.type == 'do_statement' and tree_sitter_node.parent.child_by_field_name('condition') == tree_sitter_node:
+            self.is_branch = True
         
         # 获取定义和使用信息
         # 对于分支语句，只分析条件部分，不包括语句体

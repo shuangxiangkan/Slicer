@@ -35,7 +35,7 @@ def test_cfg_cdg_ddg_pdg():
     logging.basicConfig(level=logging.WARNING)
     
     # 获取测试文件路径
-    test_file = os.path.join(os.path.dirname(__file__), 'test_functions.c')
+    test_file = os.path.join(os.path.dirname(__file__), '/Users/shuangxiangkan/Tools/Slicer/benchmarks/utf8/utf8.h')
     
     print("=" * 80)
     print("🔍 CFG/CDG/DDG/PDG 分析测试")

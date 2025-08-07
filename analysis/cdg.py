@@ -241,24 +241,32 @@ class CDG(CFG):
     def construct_cdg(self, code: str) -> List[Graph]:
         """构建控制依赖图"""
         if self.check_syntax(code):
-            print('Syntax Error')
-            return []
+            print('⚠️  CDG构建警告: 检测到语法错误，但将继续尝试构建CDG')
+            # 不直接返回，继续尝试构建CDG
         
-        # 构建CFG
-        cfgs = self.see_cfg(code, pdf=False, dot_format=False)
-        
-        self.cdgs = []
-        for cfg in cfgs:
-            cdg = Graph()
+        try:
+            # 构建CFG
+            cfgs = self.see_cfg(code, pdf=False, dot_format=False)
             
-            # 复制CFG的节点到CDG
-            for node in cfg.nodes:
-                cdg.add_node(node)
-            
-            # 基于CFG构建控制依赖关系
-            self._build_control_dependencies_from_cfg(cfg, cdg)
-            
-            self.cdgs.append(cdg)
+            self.cdgs = []
+            for cfg in cfgs:
+                try:
+                    cdg = Graph()
+                    
+                    # 复制CFG的节点到CDG
+                    for node in cfg.nodes:
+                        cdg.add_node(node)
+                    
+                    # 基于CFG构建控制依赖关系
+                    self._build_control_dependencies_from_cfg(cfg, cdg)
+                    
+                    self.cdgs.append(cdg)
+                except Exception as e:
+                    print(f'⚠️  CDG构建警告: CFG处理失败: {e}')
+                    continue
+        except Exception as e:
+            print(f'⚠️  CDG构建警告: 代码解析失败: {e}')
+            self.cdgs = []
         
         return self.cdgs
     

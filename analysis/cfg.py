@@ -5,16 +5,12 @@
 基于tree-sitter构建函数级控制流图
 """
 
-from typing import List, Tuple, Optional
+from typing import List
 from .base import BaseAnalyzer
 from .node import Node
 from .graph import Graph, Edge
 from .visualization import visualize_cfg
 from .utils import text
-
-
-
-
 
 class CFG(BaseAnalyzer):
     """控制流图构建器"""
@@ -105,6 +101,9 @@ class CFG(BaseAnalyzer):
         elif node.type in ['while_statement', 'for_statement']:
             return self._handle_loop_statement(node, in_nodes)
 
+        elif node.type == 'do_statement':
+            return self._handle_do_statement(node, in_nodes)
+
         elif node.type == 'switch_statement':
             return self._handle_switch_statement(node, in_nodes)
 
@@ -154,33 +153,80 @@ class CFG(BaseAnalyzer):
         cfg, body_out = self.create_cfg(body, [(node_info, 'Y')])
         CFG.extend(cfg)
 
+        # 处理break和continue语句
+        break_nodes, continue_nodes = self.get_break_continue_nodes(node)
+
         # 循环体的出口回到条件 - 为循环条件节点添加来自循环体出口的边
         loop_back_edges = []
         for out_node, _ in body_out:
             if out_node:
                 loop_back_edges.append((out_node.id, ''))
+        
+        # continue语句也应该回到循环条件
+        for continue_node in continue_nodes:
+            continue_node_info = Node(continue_node)
+            # 对于for循环，continue应该跳转到更新部分（如果有），然后到条件
+            # 对于while循环和for(;;)，continue应该直接跳转到循环条件
+            # 当前简化为直接跳转到循环条件
+            loop_back_edges.append((continue_node_info.id, ''))
 
         # 更新循环条件节点的入边，添加回边
         if loop_back_edges:
             for i, (cfg_node, cfg_edges) in enumerate(CFG):
                 if cfg_node.id == node_info.id:
-                    CFG[i] = (cfg_node, cfg_edges + loop_back_edges)
+                    CFG[i] = (cfg_node, list(cfg_edges) + loop_back_edges)
                     break
 
-        # 处理break和continue语句
-        break_nodes, continue_nodes = self.get_break_continue_nodes(node)
+        # break语句是循环的出口
         out_nodes = [(node_info, 'N')]  # 循环条件为false时跳出
-
         for break_node in break_nodes:
             out_nodes.append((Node(break_node), ''))
 
-        for continue_node in continue_nodes:
-            # 为continue节点添加到循环条件的边
-            continue_node_info = Node(continue_node)
+        return CFG, out_nodes
+
+    def _handle_do_statement(self, node, in_nodes):
+        """处理do-while语句"""
+        # 1. 循环体
+        body = node.child_by_field_name('body')
+        body_cfg, body_out_nodes = self.create_cfg(body, in_nodes)
+
+        # 2. 条件
+        condition = node.child_by_field_name('condition')
+        condition_node_info = Node(condition)
+        condition_node_info.text = f'while ({condition_node_info.text})'
+        condition_node_info.is_branch = True
+
+        # 3. break 和 continue 节点
+        break_ts_nodes, continue_ts_nodes = self.get_break_continue_nodes(body)
+        
+        # 4. 找到CFG中的Node对象
+        all_cfg_nodes = {node_info.id: node_info for node_info, _ in body_cfg}
+        break_nodes = [all_cfg_nodes[Node(n).id] for n in break_ts_nodes if Node(n).id in all_cfg_nodes]
+        continue_nodes = [all_cfg_nodes[Node(n).id] for n in continue_ts_nodes if Node(n).id in all_cfg_nodes]
+
+        # 5. 连接循环体正常出口和 continue 节点到条件节点
+        condition_in_nodes = body_out_nodes
+        for cont_node in continue_nodes:
+            condition_in_nodes.append((cont_node, ''))
+
+        # 6. 将条件节点添加到CFG
+        CFG = body_cfg
+        CFG.append((condition_node_info, self.get_edge(condition_in_nodes)))
+
+        # 7. 从条件节点连接回循环体入口 (回边)
+        if body_cfg:
+            first_node_in_body = body_cfg[0][0]
             for i, (cfg_node, cfg_edges) in enumerate(CFG):
-                if cfg_node.id == continue_node_info.id:
-                    CFG[i] = (cfg_node, cfg_edges + [(node_info.id, '')])
+                if cfg_node.id == first_node_in_body.id:
+                    new_edges = list(cfg_edges)
+                    new_edges.append((condition_node_info.id, 'Y'))
+                    CFG[i] = (cfg_node, new_edges)
                     break
+        
+        # 8. 确定整个 do-while 语句的出口
+        out_nodes = [(condition_node_info, 'N')]
+        for brk_node in break_nodes:
+            out_nodes.append((brk_node, ''))
 
         return CFG, out_nodes
     
@@ -233,31 +279,39 @@ class CFG(BaseAnalyzer):
     def construct_cfg(self, code: str):
         """构建CFG"""
         if self.check_syntax(code):
-            print('Syntax Error')
-            return
+            print('⚠️  CFG构建警告: 检测到语法错误，但将继续尝试构建CFG')
+            # 不直接返回，继续尝试构建CFG
 
-        root_node = self.parse_code(code)
-        functions = self.find_functions(root_node)
+        try:
+            root_node = self.parse_code(code)
+            functions = self.find_functions(root_node)
 
-        self.cfgs = []
-        for func_node in functions:
-            cfg_edges, _ = self.create_cfg(func_node)
+            self.cfgs = []
+            for func_node in functions:
+                try:
+                    cfg_edges, _ = self.create_cfg(func_node)
 
-            # 构建图对象
-            cfg = Graph()
-            for node_info, edges in cfg_edges:
-                cfg.add_node(node_info)
-                # 转换边格式 - edges是入边列表，存储为入边
-                edge_list = []
-                for edge_info in edges:
-                    if isinstance(edge_info, tuple) and len(edge_info) == 2:
-                        source_id, label = edge_info
-                        edge = Edge(source_id, label)
-                        edge_list.append(edge)
-                cfg.edges[node_info.id] = edge_list
+                    # 构建图对象
+                    cfg = Graph()
+                    for node_info, edges in cfg_edges:
+                        cfg.add_node(node_info)
+                        # 转换边格式 - edges是入边列表，存储为入边
+                        edge_list = []
+                        for edge_info in edges:
+                            if isinstance(edge_info, tuple) and len(edge_info) == 2:
+                                source_id, label = edge_info
+                                edge = Edge(source_id, label)
+                                edge_list.append(edge)
+                        cfg.edges[node_info.id] = edge_list
 
-            cfg.get_def_use_info()
-            self.cfgs.append(cfg)
+                    cfg.get_def_use_info()
+                    self.cfgs.append(cfg)
+                except Exception as e:
+                    print(f'⚠️  CFG构建警告: 函数 {getattr(func_node, "text", "unknown")} 处理失败: {e}')
+                    continue
+        except Exception as e:
+            print(f'⚠️  CFG构建警告: 代码解析失败: {e}')
+            self.cfgs = []
     
     def see_cfg(self, code: str, filename: str = 'CFG', pdf: bool = True, dot_format: bool = True, view: bool = False):
         """可视化CFG"""
