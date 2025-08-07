@@ -18,10 +18,14 @@ class Node:
         Args:
             tree_sitter_node: tree-sitter解析的节点
         """
+        # 初始化所有实例变量
         self.line = tree_sitter_node.start_point[0] + 1
         self.type = tree_sitter_node.type
         self.id = hash((tree_sitter_node.start_point, tree_sitter_node.end_point)) % 1000000
         self.is_branch = False
+        self.text = ''  # 节点文本表示
+        self.defs = set()  # 定义的变量集合
+        self.uses = set()  # 使用的变量集合
         
         # 根据节点类型设置文本和分支标记
         if tree_sitter_node.type == 'function_definition':
@@ -98,7 +102,8 @@ class Node:
             else:
                 uses.add(text(identifier))
         
-        # 特殊处理：函数调用中的参数既被视为定义也被视为使用（保守做法）
+        # 当前处理：函数调用中的参数既被视为定义也被视为使用（保守做法）
+        # TODO: 做更精确的分析，区分参数是def还是use
         if node.type == 'call_expression':
             function_call_params = self._get_function_call_parameters(node)
             for param_var in function_call_params:
