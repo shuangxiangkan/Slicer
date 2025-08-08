@@ -5,7 +5,7 @@
 基于CFG构建数据依赖图
 """
 
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Optional
 from .cfg import CFG
 from .graph import Graph, Edge
 from .node import Node
@@ -13,16 +13,16 @@ from .visualization import visualize_ddg
 
 
 class DDG(CFG):
-    """数据依赖图构建器"""
+    """数据依赖图构建器 - 单函数版本"""
     
     def __init__(self, language: str = "c"):
         """初始化DDG构建器"""
         super().__init__(language)
-        self.ddgs: List[Graph] = []
+        self.ddg: Optional[Graph] = None  # 单个DDG图
     
-    def construct_ddg(self, code: str):
+    def construct_ddg(self, code: str) -> Optional[Graph]:
         """
-        构建数据依赖图
+        构建数据依赖图 - 单函数版本
         参考算法：https://home.cs.colorado.edu/~kena/classes/5828/s99/lectures/lecture25.pdf
         """
         if self.check_syntax(code):
@@ -31,27 +31,32 @@ class DDG(CFG):
         
         try:
             # 首先构建CFG
-            cfgs = self.see_cfg(code, pdf=False, dot_format=False)
+            cfg = self.see_cfg(code, pdf=False, dot_format=False)
+            if not cfg:
+                print('⚠️  DDG构建警告: 未找到任何函数')
+                self.ddg = None
+                return None
             
-            self.ddgs = []
-            for cfg in cfgs:
-                try:
-                    ddg = Graph()
-                    
-                    # 复制CFG的节点到DDG
-                    for node in cfg.nodes:
-                        ddg.add_node(node)
-                    
-                    # 构建数据依赖边
-                    self._build_data_dependencies(cfg, ddg)
-                    
-                    self.ddgs.append(ddg)
-                except Exception as e:
-                    print(f'⚠️  DDG构建警告: CFG处理失败: {e}')
-                    continue
+            try:
+                ddg = Graph()
+                
+                # 复制CFG的节点到DDG
+                for node in cfg.nodes:
+                    ddg.add_node(node)
+                
+                # 构建数据依赖边
+                self._build_data_dependencies(cfg, ddg)
+                
+                self.ddg = ddg
+                return ddg
+            except Exception as e:
+                print(f'⚠️  DDG构建警告: CFG处理失败: {e}')
+                self.ddg = None
+                return None
         except Exception as e:
             print(f'⚠️  DDG构建警告: 代码解析失败: {e}')
-            self.ddgs = []
+            self.ddg = None
+            return None
     
     def _build_data_dependencies(self, cfg: Graph, ddg: Graph):
         """
@@ -167,50 +172,49 @@ class DDG(CFG):
             ddg.edges.setdefault(target_id, []).append(ddg_edge)
     
     def see_ddg(self, code: str, filename: str = 'DDG', pdf: bool = True, dot_format: bool = True, view: bool = False):
-        """可视化DDG"""
-        self.construct_ddg(code)
-        visualize_ddg(self.ddgs, filename, pdf, dot_format, view)
-        return self.ddgs
+        """可视化DDG - 单函数版本"""
+        ddg = self.construct_ddg(code)
+        if ddg:
+            visualize_ddg([ddg], filename, pdf, dot_format, view)  # 传入单元素列表以兼容可视化函数
+        return ddg
     
-    def get_data_dependencies(self, code: str) -> List[Dict]:
+    def get_data_dependencies(self, code: str) -> Optional[Dict]:
         """
-        获取数据依赖关系信息
+        获取数据依赖关系信息 - 单函数版本
         Returns:
-            每个函数的数据依赖信息列表
+            单个函数的数据依赖信息
         """
-        self.construct_ddg(code)
+        ddg = self.construct_ddg(code)
+        if not ddg:
+            return None
         
-        dependencies = []
-        for ddg in self.ddgs:
-            func_deps = {
-                'nodes': len(ddg.nodes),
-                'dependencies': []
-            }
-            
-            for node_id, edges in ddg.edges.items():
-                source_node = ddg.id_to_nodes[node_id]
-                for edge in edges:
-                    if edge.type == 'DDG':
-                        target_node = ddg.id_to_nodes[edge.id]
-                        func_deps['dependencies'].append({
-                            'source': {
-                                'id': source_node.id,
-                                'line': source_node.line,
-                                'text': source_node.text,
-                                'type': source_node.type
-                            },
-                            'target': {
-                                'id': target_node.id,
-                                'line': target_node.line,
-                                'text': target_node.text,
-                                'type': target_node.type
-                            },
-                            'variables': edge.token
-                        })
-            
-            dependencies.append(func_deps)
+        func_deps = {
+            'nodes': len(ddg.nodes),
+            'dependencies': []
+        }
         
-        return dependencies
+        for node_id, edges in ddg.edges.items():
+            source_node = ddg.id_to_nodes[node_id]
+            for edge in edges:
+                if edge.type == 'DDG':
+                    target_node = ddg.id_to_nodes[edge.id]
+                    func_deps['dependencies'].append({
+                        'source': {
+                            'id': source_node.id,
+                            'line': source_node.line,
+                            'text': source_node.text,
+                            'type': source_node.type
+                        },
+                        'target': {
+                            'id': target_node.id,
+                            'line': target_node.line,
+                            'text': target_node.text,
+                            'type': target_node.type
+                        },
+                        'variables': edge.token
+                    })
+        
+        return func_deps
 
 
 

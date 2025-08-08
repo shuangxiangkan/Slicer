@@ -5,7 +5,7 @@
 基于tree-sitter构建函数级控制流图
 """
 
-from typing import List
+from typing import Optional
 from .base import BaseAnalyzer
 from .node import Node
 from .graph import Graph, Edge
@@ -13,12 +13,12 @@ from .visualization import visualize_cfg
 from .utils import text
 
 class CFG(BaseAnalyzer):
-    """控制流图构建器"""
+    """单函数控制流图构建器"""
 
     def __init__(self, language: str = "c"):
         """初始化CFG构建器"""
         super().__init__(language)
-        self.cfgs: List[Graph] = []
+        self.cfg: Optional[Graph] = None
 
     def get_break_continue_nodes(self, node):
         """找到节点循环中的所有break和continue节点"""
@@ -111,12 +111,13 @@ class CFG(BaseAnalyzer):
             return self._handle_case_statement(node, in_nodes)
 
         else:
-            CFGs = []  # 存放每一个函数的CFG图
+            # 对于其他类型的节点，递归处理子节点
+            CFG = []
             for child in node.children:
-                if child.type == 'function_definition':  # 获得每一个函数的CFG图
-                    CFG, out_nodes = self.create_cfg(child, in_nodes)
-                    CFGs.append(CFG)
-            return CFGs, in_nodes
+                cfg, out_nodes = self.create_cfg(child, in_nodes)
+                CFG.extend(cfg)
+                in_nodes = out_nodes
+            return CFG, in_nodes
     
     def _handle_if_statement(self, node, in_nodes):
         """处理if语句"""
@@ -276,48 +277,73 @@ class CFG(BaseAnalyzer):
                 in_nodes = out_nodes
             return CFG, in_nodes
     
-    def construct_cfg(self, code: str):
-        """构建CFG"""
+    def construct_cfg(self, func_node):
+        """为单个函数构建CFG"""
+        try:
+            cfg_edges, _ = self.create_cfg(func_node)
+
+            # 构建图对象
+            cfg = Graph()
+            for node_info, edges in cfg_edges:
+                cfg.add_node(node_info)
+                # 转换边格式 - edges是入边列表，存储为入边
+                edge_list = []
+                for edge_info in edges:
+                    if isinstance(edge_info, tuple) and len(edge_info) == 2:
+                        source_id, label = edge_info
+                        edge = Edge(source_id, label)
+                        edge_list.append(edge)
+                cfg.edges[node_info.id] = edge_list
+
+            cfg.get_def_use_info()
+            self.cfg = cfg
+            return cfg
+        except Exception as e:
+            print(f'⚠️  CFG构建警告: 函数处理失败: {e}')
+            self.cfg = None
+            return None
+    
+    def construct_cfg_from_code(self, code: str, function_name: str = None):
+        """从代码字符串构建指定函数的CFG"""
         if self.check_syntax(code):
             print('⚠️  CFG构建警告: 检测到语法错误，但将继续尝试构建CFG')
-            # 不直接返回，继续尝试构建CFG
 
         try:
             root_node = self.parse_code(code)
             functions = self.find_functions(root_node)
-
-            self.cfgs = []
-            for func_node in functions:
-                try:
-                    cfg_edges, _ = self.create_cfg(func_node)
-
-                    # 构建图对象
-                    cfg = Graph()
-                    for node_info, edges in cfg_edges:
-                        cfg.add_node(node_info)
-                        # 转换边格式 - edges是入边列表，存储为入边
-                        edge_list = []
-                        for edge_info in edges:
-                            if isinstance(edge_info, tuple) and len(edge_info) == 2:
-                                source_id, label = edge_info
-                                edge = Edge(source_id, label)
-                                edge_list.append(edge)
-                        cfg.edges[node_info.id] = edge_list
-
-                    cfg.get_def_use_info()
-                    self.cfgs.append(cfg)
-                except Exception as e:
-                    print(f'⚠️  CFG构建警告: 函数 {getattr(func_node, "text", "unknown")} 处理失败: {e}')
-                    continue
+            
+            if not functions:
+                print('⚠️  CFG构建警告: 未找到函数定义')
+                self.cfg = None
+                return None
+            
+            # 如果指定了函数名，查找对应函数
+            if function_name:
+                target_func = None
+                for func_node in functions:
+                    func_name_node = func_node.child_by_field_name('declarator')
+                    if func_name_node and func_name_node.text.decode() == function_name:
+                        target_func = func_node
+                        break
+                if not target_func:
+                    print(f'⚠️  CFG构建警告: 未找到函数 {function_name}')
+                    self.cfg = None
+                    return None
+                return self.construct_cfg(target_func)
+            else:
+                # 如果未指定函数名，构建第一个函数的CFG
+                return self.construct_cfg(functions[0])
         except Exception as e:
             print(f'⚠️  CFG构建警告: 代码解析失败: {e}')
-            self.cfgs = []
+            self.cfg = None
+            return None
     
-    def see_cfg(self, code: str, filename: str = 'CFG', pdf: bool = True, dot_format: bool = True, view: bool = False):
-        """可视化CFG"""
-        self.construct_cfg(code)
-        visualize_cfg(self.cfgs, filename, pdf, dot_format, view)
-        return self.cfgs
+    def see_cfg(self, code: str, function_name: str = None, filename: str = 'CFG', pdf: bool = True, dot_format: bool = True, view: bool = False):
+        """可视化单个函数的CFG"""
+        cfg = self.construct_cfg_from_code(code, function_name)
+        if cfg:
+            visualize_cfg([cfg], filename, pdf, dot_format, view)
+        return cfg
 
 
 

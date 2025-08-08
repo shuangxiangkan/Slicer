@@ -35,8 +35,9 @@ def test_cfg_cdg_ddg_pdg():
     logging.basicConfig(level=logging.WARNING)
     
     # 获取测试文件路径
-    test_file = os.path.join(os.path.dirname(__file__), '/Users/shuangxiangkan/Tools/Slicer/benchmarks/utf8/utf8.h')
+    # test_file = os.path.join(os.path.dirname(__file__), '/Users/shuangxiangkan/Tools/Slicer/benchmarks/utf8/utf8.h')
     # test_file = os.path.join(os.path.dirname(__file__), '/Users/shuangxiangkan/Tools/Slicer/benchmarks/cJSON/cJSON.c')
+    test_file = os.path.join(os.path.dirname(__file__), "../benchmarks/configs/cjson_config.json")
     
     print("=" * 80)
     print("🔍 CFG/CDG/DDG/PDG 分析测试")
@@ -80,7 +81,7 @@ def test_cfg_cdg_ddg_pdg():
             print(f"{'='*60}")
             
             # 提取函数代码
-            function_code = extract_function_code(test_file, func.name, func.start_line, func.end_line)
+            function_code = func.get_body()
             
             if not function_code:
                 print(f"❌ 无法提取函数 {func.name} 的代码")
@@ -99,10 +100,9 @@ def test_cfg_cdg_ddg_pdg():
             try:
                 cfg_analyzer = CFG("c")
                 cfg_output = os.path.join(output_dir, f"{func.name}_cfg")
-                cfgs = cfg_analyzer.see_cfg(function_code, filename=cfg_output, pdf=True, view=False)
+                cfg_graph = cfg_analyzer.see_cfg(function_code, filename=cfg_output, pdf=True, view=False)
                 
-                if cfgs:
-                    cfg_graph = cfgs[0]
+                if cfg_graph:
                     print(f"   ✅ CFG生成成功! 节点数: {len(cfg_graph.nodes)}, 边数: {sum(len(edges) for edges in cfg_graph.edges.values())}")
                     print(f"   📊 CFG已保存到: {cfg_output}.pdf")
                 else:
@@ -116,10 +116,9 @@ def test_cfg_cdg_ddg_pdg():
             try:
                 cdg_analyzer = CDG("c")
                 cdg_output = os.path.join(output_dir, f"{func.name}_cdg")
-                cdgs = cdg_analyzer.see_cdg(function_code, filename=cdg_output, pdf=True, view=False)
+                cdg_graph = cdg_analyzer.see_cdg(function_code, filename=cdg_output, pdf=True, view=False)
                 
-                if cdgs:
-                    cdg_graph = cdgs[0]
+                if cdg_graph:
                     print(f"   ✅ CDG生成成功! 节点数: {len(cdg_graph.nodes)}, 边数: {sum(len(edges) for edges in cdg_graph.edges.values())}")
                     print(f"   📊 CDG已保存到: {cdg_output}.pdf")
                 else:
@@ -133,10 +132,9 @@ def test_cfg_cdg_ddg_pdg():
             try:
                 ddg_analyzer = DDG("c")
                 ddg_output = os.path.join(output_dir, f"{func.name}_ddg")
-                ddgs = ddg_analyzer.see_ddg(function_code, filename=ddg_output, pdf=True, view=False)
+                ddg_graph = ddg_analyzer.see_ddg(function_code, filename=ddg_output, pdf=True, view=False)
                 
-                if ddgs:
-                    ddg_graph = ddgs[0]
+                if ddg_graph:
                     print(f"   ✅ DDG生成成功! 节点数: {len(ddg_graph.nodes)}, 边数: {sum(len(edges) for edges in ddg_graph.edges.values())}")
                     print(f"   📊 DDG已保存到: {ddg_output}.pdf")
                 else:
@@ -150,10 +148,9 @@ def test_cfg_cdg_ddg_pdg():
             try:
                 pdg_analyzer = PDG("c")
                 pdg_output = os.path.join(output_dir, f"{func.name}_pdg")
-                pdgs = pdg_analyzer.see_pdg(function_code, filename=pdg_output, pdf=True, view=False)
+                pdg_graph = pdg_analyzer.see_pdg(function_code, filename=pdg_output, pdf=True, view=False)
                 
-                if pdgs:
-                    pdg_graph = pdgs[0]
+                if pdg_graph:
                     print(f"   ✅ PDG生成成功! 节点数: {len(pdg_graph.nodes)}, 边数: {sum(len(edges) for edges in pdg_graph.edges.values())}")
                     print(f"   📊 PDG已保存到: {pdg_output}.pdf")
                 else:

@@ -8,8 +8,9 @@ from parser.repo_analyzer import RepoAnalyzer
 
 def main():
     # 使用 benchmarks/utf8/utf8.h 进行测试
-    test_file = 'benchmarks/utf8/utf8.h'
-    analyzer = RepoAnalyzer(test_file)
+    # test_file = 'benchmarks/utf8/utf8.h'
+    config_path = os.path.join(os.path.dirname(__file__), "../benchmarks/configs/cjson_config.json")
+    analyzer = RepoAnalyzer(config_path)
 
     # 分析文件中的所有函数
     analyzer.analyze()
