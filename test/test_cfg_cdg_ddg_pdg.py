@@ -36,6 +36,7 @@ def test_cfg_cdg_ddg_pdg():
     
     # 获取测试文件路径
     test_file = os.path.join(os.path.dirname(__file__), '/Users/shuangxiangkan/Tools/Slicer/benchmarks/utf8/utf8.h')
+    # test_file = os.path.join(os.path.dirname(__file__), '/Users/shuangxiangkan/Tools/Slicer/benchmarks/cJSON/cJSON.c')
     
     print("=" * 80)
     print("🔍 CFG/CDG/DDG/PDG 分析测试")
