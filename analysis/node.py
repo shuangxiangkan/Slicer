@@ -4,10 +4,7 @@ AST节点处理模块
 
 提供AST节点的解析和处理功能
 """
-
-from typing import Set
 from .utils import text
-
 
 class Node:
     """程序分析节点"""
