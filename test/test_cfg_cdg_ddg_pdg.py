@@ -104,7 +104,7 @@ def test_cfg_cdg_ddg_pdg():
                 cfg_graph = cfg_analyzer.see_cfg(function_code, filename=cfg_output, pdf=True, view=False)
                 
                 if cfg_graph:
-                    print(f"   ✅ CFG生成成功! 节点数: {len(cfg_graph.nodes)}, 边数: {sum(len(edges) for edges in cfg_graph.edges.values())}")
+                    print(f"   ✅ CFG生成成功! 节点数: {len(cfg_graph.nodes)}, 边数: {len(cfg_graph.edges)}")
                     print(f"   📊 CFG已保存到: {cfg_output}.pdf")
                 else:
                     print(f"   ❌ CFG生成失败")
@@ -120,7 +120,7 @@ def test_cfg_cdg_ddg_pdg():
                 cdg_graph = cdg_analyzer.see_cdg(function_code, filename=cdg_output, pdf=True, view=False)
                 
                 if cdg_graph:
-                    print(f"   ✅ CDG生成成功! 节点数: {len(cdg_graph.nodes)}, 边数: {sum(len(edges) for edges in cdg_graph.edges.values())}")
+                    print(f"   ✅ CDG生成成功! 节点数: {len(cdg_graph.nodes)}, 边数: {len(cdg_graph.edges)}")
                     print(f"   📊 CDG已保存到: {cdg_output}.pdf")
                 else:
                     print(f"   ❌ CDG生成失败")
@@ -136,21 +136,20 @@ def test_cfg_cdg_ddg_pdg():
                 ddg_graph = ddg_analyzer.see_ddg(function_code, filename=ddg_output, pdf=True, view=False)
                 
                 if ddg_graph:
-                    print(f"   ✅ DDG生成成功! 节点数: {len(ddg_graph.nodes)}, 边数: {sum(len(edges) for edges in ddg_graph.edges.values())}")
+                    print(f"   ✅ DDG生成成功! 节点数: {len(ddg_graph.nodes)}, 边数: {len(ddg_graph.edges)}")
                     print(f"   📊 DDG已保存到: {ddg_output}.pdf")
                     
                     # 打印DDG边的token信息
                     print(f"   🔍 DDG边的变量依赖信息:")
                     ddg_edge_count = 0
-                    for target_id, edges in ddg_graph.edges.items():
-                        for edge in edges:
-                            if edge.type == 'DDG' and edge.token and edge.source_node:
+                    for edge in ddg_graph.edges:
+                        if edge.type == 'DDG' and edge.source_node and edge.target_node:
+                            variables = edge.variables if hasattr(edge, 'variables') else (edge.token if hasattr(edge, 'token') else [])
+                            if variables:
                                 ddg_edge_count += 1
-                                source_node = ddg_graph.id_to_nodes.get(edge.source_node.id)
-                                target_node = ddg_graph.id_to_nodes.get(target_id)
-                                source_text = source_node.text[:30] + "..." if source_node and len(source_node.text) > 30 else (source_node.text if source_node else "未知")
-                                target_text = target_node.text[:30] + "..." if target_node and len(target_node.text) > 30 else (target_node.text if target_node else "未知")
-                                print(f"     📍 边 #{ddg_edge_count}: 节点{edge.source_node.id} -> 节点{target_id}")
+                                source_text = edge.source_node.text[:30] + "..." if len(edge.source_node.text) > 30 else edge.source_node.text
+                                target_text = edge.target_node.text[:30] + "..." if len(edge.target_node.text) > 30 else edge.target_node.text
+                                print(f"     📍 边 #{ddg_edge_count}: 节点{edge.source_node.id} -> 节点{edge.target_node.id}")
                                 print(f"        源节点: {source_text}")
                                 print(f"        目标节点: {target_text}")
                                 print(f"        依赖变量: {', '.join(edge.token)}")
@@ -173,7 +172,7 @@ def test_cfg_cdg_ddg_pdg():
                 pdg_graph = pdg_analyzer.see_pdg(function_code, filename=pdg_output, pdf=True, view=False)
                 
                 if pdg_graph:
-                    print(f"   ✅ PDG生成成功! 节点数: {len(pdg_graph.nodes)}, 边数: {sum(len(edges) for edges in pdg_graph.edges.values())}")
+                    print(f"   ✅ PDG生成成功! 节点数: {len(pdg_graph.nodes)}, 边数: {len(pdg_graph.edges)}")
                     print(f"   📊 PDG已保存到: {pdg_output}.pdf")
                 else:
                     print(f"   ❌ PDG生成失败")

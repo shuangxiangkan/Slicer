@@ -136,13 +136,13 @@ class CDG(CFG):
         for node in cfg.nodes:
             prev.setdefault(node.id, [])
         
-        # 使用入边结构计算前驱
-        for target_id, edges in cfg.edges.items():
-            for edge in edges:
-                if edge.source_node:
-                    source_id = edge.source_node.id
-                    prev.setdefault(target_id, [])
-                    prev[target_id].append(source_id)
+        # 使用边列表计算前驱
+        for edge in cfg.edges:
+            if edge.source_node and edge.target_node:
+                source_id = edge.source_node.id
+                target_id = edge.target_node.id
+                prev.setdefault(target_id, [])
+                prev[target_id].append(source_id)
         return prev
     
     def post_dominator_tree(self, cfg, prev):
@@ -232,9 +232,8 @@ class CDG(CFG):
                         controlled_nodes = self._find_controlled_nodes(cfg, node)
                         for controlled_node in controlled_nodes:
                             if controlled_node.id != node.id:
-                                cdg_edge = Edge(label='', edge_type=EdgeType.CDG, source_node=node)
-                                cdg.edges.setdefault(controlled_node.id, [])
-                                cdg.edges[controlled_node.id].append(cdg_edge)
+                                cdg_edge = Edge(label='', edge_type=EdgeType.CDG, source_node=node, target_node=controlled_node)
+                                cdg.edges.append(cdg_edge)
                 
                 self.cdg = cdg
                 return cdg
@@ -288,14 +287,13 @@ class CDG(CFG):
             return None
         
         dependencies = []
-        for target_id, edges in cdg.edges.items():
-            for edge in edges:
-                if edge.type == 'CDG' and edge.source_node:
-                    dependencies.append({
-                        'controller': edge.source_node.id,
-                        'controlled': target_id,
-                        'type': 'control_dependency'
-                    })
+        for edge in cdg.edges:
+            if edge.type == 'CDG' and edge.source_node and edge.target_node:
+                dependencies.append({
+                    'controller': edge.source_node.id,
+                    'controlled': edge.target_node.id,
+                    'type': 'control_dependency'
+                })
         
         return {
             'dependencies': dependencies,

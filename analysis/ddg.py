@@ -165,11 +165,12 @@ class DDG(CFG):
         #                     edge[(d1, d2)].add(X)
         #                     break  # 找到一条就够了
         
-        # 构建DDG边 - 注意这里要转换为入边结构
+        # 构建DDG边
         for (source_id, target_id), vars_set in edge.items():
             source_node = ddg.id_to_nodes.get(source_id)
-            ddg_edge = DDGEdge(label='', variables=list(vars_set), source_node=source_node)
-            ddg.edges.setdefault(target_id, []).append(ddg_edge)
+            target_node = ddg.id_to_nodes.get(target_id)
+            ddg_edge = DDGEdge(label='', variables=list(vars_set), source_node=source_node, target_node=target_node)
+            ddg.edges.append(ddg_edge)
     
     def see_ddg(self, code: str, filename: str = 'DDG', pdf: bool = True, dot_format: bool = True, view: bool = False):
         """可视化DDG - 单函数版本"""
@@ -193,26 +194,23 @@ class DDG(CFG):
             'dependencies': []
         }
         
-        for node_id, edges in ddg.edges.items():
-            source_node = ddg.id_to_nodes[node_id]
-            for edge in edges:
-                if edge.type == 'DDG' and edge.source_node:
-                    target_node = ddg.id_to_nodes[edge.source_node.id]
-                    func_deps['dependencies'].append({
-                        'source': {
-                            'id': source_node.id,
-                            'line': source_node.line,
-                            'text': source_node.text,
-                            'type': source_node.type
-                        },
-                        'target': {
-                            'id': target_node.id,
-                            'line': target_node.line,
-                            'text': target_node.text,
-                            'type': target_node.type
-                        },
-                        'variables': edge.token
-                    })
+        for edge in ddg.edges:
+            if edge.type == 'DDG' and edge.source_node and edge.target_node:
+                func_deps['dependencies'].append({
+                    'source': {
+                        'id': edge.source_node.id,
+                        'line': edge.source_node.line,
+                        'text': edge.source_node.text,
+                        'type': edge.source_node.type
+                    },
+                    'target': {
+                        'id': edge.target_node.id,
+                        'line': edge.target_node.line,
+                        'text': edge.target_node.text,
+                        'type': edge.target_node.type
+                    },
+                    'variables': edge.variables if hasattr(edge, 'variables') else edge.token
+                })
         
         return func_deps
 

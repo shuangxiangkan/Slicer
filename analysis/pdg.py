@@ -45,16 +45,12 @@ class PDG(CFG):
                     pdg.add_node(node)
                 
                 # 复制控制依赖边
-                for node_id, edges in cdg_graph.edges.items():
-                    pdg.edges.setdefault(node_id, [])
-                    for edge in edges:
-                        pdg.edges[node_id].append(edge)
+                for edge in cdg_graph.edges:
+                    pdg.edges.append(edge)
                 
                 # 添加数据依赖边
-                for node_id, edges in ddg_graph.edges.items():
-                    pdg.edges.setdefault(node_id, [])
-                    for edge in edges:
-                        pdg.edges[node_id].append(edge)
+                for edge in ddg_graph.edges:
+                    pdg.edges.append(edge)
                 
                 self.pdg = pdg
                 return pdg
@@ -90,32 +86,31 @@ class PDG(CFG):
             'data_dependencies': []
         }
         
-        for node_id, edges in pdg.edges.items():
-            source_node = pdg.id_to_nodes[node_id]
-            for edge in edges:
-                if edge.source_node:
-                    target_node = pdg.id_to_nodes[edge.source_node.id]
-                    
-                    dep_info = {
-                        'source': {
-                            'id': source_node.id,
-                            'line': source_node.line,
-                            'text': source_node.text,
-                            'type': source_node.type
-                        },
-                        'target': {
-                            'id': target_node.id,
-                            'line': target_node.line,
-                            'text': target_node.text,
-                            'type': target_node.type
-                        }
+        for edge in pdg.edges:
+            if edge.target_node and edge.source_node:
+                source_node = edge.source_node
+                target_node = edge.target_node
+                
+                dep_info = {
+                    'source': {
+                        'id': source_node.id,
+                        'line': source_node.line,
+                        'text': source_node.text,
+                        'type': source_node.type
+                    },
+                    'target': {
+                        'id': target_node.id,
+                        'line': target_node.line,
+                        'text': target_node.text,
+                        'type': target_node.type
                     }
-                    
-                    if edge.type == 'DDG':
-                        dep_info['variables'] = edge.token
-                        func_deps['data_dependencies'].append(dep_info)
-                    elif edge.type == 'CDG':
-                        func_deps['control_dependencies'].append(dep_info)
+                }
+                
+                if edge.type == 'DDG':
+                    dep_info['variables'] = edge.token
+                    func_deps['data_dependencies'].append(dep_info)
+                elif edge.type == 'CDG':
+                    func_deps['control_dependencies'].append(dep_info)
         
         return func_deps
     
@@ -132,12 +127,11 @@ class PDG(CFG):
             'total_dependencies': 0
         }
         
-        for edges in pdg.edges.values():
-            for edge in edges:
-                if edge.type == 'DDG':
-                    func_info['data_dependencies'] += 1
-                elif edge.type == 'CDG':
-                    func_info['control_dependencies'] += 1
+        for edge in pdg.edges:
+            if edge.type == 'DDG':
+                func_info['data_dependencies'] += 1
+            elif edge.type == 'CDG':
+                func_info['control_dependencies'] += 1
                 func_info['total_dependencies'] += 1
         
         return func_info

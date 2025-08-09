@@ -296,15 +296,13 @@ class CFG(BaseAnalyzer):
             cfg = Graph()
             for node_info, edges in cfg_edges:
                 cfg.add_node(node_info)
-                # 转换边格式 - edges是入边列表，存储为入边
-                edge_list = []
+                # 转换边格式 - edges是入边列表，添加到图的边列表中
                 for edge_info in edges:
                     if isinstance(edge_info, tuple) and len(edge_info) == 2:
                         source_id, label = edge_info
                         source_node = cfg.id_to_nodes.get(source_id)
-                        edge = Edge(label=label, edge_type=EdgeType.CFG, source_node=source_node)
-                        edge_list.append(edge)
-                cfg.edges[node_info.id] = edge_list
+                        edge = Edge(label=label, edge_type=EdgeType.CFG, source_node=source_node, target_node=node_info)
+                        cfg.edges.append(edge)
 
             cfg.get_def_use_info()
             self.cfg = cfg
