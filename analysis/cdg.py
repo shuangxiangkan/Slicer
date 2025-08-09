@@ -139,9 +139,10 @@ class CDG(CFG):
         # 使用入边结构计算前驱
         for target_id, edges in cfg.edges.items():
             for edge in edges:
-                source_id = edge.id
-                prev.setdefault(target_id, [])
-                prev[target_id].append(source_id)
+                if edge.source_node:
+                    source_id = edge.source_node.id
+                    prev.setdefault(target_id, [])
+                    prev[target_id].append(source_id)
         return prev
     
     def post_dominator_tree(self, cfg, prev):
@@ -231,7 +232,7 @@ class CDG(CFG):
                         controlled_nodes = self._find_controlled_nodes(cfg, node)
                         for controlled_node in controlled_nodes:
                             if controlled_node.id != node.id:
-                                cdg_edge = Edge(node.id, '', EdgeType.CDG)
+                                cdg_edge = Edge(label='', edge_type=EdgeType.CDG, source_node=node)
                                 cdg.edges.setdefault(controlled_node.id, [])
                                 cdg.edges[controlled_node.id].append(cdg_edge)
                 
@@ -289,9 +290,9 @@ class CDG(CFG):
         dependencies = []
         for target_id, edges in cdg.edges.items():
             for edge in edges:
-                if edge.type == 'CDG':
+                if edge.type == 'CDG' and edge.source_node:
                     dependencies.append({
-                        'controller': edge.id,
+                        'controller': edge.source_node.id,
                         'controlled': target_id,
                         'type': 'control_dependency'
                     })

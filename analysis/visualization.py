@@ -35,10 +35,11 @@ def visualize_cfg(cfgs: List[Graph], filename: str = 'CFG', pdf: bool = True, do
 
         for node_id, edges in cfg.edges.items():
             for edge in edges:
-                source_id = edge.id  # 这里edge.id实际上是source
-                target_id = node_id  # 当前节点是target
-                label = edge.label if edge.label else ''
-                dot.edge(str(source_id), str(target_id), label=label)
+                if edge.source_node:
+                    source_id = edge.source_node.id  # 源节点ID
+                    target_id = node_id  # 当前节点是target
+                    label = edge.label if edge.label else ''
+                    dot.edge(str(source_id), str(target_id), label=label)
 
     # 保存.dot文件
     if dot_format:
@@ -78,8 +79,8 @@ def visualize_ddg(ddgs: List[Graph], filename: str = 'DDG', pdf: bool = True, do
         # 添加数据依赖边
         for node_id, edges in ddg.edges.items():
             for edge in edges:
-                if edge.type == 'DDG':
-                    source_id = edge.id  # 源节点（定义/写入变量的节点）
+                if edge.type == 'DDG' and edge.source_node:
+                    source_id = edge.source_node.id  # 源节点（定义/写入变量的节点）
                     target_id = node_id  # 目标节点（使用变量的节点）
                     var_label = ', '.join(edge.token) if edge.token else ''
                     dot.edge(str(source_id), str(target_id),
@@ -124,17 +125,17 @@ def visualize_pdg(pdgs: List[Graph], filename: str = 'PDG', pdf: bool = True, do
         # 添加边
         for node_id, edges in pdg.edges.items():
             for edge in edges:
-                if edge.type == 'DDG':
+                if edge.type == 'DDG' and edge.source_node:
                     # 数据依赖边：红色虚线
                     source_id = node_id  # 定义节点
-                    target_id = edge.id  # 使用节点
+                    target_id = edge.source_node.id  # 使用节点
                     var_label = ', '.join(edge.token) if edge.token else ''
                     dot.edge(str(source_id), str(target_id),
                             label=var_label, style='dotted', color='red')
-                elif edge.type == 'CDG':
+                elif edge.type == 'CDG' and edge.source_node:
                     # 控制依赖边：根据标签设置不同样式
                     source_id = node_id  # 控制节点
-                    target_id = edge.id  # 被控制节点
+                    target_id = edge.source_node.id  # 被控制节点
                     
                     # 根据边的标签设置不同的样式
                     if edge.label == 'entry':
@@ -153,10 +154,11 @@ def visualize_pdg(pdgs: List[Graph], filename: str = 'PDG', pdf: bool = True, do
                                 color='blue', style='solid', penwidth='1')
                 else:
                     # 控制流边：黑色实线
-                    source_id = edge.id
-                    target_id = node_id
-                    label = edge.label if edge.label else ''
-                    dot.edge(str(source_id), str(target_id), label=label)
+                    if edge.source_node:
+                        source_id = edge.source_node.id
+                        target_id = node_id
+                        label = edge.label if edge.label else ''
+                        dot.edge(str(source_id), str(target_id), label=label)
 
     # 保存.dot文件
     if dot_format:
@@ -197,10 +199,10 @@ def visualize_cdg(cdgs: List[Graph], filename: str = 'CDG', pdf: bool = True, do
         # 添加控制依赖边
         for node_id, edges in cdg.edges.items():
             for edge in edges:
-                if edge.type == 'CDG':
+                if edge.type == 'CDG' and edge.source_node:
                     # 控制依赖边：从控制节点指向依赖节点
                     source_id = node_id  # 控制节点
-                    target_id = edge.id  # 被控制节点
+                    target_id = edge.source_node.id  # 被控制节点
                     
                     # 根据边的标签设置不同的样式
                     if edge.label == 'entry':

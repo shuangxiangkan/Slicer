@@ -21,39 +21,30 @@ class EdgeType(Enum):
 class Edge:
     """图的边基类"""
     
-    def __init__(self, target_id: int = None, label: str = '', edge_type: EdgeType = EdgeType.CFG, 
+    def __init__(self, label: str = '', edge_type: EdgeType = EdgeType.CFG, 
                  source_node: Node = None, target_node: Node = None):
         """
         创建边
         Args:
-            target_id: 目标节点ID (向后兼容，当target_node为None时使用)
             label: 边的标签
             edge_type: 边的类型
-            source_node: 源节点对象 (推荐使用)
-            target_node: 目标节点对象 (推荐使用)
+            source_node: 源节点对象 
+            target_node: 目标节点对象
         """
         self.source_node = source_node
         self.target_node = target_node
         self.label = label
         self.type = edge_type
-        
-        # 向后兼容：当没有提供target_node但有target_id时，保存target_id用于后续查找
-        self._legacy_target_id = target_id if target_node is None and target_id is not None else None
     
     @property
-    def source_id(self):
-        """获取源节点ID"""
-        return self.source_node.id if self.source_node else None
+    def source(self):
+        """获取源节点对象"""
+        return self.source_node
     
     @property
-    def target_id(self):
-        """获取目标节点ID"""
-        return self.target_node.id if self.target_node else self._legacy_target_id
-    
-    @property
-    def id(self):
-        """向后兼容属性"""
-        return self.target_id
+    def target(self):
+        """获取目标节点对象"""
+        return self.target_node
     
     def __str__(self):
         """提供调试友好的字符串表示"""
@@ -62,7 +53,9 @@ class Edge:
             target_text = self.target_node.text[:50] + "..." if len(self.target_node.text) > 50 else self.target_node.text
             return f"Edge({self.type.value}): [{source_text}] -> [{target_text}]"
         else:
-            return f"Edge({self.type.value}): {self.source_id} -> {self.target_id}"
+            source_id = self.source_node.id if self.source_node else None
+            target_id = self.target_node.id if self.target_node else None
+            return f"Edge({self.type.value}): {source_id} -> {target_id}"
     
     def __repr__(self):
         return self.__str__()
@@ -71,18 +64,17 @@ class Edge:
 class DDGEdge(Edge):
     """数据依赖图边，包含变量信息"""
     
-    def __init__(self, target_id: int = None, label: str = '', variables: List[str] = None,
+    def __init__(self, label: str = '', variables: List[str] = None,
                  source_node: Node = None, target_node: Node = None):
         """
         创建DDG边
         Args:
-            target_id: 目标节点ID (向后兼容，当target_node为None时使用)
             label: 边的标签
             variables: 依赖的变量列表
-            source_node: 源节点对象 (推荐使用)
-            target_node: 目标节点对象 (推荐使用)
+            source_node: 源节点对象
+            target_node: 目标节点对象
         """
-        super().__init__(target_id, label, EdgeType.DDG, source_node, target_node)
+        super().__init__(label, EdgeType.DDG, source_node, target_node)
         self.variables = variables or []  # 依赖的变量列表
         
         # 为了保持向后兼容性，保留token属性
@@ -131,15 +123,6 @@ class Graph:
                     # 如果边还没有设置source_node，自动设置
                     if edge.source_node is None:
                         edge.source_node = source_node
-                    
-                    # 如果边有_legacy_target_id但没有target_node，尝试从图中查找
-                    if (edge.target_node is None and 
-                        hasattr(edge, '_legacy_target_id') and edge._legacy_target_id is not None):
-                        for node in self.nodes:
-                            if node.id == edge._legacy_target_id:
-                                edge.target_node = node
-                                edge._legacy_target_id = None  # 清除legacy ID
-                                break
                 
                 self.edges[source_node.id].extend(edges_to_add)
     
@@ -160,32 +143,31 @@ class Graph:
         # 反向所有边
         for source_id, edges in self.edges.items():
             for edge in edges:
-                target_id = edge.id
-                # 根据边的类型创建相应的反向边，交换source和target
-                if isinstance(edge, DDGEdge):
-                    reversed_edge = DDGEdge(
-                        target_id=source_id, 
-                        label=edge.label, 
-                        variables=edge.variables,
-                        source_node=edge.target_node,  # 交换
-                        target_node=edge.source_node   # 交换
-                    )
-                else:
-                    reversed_edge = Edge(
-                        target_id=source_id, 
-                        label=edge.label, 
-                        edge_type=edge.type,
-                        source_node=edge.target_node,  # 交换
-                        target_node=edge.source_node   # 交换
-                    )
-                    # 为了向后兼容，如果原边有token属性，也复制过来
-                    if hasattr(edge, 'token'):
-                        reversed_edge.token = edge.token
-                
-                # 添加到反向图中
-                if target_id not in reversed_graph.edges:
-                    reversed_graph.edges[target_id] = []
-                reversed_graph.edges[target_id].append(reversed_edge)
+                if edge.target_node:
+                    target_id = edge.target_node.id
+                    # 根据边的类型创建相应的反向边，交换source和target
+                    if isinstance(edge, DDGEdge):
+                        reversed_edge = DDGEdge(
+                            label=edge.label, 
+                            variables=edge.variables,
+                            source_node=edge.target_node,  # 交换
+                            target_node=edge.source_node   # 交换
+                        )
+                    else:
+                        reversed_edge = Edge(
+                            label=edge.label, 
+                            edge_type=edge.type,
+                            source_node=edge.target_node,  # 交换
+                            target_node=edge.source_node   # 交换
+                        )
+                        # 为了向后兼容，如果原边有token属性，也复制过来
+                        if hasattr(edge, 'token'):
+                            reversed_edge.token = edge.token
+                    
+                    # 添加到反向图中
+                    if target_id not in reversed_graph.edges:
+                        reversed_graph.edges[target_id] = []
+                    reversed_graph.edges[target_id].append(reversed_edge)
         
         return reversed_graph
     
@@ -194,10 +176,11 @@ class Graph:
         outgoing = {}
         for target_id, incoming_edges in self.edges.items():
             for edge in incoming_edges:
-                source_id = edge.id
-                if source_id not in outgoing:
-                    outgoing[source_id] = []
-                outgoing[source_id].append(target_id)
+                if edge.source_node:
+                    source_id = edge.source_node.id
+                    if source_id not in outgoing:
+                        outgoing[source_id] = []
+                    outgoing[source_id].append(target_id)
         return outgoing
     
     def findAllPath(self, start, end):

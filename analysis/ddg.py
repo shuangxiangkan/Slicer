@@ -167,7 +167,8 @@ class DDG(CFG):
         
         # 构建DDG边 - 注意这里要转换为入边结构
         for (source_id, target_id), vars_set in edge.items():
-            ddg_edge = DDGEdge(source_id, '', list(vars_set))
+            source_node = ddg.id_to_nodes.get(source_id)
+            ddg_edge = DDGEdge(label='', variables=list(vars_set), source_node=source_node)
             ddg.edges.setdefault(target_id, []).append(ddg_edge)
     
     def see_ddg(self, code: str, filename: str = 'DDG', pdf: bool = True, dot_format: bool = True, view: bool = False):
@@ -195,8 +196,8 @@ class DDG(CFG):
         for node_id, edges in ddg.edges.items():
             source_node = ddg.id_to_nodes[node_id]
             for edge in edges:
-                if edge.type == 'DDG':
-                    target_node = ddg.id_to_nodes[edge.id]
+                if edge.type == 'DDG' and edge.source_node:
+                    target_node = ddg.id_to_nodes[edge.source_node.id]
                     func_deps['dependencies'].append({
                         'source': {
                             'id': source_node.id,

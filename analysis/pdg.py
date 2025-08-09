@@ -93,28 +93,29 @@ class PDG(CFG):
         for node_id, edges in pdg.edges.items():
             source_node = pdg.id_to_nodes[node_id]
             for edge in edges:
-                target_node = pdg.id_to_nodes[edge.id]
-                
-                dep_info = {
-                    'source': {
-                        'id': source_node.id,
-                        'line': source_node.line,
-                        'text': source_node.text,
-                        'type': source_node.type
-                    },
-                    'target': {
-                        'id': target_node.id,
-                        'line': target_node.line,
-                        'text': target_node.text,
-                        'type': target_node.type
+                if edge.source_node:
+                    target_node = pdg.id_to_nodes[edge.source_node.id]
+                    
+                    dep_info = {
+                        'source': {
+                            'id': source_node.id,
+                            'line': source_node.line,
+                            'text': source_node.text,
+                            'type': source_node.type
+                        },
+                        'target': {
+                            'id': target_node.id,
+                            'line': target_node.line,
+                            'text': target_node.text,
+                            'type': target_node.type
+                        }
                     }
-                }
-                
-                if edge.type == 'DDG':
-                    dep_info['variables'] = edge.token
-                    func_deps['data_dependencies'].append(dep_info)
-                elif edge.type == 'CDG':
-                    func_deps['control_dependencies'].append(dep_info)
+                    
+                    if edge.type == 'DDG':
+                        dep_info['variables'] = edge.token
+                        func_deps['data_dependencies'].append(dep_info)
+                    elif edge.type == 'CDG':
+                        func_deps['control_dependencies'].append(dep_info)
         
         return func_deps
     

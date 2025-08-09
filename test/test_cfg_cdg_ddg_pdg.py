@@ -144,13 +144,13 @@ def test_cfg_cdg_ddg_pdg():
                     ddg_edge_count = 0
                     for target_id, edges in ddg_graph.edges.items():
                         for edge in edges:
-                            if edge.type == 'DDG' and edge.token:
+                            if edge.type == 'DDG' and edge.token and edge.source_node:
                                 ddg_edge_count += 1
-                                source_node = ddg_graph.id_to_nodes.get(edge.id)
+                                source_node = ddg_graph.id_to_nodes.get(edge.source_node.id)
                                 target_node = ddg_graph.id_to_nodes.get(target_id)
                                 source_text = source_node.text[:30] + "..." if source_node and len(source_node.text) > 30 else (source_node.text if source_node else "未知")
                                 target_text = target_node.text[:30] + "..." if target_node and len(target_node.text) > 30 else (target_node.text if target_node else "未知")
-                                print(f"     📍 边 #{ddg_edge_count}: 节点{edge.id} -> 节点{target_id}")
+                                print(f"     📍 边 #{ddg_edge_count}: 节点{edge.source_node.id} -> 节点{target_id}")
                                 print(f"        源节点: {source_text}")
                                 print(f"        目标节点: {target_text}")
                                 print(f"        依赖变量: {', '.join(edge.token)}")

@@ -301,7 +301,8 @@ class CFG(BaseAnalyzer):
                 for edge_info in edges:
                     if isinstance(edge_info, tuple) and len(edge_info) == 2:
                         source_id, label = edge_info
-                        edge = Edge(source_id, label, EdgeType.CFG)
+                        source_node = cfg.id_to_nodes.get(source_id)
+                        edge = Edge(label=label, edge_type=EdgeType.CFG, source_node=source_node)
                         edge_list.append(edge)
                 cfg.edges[node_info.id] = edge_list
 
