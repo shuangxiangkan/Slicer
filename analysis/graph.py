@@ -45,20 +45,6 @@ class Edge:
     def target(self):
         """获取目标节点对象"""
         return self.target_node
-    
-    def __str__(self):
-        """提供调试友好的字符串表示"""
-        if self.source_node and self.target_node:
-            source_text = self.source_node.text[:50] + "..." if len(self.source_node.text) > 50 else self.source_node.text
-            target_text = self.target_node.text[:50] + "..." if len(self.target_node.text) > 50 else self.target_node.text
-            return f"Edge({self.type.value}): [{source_text}] -> [{target_text}]"
-        else:
-            source_id = self.source_node.id if self.source_node else None
-            target_id = self.target_node.id if self.target_node else None
-            return f"Edge({self.type.value}): {source_id} -> {target_id}"
-    
-    def __repr__(self):
-        return self.__str__()
 
 
 class DDGEdge(Edge):
@@ -79,14 +65,6 @@ class DDGEdge(Edge):
         
         # 为了保持向后兼容性，保留token属性
         self.token = self.variables
-    
-    def __str__(self):
-        """提供调试友好的字符串表示"""
-        base_str = super().__str__()
-        if self.variables:
-            return f"{base_str} [vars: {', '.join(self.variables)}]"
-        return base_str
-
 
 class Graph:
     """程序分析图"""

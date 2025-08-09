@@ -31,7 +31,7 @@ class DDG(CFG):
         
         try:
             # 首先构建CFG
-            cfg = self.see_cfg(code, pdf=False, dot_format=False)
+            cfg = self.construct_cfg(code)
             if not cfg:
                 print('⚠️  DDG构建警告: 未找到任何函数')
                 self.ddg = None

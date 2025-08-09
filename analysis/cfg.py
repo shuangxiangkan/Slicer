@@ -276,9 +276,17 @@ class CFG(BaseAnalyzer):
                 edge.append((parent_id, label))
         return edge
     
-    def construct_cfg(self, node):
-        """构建CFG - 可以接受函数节点或根节点"""
+    def construct_cfg(self, code_or_node):
+        """构建CFG - 可以接受代码字符串、函数节点或根节点"""
         try:
+            # 如果传入的是字符串，先解析代码
+            if isinstance(code_or_node, str):
+                if self.check_syntax(code_or_node):
+                    print('⚠️  CFG构建警告: 检测到语法错误，但将继续尝试构建CFG')
+                node = self.parse_code(code_or_node)
+            else:
+                node = code_or_node
+            
             # 如果传入的不是function_definition，查找第一个函数
             if node.type != 'function_definition':
                 functions = self.find_functions(node)
@@ -312,22 +320,14 @@ class CFG(BaseAnalyzer):
             self.cfg = None
             return None
     
-    def construct_cfg_from_code(self, code: str):
-        """从代码字符串构建CFG"""
-        if self.check_syntax(code):
-            print('⚠️  CFG构建警告: 检测到语法错误，但将继续尝试构建CFG')
-
+    def see_cfg(self, code: str, filename: str = 'CFG', pdf: bool = True, dot_format: bool = True, view: bool = False):
+        """可视化单个函数的CFG"""
         try:
-            root_node = self.parse_code(code)
-            return self.construct_cfg(root_node)
+            cfg = self.construct_cfg(code)
+            if cfg:
+                visualize_cfg([cfg], filename, pdf, dot_format, view)
+            return cfg
         except Exception as e:
             print(f'⚠️  CFG构建警告: 代码解析失败: {e}')
             self.cfg = None
             return None
-    
-    def see_cfg(self, code: str, filename: str = 'CFG', pdf: bool = True, dot_format: bool = True, view: bool = False):
-        """可视化单个函数的CFG"""
-        cfg = self.construct_cfg_from_code(code)
-        if cfg:
-            visualize_cfg([cfg], filename, pdf, dot_format, view)
-        return cfg
