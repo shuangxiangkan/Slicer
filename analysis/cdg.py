@@ -2,70 +2,82 @@
 """
 控制依赖图(CDG)构建器
 
-基于后支配树和支配边界算法构建控制依赖图
+基于CFG构建控制依赖图，使用后支配树和支配边界算法
 """
 
-from typing import List, Dict, Set, Optional
+from typing import Optional
 from .cfg import CFG
-from .graph import Graph, Edge
-from .node import Node
+from .graph import Graph, Edge, EdgeType
 from .visualization import visualize_cdg
 
 
 class Tree:
     """支配树数据结构"""
     
-    def __init__(self, vertices: List[int], children: Dict[int, List[int]], root: int):
+    def __init__(self, V, children, root):
         """
         初始化树
         Args:
-            vertices: 节点集合
-            children: 子节点映射，key为节点，value为子节点列表
+            V: 节点集合
+            children: 字典，key为节点，value为子节点列表
             root: 根节点
         """
-        self.vertex = vertices
+        self.vertex = V
         self.children = children
         self.root = root
         self.parent = {}
         
         # 初始化parent字典
         for node in children:
-            for child in children[node]:
-                self.parent[child] = node
+            for each in children[node]:
+                self.parent[each] = node
         self.parent[root] = root
         
         # 确保所有节点都在children中
-        for v in vertices:
+        for v in V:
             if v not in self.children:
                 self.children[v] = []
                 
-        # 计算每个节点的深度
+        # 计算节点深度
         self.depth = self.get_nodes_depth(root, {root: 0})
     
-    def get_nodes_depth(self, root: int, depth: Dict[int, int]) -> Dict[int, int]:
+    def get_nodes_depth(self, root, depth):
         """递归计算每个节点的深度"""
         for child in self.children[root]:
             depth[child] = depth[root] + 1
             depth = self.get_nodes_depth(child, depth)
         return depth
     
-    def get_lca(self, a: int, b: int) -> int:
-        """计算a,b的最近公共祖先(Lowest Common Ancestor)"""
+    def get_lca(self, a, b):
+        """计算a,b的最近公共祖先"""
+        # 检查节点是否存在
+        if a not in self.depth or b not in self.depth:
+            return self.root
+        if a not in self.parent or b not in self.parent:
+            return self.root
+            
         if self.depth[a] > self.depth[b]:
             diff = self.depth[a] - self.depth[b]
-            while diff > 0:
+            while diff > 0 and a in self.parent:
                 a = self.parent[a]
                 diff -= 1
         elif self.depth[a] < self.depth[b]:
             diff = self.depth[b] - self.depth[a]
-            while diff > 0:
+            while diff > 0 and b in self.parent:
                 b = self.parent[b]
                 diff -= 1
         
-        while a != b:
+        # 防止无限循环
+        max_iterations = len(self.vertex)
+        iterations = 0
+        while a != b and iterations < max_iterations:
+            if a not in self.parent or b not in self.parent:
+                break
             a = self.parent[a]
             b = self.parent[b]
-        return a
+            iterations += 1
+        
+        return a if a == b else self.root
     
     def reset_by_parent(self):
         """根据parent字典重置children字典"""
@@ -81,162 +93,123 @@ class CDG(CFG):
     def __init__(self, language: str = "c"):
         """初始化CDG构建器"""
         super().__init__(language)
-        self.cdg: Optional[Graph] = None  # 单个CDG图
+        self.cdg: Optional[Graph] = None
     
-    def get_sub_tree(self, cfg: Graph) -> Dict[int, List[int]]:
-        """
-        按照广度优先遍历，找出一个子树
-        从Exit节点开始反向遍历构建子树
-        """
-        vertices = [node.id for node in cfg.nodes]
-        edges = cfg.edges
-        
-        # 找到Exit节点（度为0的节点或最后一个节点）
-        exit_node = None
-        for node in cfg.nodes:
-            if node.id not in edges or len(edges[node.id]) == 0:
-                exit_node = node.id
+    def get_subTree(self, cfg):
+        """按照广度优先遍历，找出一个子树"""
+        V, E = cfg.nodes, cfg.edges
+        # 找到出口节点（没有出边的节点）
+        outgoing = cfg.get_outgoing_edges()
+        Exit = None
+        for node in V:
+            if node.id not in outgoing or len(outgoing[node.id]) == 0:
+                Exit = node.id
                 break
         
-        if exit_node is None and cfg.nodes:
-            # 如果没有找到Exit节点，使用最后一个节点
-            exit_node = cfg.nodes[-1].id
+        if Exit is None:
+            # 如果没有找到出口节点，使用最后一个节点
+            Exit = V[-1].id if V else None
         
-        if exit_node is None:
+        if Exit is None:
             return {}
         
-        visited = {v: False for v in vertices}
-        queue = [exit_node]
-        visited[exit_node] = True
-        sub_tree = {}
+        visited = {v.id: False for v in V}
+        queue = [Exit]
+        visited[Exit] = True
+        subTree = {}
         
         while queue:
-            node = queue.pop(0)  # BFS
-            if node not in edges:
+            node = queue.pop(0)
+            if node not in outgoing:
                 continue
-            
-            for edge in edges[node]:
-                v = edge.id
-                if v in visited and not visited[v]:
-                    queue.append(v)
-                    visited[v] = True
-                    sub_tree.setdefault(node, [])
-                    sub_tree[node].append(v)
-        
-        return sub_tree
+            for target_id in outgoing[node]:
+                if not visited[target_id]:
+                    queue.append(target_id)
+                    visited[target_id] = True
+                    subTree.setdefault(node, [])
+                    subTree[node].append(target_id)
+        return subTree
     
-    def get_predecessors(self, cfg: Graph) -> Dict[int, List[int]]:
+    def get_prev(self, cfg):
         """计算每个节点的前驱节点"""
-        predecessors = {}
-        
-        # 初始化所有节点的前驱列表
+        prev = {}
         for node in cfg.nodes:
-            predecessors.setdefault(node.id, [])
+            prev.setdefault(node.id, [])
         
-        # 构建前驱关系
-        for node_id, edges in cfg.edges.items():
+        # 使用入边结构计算前驱
+        for target_id, edges in cfg.edges.items():
             for edge in edges:
-                target_id = edge.id
-                predecessors.setdefault(target_id, [])
-                predecessors[target_id].append(node_id)
-        
-        return predecessors
+                source_id = edge.id
+                prev.setdefault(target_id, [])
+                prev[target_id].append(source_id)
+        return prev
     
-    def post_dominator_tree(self, cfg: Graph, predecessors: Dict[int, List[int]]) -> Tree:
+    def post_dominator_tree(self, cfg, prev):
         """生成后支配树"""
-        sub_tree = self.get_sub_tree(cfg)
-        vertices = [node.id for node in cfg.nodes]
+        subTree = self.get_subTree(cfg)
+        V = [node.id for node in cfg.nodes]
         
-        # 找到根节点（Exit节点）
+        # 找到根节点（出口节点）- 使用出边结构
+        outgoing = cfg.get_outgoing_edges()
         root = None
-        for node in cfg.nodes:
-            if node.id not in cfg.edges or len(cfg.edges[node.id]) == 0:
-                root = node.id
+        for node_id in V:
+            if node_id not in outgoing or len(outgoing[node_id]) == 0:
+                root = node_id
                 break
         
-        if root is None and cfg.nodes:
-            root = cfg.nodes[-1].id
+        if root is None:
+            root = V[-1] if V else None
         
         if root is None:
-            raise ValueError("无法找到CFG的根节点")
+            return None
         
-        tree = Tree(vertices, sub_tree, root)
-        
-        # 后支配树算法
+        tree = Tree(V, subTree, root)
         changed = True
-        iterations = 0
-        max_iterations = len(vertices) * 2  # 防止无限循环
         
-        while changed and iterations < max_iterations:
+        while changed:
             changed = False
-            iterations += 1
-            
-            for v in vertices:
-                if v != root and v in predecessors:
-                    for u in predecessors[v]:
-                        if u in tree.parent:
+            for v in V:
+                if v != root and v in prev:
+                    for u in prev[v]:
+                        if u in tree.vertex:
                             parent_v = tree.parent[v]
-                            if u in tree.vertex and u != parent_v:
-                                lca = tree.get_lca(u, parent_v)
-                                if parent_v != lca:
-                                    tree.parent[v] = lca
-                                    changed = True
+                            if u != parent_v and parent_v != tree.get_lca(u, parent_v):
+                                tree.parent[v] = tree.get_lca(u, parent_v)
+                                changed = True
         
         tree.reset_by_parent()
         return tree
     
-    def dominance_frontier(self, code: str):
+    def dominance_frontier(self, cfg):
         """计算支配边界"""
-        if self.check_syntax(code):
-            print('Syntax Error')
-            return None, None
-        
-        # 构建CFG - 只处理第一个函数
-        cfgs = self.see_cfg(code, pdf=False, dot_format=False)
-        if not cfgs:
-            return None, None
-        
-        cfg = cfgs[0]  # 只取第一个函数的CFG
-        
-        # 创建反向CFG
+        # 计算逆向CFG
         reverse_cfg = cfg.reverse()
+        prev = self.get_prev(reverse_cfg)
+        PDT = self.post_dominator_tree(reverse_cfg, prev)
         
-        # 计算前驱节点
-        predecessors = self.get_predecessors(reverse_cfg)
+        if PDT is None:
+            return {}
         
-        # 构建后支配树
-        post_dom_tree = self.post_dominator_tree(reverse_cfg, predecessors)
+        V = [node.id for node in reverse_cfg.nodes]
+        DF = {v: [] for v in V}
         
-        # 计算支配边界
-        vertices = [node.id for node in reverse_cfg.nodes]
-        df = {v: [] for v in vertices}
+        for v in V:
+            if len(prev[v]) > 1:
+                for p in prev[v]:
+                    runner = p
+                    while runner != PDT.parent[v]:
+                        DF[runner].append(v)
+                        runner = PDT.parent[runner]
         
-        for v in vertices:
-            if v in predecessors and len(predecessors[v]) > 1:
-                for p in predecessors[v]:
-                    if p in post_dom_tree.parent:
-                        runner = p
-                        parent_v = post_dom_tree.parent.get(v, v)
-                        
-                        # 防止无限循环
-                        visited = set()
-                        while runner != parent_v and runner not in visited:
-                            visited.add(runner)
-                            df[runner].append(v)
-                            runner = post_dom_tree.parent.get(runner, runner)
-                            if runner == post_dom_tree.parent.get(runner, runner):
-                                break
-        
-        return cfg, df
+        return DF
     
     def construct_cdg(self, code: str) -> Optional[Graph]:
-        """构建控制依赖图 - 单函数版本"""
+        """构建控制依赖图 - 单函数版本（简化版本）"""
         if self.check_syntax(code):
             print('⚠️  CDG构建警告: 检测到语法错误，但将继续尝试构建CDG')
-            # 不直接返回，继续尝试构建CDG
         
         try:
-            # 构建CFG - 只处理第一个函数
+            # 首先构建CFG
             cfg = self.see_cfg(code, pdf=False, dot_format=False)
             if not cfg:
                 print('⚠️  CDG构建警告: 未找到任何函数')
@@ -244,19 +217,28 @@ class CDG(CFG):
                 return None
             
             try:
+                # 创建CDG
                 cdg = Graph()
                 
                 # 复制CFG的节点到CDG
                 for node in cfg.nodes:
                     cdg.add_node(node)
                 
-                # 基于CFG构建控制依赖关系
-                self._build_control_dependencies_from_cfg(cfg, cdg)
+                # 简化的控制依赖分析：基于分支节点
+                for node in cfg.nodes:
+                    if node.is_branch:  # 如果是分支节点
+                        # 找到所有可能被这个分支控制的节点
+                        controlled_nodes = self._find_controlled_nodes(cfg, node)
+                        for controlled_node in controlled_nodes:
+                            if controlled_node.id != node.id:
+                                cdg_edge = Edge(node.id, '', EdgeType.CDG)
+                                cdg.edges.setdefault(controlled_node.id, [])
+                                cdg.edges[controlled_node.id].append(cdg_edge)
                 
                 self.cdg = cdg
                 return cdg
             except Exception as e:
-                print(f'⚠️  CDG构建警告: CFG处理失败: {e}')
+                print(f'⚠️  CDG构建警告: 控制依赖分析失败: {e}')
                 self.cdg = None
                 return None
         except Exception as e:
@@ -264,166 +246,57 @@ class CDG(CFG):
             self.cdg = None
             return None
     
-    def _build_control_dependencies_from_cfg(self, cfg: Graph, cdg: Graph):
-        """基于CFG构建控制依赖关系"""
-        # 找到函数定义节点作为根节点
-        function_node = None
-        for node in cfg.nodes:
-            if node.type == 'function_definition':
-                function_node = node
-                break
-        
-        if not function_node:
-            return
-        
-        # 找到所有分支节点
-        branch_nodes = [node for node in cfg.nodes if node.is_branch]
-        
-        # 跟踪已经有控制依赖的节点
-        controlled_nodes_set = set()
-        
-        for branch_node in branch_nodes:
-            # 找到该分支节点控制的所有节点
-            controlled_nodes = self._find_controlled_nodes_in_cfg(cfg, branch_node)
-            
-            # 建立控制依赖边：从分支节点指向被控制的节点
-            for controlled_node in controlled_nodes:
-                if controlled_node.id != branch_node.id:
-                    edge = Edge(controlled_node.id, '', 'CDG')
-                    if branch_node.id not in cdg.edges:
-                        cdg.edges[branch_node.id] = []
-                    cdg.edges[branch_node.id].append(edge)
-                    controlled_nodes_set.add(controlled_node.id)
-        
-        # 将所有没有控制依赖的节点连接到函数根节点
-        # 这样确保CDG是连通的，以函数签名为根
-        for node in cfg.nodes:
-            if node.id != function_node.id and node.id not in controlled_nodes_set:
-                # 对于分支节点和普通节点，都连接到函数根节点
-                label = 'branch' if node.is_branch else 'entry'
-                edge = Edge(node.id, label, 'CDG')
-                if function_node.id not in cdg.edges:
-                    cdg.edges[function_node.id] = []
-                cdg.edges[function_node.id].append(edge)
-    
-    def _find_controlled_nodes_in_cfg(self, cfg: Graph, branch_node: Node) -> List[Node]:
-        """在CFG中找到被分支节点控制的所有节点"""
+    def _find_controlled_nodes(self, cfg, branch_node):
+        """找到被分支节点控制的所有节点（简化版本）"""
         controlled = []
+        outgoing = cfg.get_outgoing_edges()
         
-        # 找到以分支节点为源的所有边
-        for target_id, edges in cfg.edges.items():
-            for edge in edges:
-                if edge.id == branch_node.id:  # 分支节点是这条边的源
-                    target_node = cfg.id_to_nodes.get(target_id)
-                    if target_node and target_node != branch_node:
-                        # 根据分支类型和边标签判断是否为真正的控制依赖
-                        if self._is_true_control_dependency(branch_node, edge):
-                            controlled.append(target_node)
-                            # 对于真正被控制的节点，递归找到其传递控制的节点
-                            transitive = self._find_transitively_controlled(cfg, target_node, branch_node)
-                            controlled.extend(transitive)
-        
-        return controlled
-    
-    def _is_true_control_dependency(self, branch_node: Node, edge) -> bool:
-        """判断是否为真正的控制依赖关系"""
-        branch_type = branch_node.type
-        edge_label = edge.label if hasattr(edge, 'label') else ''
-        
-        if branch_type in ['while_statement', 'for_statement']:
-            # 对于循环：只有进入循环体的边（通常是Y）才是控制依赖
-            # 退出循环的边（通常是N）不是控制依赖，因为退出后的语句无论如何都会执行
-            return edge_label == 'Y'
-        elif branch_type == 'if_statement':
-            # 对于if语句：then分支（Y）和else分支（N）都是控制依赖
-            return edge_label in ['Y', 'N']
-        elif branch_type == 'switch_statement':
-            # 对于switch语句：所有case都是控制依赖
-            return True
-        else:
-            # 其他分支类型（如三元运算符等）
-            return edge_label in ['Y', 'N']
-    
-    def _find_transitively_controlled(self, cfg: Graph, start_node: Node, original_branch: Node) -> List[Node]:
-        """递归找到传递控制的节点"""
-        controlled = []
+        # 简单的启发式：分支节点后面的所有节点都可能被控制
         visited = set()
+        queue = [branch_node.id]
         
-        def dfs_controlled(node_id, depth=0):
-            if node_id in visited or depth > 10:  # 防止无限递归
-                return
-            visited.add(node_id)
+        while queue:
+            current_id = queue.pop(0)
+            if current_id in visited:
+                continue
+            visited.add(current_id)
             
-            if node_id in cfg.edges:
-                edges = cfg.edges[node_id]
-                # 如果只有一个后继，说明控制继续传递
-                if len(edges) == 1:
-                    edge = edges[0]
-                    target_node = cfg.id_to_nodes.get(edge.id)
-                    if target_node and target_node != original_branch:
-                        # 检查这个节点是否还有其他前驱（如果有，说明是汇合点）
-                        has_other_predecessors = False
-                        for other_id, other_edges in cfg.edges.items():
-                            if other_id != node_id:
-                                for other_edge in other_edges:
-                                    if other_edge.id == edge.id:
-                                        has_other_predecessors = True
-                                        break
-                        
-                        if not has_other_predecessors:
-                            controlled.append(target_node)
-                            dfs_controlled(edge.id, depth + 1)
+            if current_id in outgoing:
+                for next_id in outgoing[current_id]:
+                    if next_id not in visited:
+                        queue.append(next_id)
+                        # 找到对应的节点
+                        for node in cfg.nodes:
+                            if node.id == next_id:
+                                controlled.append(node)
+                                break
         
-        dfs_controlled(start_node.id)
         return controlled
     
     def see_cdg(self, code: str, filename: str = 'CDG', pdf: bool = True, dot_format: bool = True, view: bool = False):
-        """可视化控制依赖图 - 单函数版本"""
+        """可视化控制依赖图"""
         cdg = self.construct_cdg(code)
         if cdg:
-            visualize_cdg([cdg], filename, pdf, dot_format, view)  # 传入单元素列表以兼容可视化函数
+            visualize_cdg([cdg], filename, pdf, dot_format, view)
         return cdg
     
-    def get_control_dependencies(self, code: str) -> Optional[Dict]:
-        """
-        获取结构化的控制依赖信息 - 单函数版本
-        Returns:
-            单个函数的控制依赖信息字典，如果构建失败则返回None
-        """
+    def get_control_dependencies(self, code: str) -> Optional[dict]:
+        """获取控制依赖关系"""
         cdg = self.construct_cdg(code)
         if not cdg:
             return None
         
-        func_deps = {
-            'dependencies': []
+        dependencies = []
+        for target_id, edges in cdg.edges.items():
+            for edge in edges:
+                if edge.type == 'CDG':
+                    dependencies.append({
+                        'controller': edge.id,
+                        'controlled': target_id,
+                        'type': 'control_dependency'
+                    })
+        
+        return {
+            'dependencies': dependencies,
+            'total_count': len(dependencies)
         }
-        
-        for node_id, edges in cdg.edges.items():
-            if node_id in cdg.id_to_nodes:
-                source_node = cdg.id_to_nodes[node_id]
-                
-                for edge in edges:
-                    if edge.id in cdg.id_to_nodes:
-                        target_node = cdg.id_to_nodes[edge.id]
-                        
-                        dep_info = {
-                            'source': {
-                                'id': source_node.id,
-                                'line': source_node.line,
-                                'text': source_node.text,
-                                'type': source_node.type,
-                                'is_branch': source_node.is_branch
-                            },
-                            'target': {
-                                'id': target_node.id,
-                                'line': target_node.line,
-                                'text': target_node.text,
-                                'type': target_node.type
-                            }
-                        }
-                        
-                        func_deps['dependencies'].append(dep_info)
-        
-        return func_deps
-
-

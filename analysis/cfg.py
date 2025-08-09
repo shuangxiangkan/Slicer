@@ -8,7 +8,7 @@
 from typing import Optional
 from .base import BaseAnalyzer
 from .node import Node
-from .graph import Graph, Edge
+from .graph import Graph, Edge, EdgeType
 from .visualization import visualize_cfg
 
 class CFG(BaseAnalyzer):
@@ -301,7 +301,7 @@ class CFG(BaseAnalyzer):
                 for edge_info in edges:
                     if isinstance(edge_info, tuple) and len(edge_info) == 2:
                         source_id, label = edge_info
-                        edge = Edge(source_id, label)
+                        edge = Edge(source_id, label, EdgeType.CFG)
                         edge_list.append(edge)
                 cfg.edges[node_info.id] = edge_list
 

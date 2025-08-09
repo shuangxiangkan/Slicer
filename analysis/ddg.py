@@ -7,7 +7,7 @@
 
 from typing import List, Dict, Set, Optional
 from .cfg import CFG
-from .graph import Graph, Edge
+from .graph import Graph, Edge, DDGEdge, EdgeType
 from .node import Node
 from .visualization import visualize_ddg
 
@@ -167,8 +167,7 @@ class DDG(CFG):
         
         # 构建DDG边 - 注意这里要转换为入边结构
         for (source_id, target_id), vars_set in edge.items():
-            ddg_edge = Edge(source_id, '', 'DDG')
-            ddg_edge.token = list(vars_set)
+            ddg_edge = DDGEdge(source_id, '', list(vars_set))
             ddg.edges.setdefault(target_id, []).append(ddg_edge)
     
     def see_ddg(self, code: str, filename: str = 'DDG', pdf: bool = True, dot_format: bool = True, view: bool = False):

@@ -6,24 +6,53 @@
 """
 
 from typing import List, Dict, Set
+from enum import Enum
 from .node import Node
 
 
+class EdgeType(Enum):
+    """边类型枚举"""
+    CFG = "CFG"  # 控制流图边
+    DDG = "DDG"  # 数据依赖图边
+    CDG = "CDG"  # 控制依赖图边
+    PDG = "PDG"  # 程序依赖图边
+
+
 class Edge:
-    """图的边"""
+    """图的边基类"""
     
-    def __init__(self, target_id: int, label: str = '', edge_type: str = 'CFG'):
+    def __init__(self, target_id: int, label: str = '', edge_type: EdgeType = EdgeType.CFG):
         """
         创建边
         Args:
             target_id: 目标节点ID
             label: 边的标签
-            edge_type: 边的类型 ('CFG', 'DDG', 'CDG')
+            edge_type: 边的类型
         """
-        self.id = target_id
+        self.target_id = target_id  # 重命名为更清晰的名称
         self.label = label
         self.type = edge_type
-        self.token = []  # 用于DDG边的变量信息
+        
+        # 为了保持向后兼容性，保留id属性
+        self.id = target_id
+
+
+class DDGEdge(Edge):
+    """数据依赖图边，包含变量信息"""
+    
+    def __init__(self, target_id: int, label: str = '', variables: List[str] = None):
+        """
+        创建DDG边
+        Args:
+            target_id: 目标节点ID
+            label: 边的标签
+            variables: 依赖的变量列表
+        """
+        super().__init__(target_id, label, EdgeType.DDG)
+        self.variables = variables or []  # 依赖的变量列表
+        
+        # 为了保持向后兼容性，保留token属性
+        self.token = self.variables
 
 
 class Graph:
@@ -76,9 +105,14 @@ class Graph:
         for source_id, edges in self.edges.items():
             for edge in edges:
                 target_id = edge.id
-                # 创建反向边
-                reversed_edge = Edge(source_id, edge.label, edge.type)
-                reversed_edge.token = edge.token
+                # 根据边的类型创建相应的反向边
+                if isinstance(edge, DDGEdge):
+                    reversed_edge = DDGEdge(source_id, edge.label, edge.variables)
+                else:
+                    reversed_edge = Edge(source_id, edge.label, edge.type)
+                    # 为了向后兼容，如果原边有token属性，也复制过来
+                    if hasattr(edge, 'token'):
+                        reversed_edge.token = edge.token
                 
                 # 添加到反向图中
                 if target_id not in reversed_graph.edges:

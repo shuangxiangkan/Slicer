@@ -138,6 +138,27 @@ def test_cfg_cdg_ddg_pdg():
                 if ddg_graph:
                     print(f"   ✅ DDG生成成功! 节点数: {len(ddg_graph.nodes)}, 边数: {sum(len(edges) for edges in ddg_graph.edges.values())}")
                     print(f"   📊 DDG已保存到: {ddg_output}.pdf")
+                    
+                    # 打印DDG边的token信息
+                    print(f"   🔍 DDG边的变量依赖信息:")
+                    ddg_edge_count = 0
+                    for target_id, edges in ddg_graph.edges.items():
+                        for edge in edges:
+                            if edge.type == 'DDG' and edge.token:
+                                ddg_edge_count += 1
+                                source_node = ddg_graph.id_to_nodes.get(edge.id)
+                                target_node = ddg_graph.id_to_nodes.get(target_id)
+                                source_text = source_node.text[:30] + "..." if source_node and len(source_node.text) > 30 else (source_node.text if source_node else "未知")
+                                target_text = target_node.text[:30] + "..." if target_node and len(target_node.text) > 30 else (target_node.text if target_node else "未知")
+                                print(f"     📍 边 #{ddg_edge_count}: 节点{edge.id} -> 节点{target_id}")
+                                print(f"        源节点: {source_text}")
+                                print(f"        目标节点: {target_text}")
+                                print(f"        依赖变量: {', '.join(edge.token)}")
+                    
+                    if ddg_edge_count == 0:
+                        print(f"     ℹ️  该函数没有数据依赖边")
+                    else:
+                        print(f"     📊 总共找到 {ddg_edge_count} 条数据依赖边")
                 else:
                     print(f"   ❌ DDG生成失败")
                     

@@ -1,47 +1,47 @@
-// 测试函数集合 - 用于CDG/DDG/PDG分析
-#include <stdio.h>
+// // 测试函数集合 - 用于CDG/DDG/PDG分析
+// #include <stdio.h>
 
-// http://zhuanlan.zhihu.com/p/572554127
-int zhihu() {
-    int i;
-    scanf("%d", &i);
+// // http://zhuanlan.zhihu.com/p/572554127
+// int zhihu() {
+//     int i;
+//     scanf("%d", &i);
 
-    if (i == 1) {
-        printf("POS:\n");
-    } else {
-        i = 1;
-    }
+//     if (i == 1) {
+//         printf("POS:\n");
+//     } else {
+//         i = 1;
+//     }
 
-    printf("%d\n", i);
-    return 0;
-}
+//     printf("%d\n", i);
+//     return 0;
+// }
 
-// https://uditagarwal.in/understanding-dependency-graphs-for-program-analysis/
-int fuzzware() {
-    int a = 10;
-    int b, c;
+// // https://uditagarwal.in/understanding-dependency-graphs-for-program-analysis/
+// int fuzzware() {
+//     int a = 10;
+//     int b, c;
 
-    while (a > 0) {
-        a = a - 1;
-    }
+//     while (a > 0) {
+//         a = a - 1;
+//     }
 
-    b = 3;
+//     b = 3;
 
-    if (a * b) {
-        a = 10;
-    } else {
-        if (b) {
-            b = 0;
-        } else {
-            b = 1;
-        }
-    }
+//     if (a * b) {
+//         a = 10;
+//     } else {
+//         if (b) {
+//             b = 0;
+//         } else {
+//             b = 1;
+//         }
+//     }
 
-    c = a + b;
+//     c = a + b;
 
-    printf("a = %d, b = %d, c = %d\n", a, b, c);
-    return 0;
-}
+//     printf("a = %d, b = %d, c = %d\n", a, b, c);
+//     return 0;
+// }
 
 // https://home.cs.colorado.edu/~kena/classes/5828/s99/lectures/lecture25.pdf
 int lecture25() {
@@ -66,16 +66,16 @@ int lecture25() {
 }
 
 
-void ware() {
-    int a = 1;
-    int b = 2;
-    int c = b;
-    while (c > a) {
-        a = a + 1;
-        c = c + 2;
-    }
-    int d = c;
-}
+// void ware() {
+//     int a = 1;
+//     int b = 2;
+//     int c = b;
+//     while (c > a) {
+//         a = a + 1;
+//         c = c + 2;
+//     }
+//     int d = c;
+// }
 
 // // 简单的加法函数
 // int add(int a, int b) {

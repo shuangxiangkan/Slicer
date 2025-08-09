@@ -5,7 +5,7 @@
 """
 
 from .node import Node
-from .graph import Graph, Edge
+from .graph import Graph, Edge, EdgeType, DDGEdge
 from .base import BaseAnalyzer
 from .cfg import CFG
 from .cdg import CDG
@@ -16,6 +16,8 @@ __all__ = [
     'Node',
     'Graph', 
     'Edge',
+    'EdgeType',
+    'DDGEdge',
     'BaseAnalyzer',
     'CFG',
     'CDG',
