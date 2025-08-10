@@ -265,8 +265,8 @@ class CFG(BaseAnalyzer):
     def _handle_case_statement(self, node, in_nodes):
         """处理case语句"""
         CFG = []
-        edge = self.get_edge(in_nodes)
         node_info = Node(node)
+        edge = self.get_edge(in_nodes, node_info)
         CFG.append((node_info, edge))
 
         if node.children and node.children[0].type == 'case':

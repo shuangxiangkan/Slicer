@@ -38,6 +38,7 @@ def test_cfg_cdg_ddg_pdg():
     # test_file = os.path.join(os.path.dirname(__file__), '/Users/shuangxiangkan/Tools/Slicer/benchmarks/utf8/utf8.h')
     # test_file = os.path.join(os.path.dirname(__file__), '/Users/shuangxiangkan/Tools/Slicer/benchmarks/cJSON/cJSON.c')
     # test_file = os.path.join(os.path.dirname(__file__), "../benchmarks/configs/cjson_config.json")
+    # test_file = os.path.join(os.path.dirname(__file__), "../benchmarks/configs/miniz_config.json")
     test_file = os.path.join(os.path.dirname(__file__), "test_functions.c")
     
     print("=" * 80)
@@ -69,6 +70,14 @@ def test_cfg_cdg_ddg_pdg():
         # 创建输出目录
         output_dir = os.path.join(os.path.dirname(__file__), 'graph_outputs')
         os.makedirs(output_dir, exist_ok=True)
+        
+        # 初始化统计计数器
+        stats = {
+            'CFG': {'success': 0, 'failure': 0},
+            'CDG': {'success': 0, 'failure': 0},
+            'DDG': {'success': 0, 'failure': 0},
+            'PDG': {'success': 0, 'failure': 0}
+        }
         
         # 按行号排序函数
         sorted_functions = sorted(function_definitions, key=lambda f: f.start_line)
@@ -104,6 +113,7 @@ def test_cfg_cdg_ddg_pdg():
                 cfg_graph = cfg_analyzer.see_cfg(function_code, filename=cfg_output, pdf=True, view=False)
                 
                 if cfg_graph:
+                    stats['CFG']['success'] += 1
                     print(f"   ✅ CFG生成成功! 节点数: {len(cfg_graph.nodes)}, 边数: {len(cfg_graph.edges)}")
                     print(f"   📊 CFG已保存到: {cfg_output}.pdf")
                     
@@ -121,9 +131,11 @@ def test_cfg_cdg_ddg_pdg():
                     else:
                         print(f"     ℹ️  该函数没有CFG边")
                 else:
+                    stats['CFG']['failure'] += 1
                     print(f"   ❌ CFG生成失败")
                     
             except Exception as e:
+                stats['CFG']['failure'] += 1
                 print(f"   ❌ CFG生成出错: {e}")
             
             # 生成CDG
@@ -134,6 +146,7 @@ def test_cfg_cdg_ddg_pdg():
                 cdg_graph = cdg_analyzer.see_cdg(function_code, filename=cdg_output, pdf=True, view=False)
                 
                 if cdg_graph:
+                    stats['CDG']['success'] += 1
                     print(f"   ✅ CDG生成成功! 节点数: {len(cdg_graph.nodes)}, 边数: {len(cdg_graph.edges)}")
                     print(f"   📊 CDG已保存到: {cdg_output}.pdf")
                     
@@ -151,9 +164,11 @@ def test_cfg_cdg_ddg_pdg():
                     else:
                         print(f"     ℹ️  该函数没有CDG边")
                 else:
+                    stats['CDG']['failure'] += 1
                     print(f"   ❌ CDG生成失败")
                     
             except Exception as e:
+                stats['CDG']['failure'] += 1
                 print(f"   ❌ CDG生成出错: {e}")
             
             # 生成DDG
@@ -164,6 +179,7 @@ def test_cfg_cdg_ddg_pdg():
                 ddg_graph = ddg_analyzer.see_ddg(function_code, filename=ddg_output, pdf=True, view=False)
                 
                 if ddg_graph:
+                    stats['DDG']['success'] += 1
                     print(f"   ✅ DDG生成成功! 节点数: {len(ddg_graph.nodes)}, 边数: {len(ddg_graph.edges)}")
                     print(f"   📊 DDG已保存到: {ddg_output}.pdf")
                     
@@ -183,9 +199,11 @@ def test_cfg_cdg_ddg_pdg():
                     else:
                         print(f"     ℹ️  该函数没有DDG边")
                 else:
+                    stats['DDG']['failure'] += 1
                     print(f"   ❌ DDG生成失败")
                     
             except Exception as e:
+                stats['DDG']['failure'] += 1
                 print(f"   ❌ DDG生成出错: {e}")
             
             # 生成PDG
@@ -196,6 +214,7 @@ def test_cfg_cdg_ddg_pdg():
                 pdg_graph = pdg_analyzer.see_pdg(function_code, filename=pdg_output, pdf=True, view=False)
                 
                 if pdg_graph:
+                    stats['PDG']['success'] += 1
                     print(f"   ✅ PDG生成成功! 节点数: {len(pdg_graph.nodes)}, 边数: {len(pdg_graph.edges)}")
                     print(f"   📊 PDG已保存到: {pdg_output}.pdf")
                     
@@ -226,9 +245,11 @@ def test_cfg_cdg_ddg_pdg():
                     else:
                         print(f"     ℹ️  该函数没有PDG边")
                 else:
+                    stats['PDG']['failure'] += 1
                     print(f"   ❌ PDG生成失败")
                     
             except Exception as e:
+                stats['PDG']['failure'] += 1
                 print(f"   ❌ PDG生成出错: {e}")
         
         # 打印总结信息
@@ -236,7 +257,39 @@ def test_cfg_cdg_ddg_pdg():
         print(f"📊 总结信息:")
         print(f"   处理函数总数: {len(sorted_functions)}")
         print(f"   输出目录: {output_dir}")
-        print(f"   生成的图文件: {func.name}_{{cfg|cdg|ddg|pdg}}.pdf")
+        print(f"   生成的图文件: {{函数名}}_{{cfg|cdg|ddg|pdg}}.pdf")
+        print(f"{'='*80}")
+        
+        # 打印详细统计信息
+        print(f"\n📈 图生成统计:")
+        print(f"{'='*80}")
+        total_success = 0
+        total_failure = 0
+        
+        for graph_type in ['CFG', 'CDG', 'DDG', 'PDG']:
+            success = stats[graph_type]['success']
+            failure = stats[graph_type]['failure']
+            total = success + failure
+            success_rate = (success / total * 100) if total > 0 else 0
+            
+            total_success += success
+            total_failure += failure
+            
+            print(f"🔸 {graph_type}:")
+            print(f"   ✅ 成功: {success} 个")
+            print(f"   ❌ 失败: {failure} 个")
+            print(f"   📊 成功率: {success_rate:.1f}%")
+            print()
+        
+        # 总体统计
+        total_graphs = total_success + total_failure
+        overall_success_rate = (total_success / total_graphs * 100) if total_graphs > 0 else 0
+        
+        print(f"🎯 总体统计:")
+        print(f"   📊 总图数: {total_graphs} 个")
+        print(f"   ✅ 总成功: {total_success} 个")
+        print(f"   ❌ 总失败: {total_failure} 个")
+        print(f"   🏆 总成功率: {overall_success_rate:.1f}%")
         print(f"{'='*80}")
         
     except Exception as e:

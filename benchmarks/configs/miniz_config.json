@@ -1,16 +1,8 @@
 {
-  "library_path": "/home/kansx/SVF-Tools/Slicer/benchmarks/miniz",
+  "library_path": "/Users/shuangxiangkan/Tools/Slicer/benchmarks/miniz",
   "include_files": [
     "miniz.c",
-    "miniz.h",
-    "miniz_tdef.c",
-    "miniz_tdef.h",
-    "miniz_tinfl.c",
-    "miniz_tinfl.h",
-    "miniz_zip.c",
-    "miniz_zip.h",
-    "miniz_zip_write.c",
-    "miniz_zip_write.h"
+    "miniz.h"
   ],
   "exclude_files": [],
   "analysis_targets": [

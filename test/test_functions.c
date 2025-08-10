@@ -154,3 +154,75 @@ int lecture25() {
 //     }
 //     return sum;
 // }
+
+
+// int processNumbers() {
+//     int x, y, result = 0;
+//     int attempts = 0;
+    
+//     printf("Enter two integers: ");
+    
+// input_retry:
+//     attempts++;
+//     if (attempts > 3) {
+//         printf("Too many invalid attempts!\n");
+//         goto cleanup;
+//     }
+    
+//     if (scanf("%d %d", &x, &y) != 2) {
+//         printf("Invalid input! Please enter two integers: ");
+//         // Clear input buffer
+//         int c;
+//         while ((c = getchar()) != '\n' && c != EOF);
+//         goto input_retry;
+//     }
+    
+//     if (x <= 0 || y <= 0) {
+//         printf("Numbers must be positive! Try again: ");
+//         goto input_retry;
+//     }
+    
+//     // Process the numbers
+//     for (int i = 1; i <= x; i++) {
+//         for (int j = 1; j <= y; j++) {
+//             result += i * j;
+            
+//             // Special condition to jump to output
+//             if (result > 1000) {
+//                 printf("Result exceeded 1000, stopping early!\n");
+//                 goto output;
+//             }
+//         }
+//     }
+    
+//     // Additional processing
+//     if (result % 2 == 0) {
+//         result += 10;
+//     } else {
+//         result -= 5;
+//     }
+    
+// output:
+//     printf("Final result: %d\n", result);
+//     printf("Processing completed successfully!\n");
+//     return result;
+    
+// cleanup:
+//     printf("Function terminated due to errors.\n");
+//     return -1;
+// }
+
+// void check_number(int num) {
+//     if (num > 5) {
+//         goto greater;
+//     }
+
+//     // 如果 num <= 5，执行这里的代码
+//     printf("数字小于或等于 5\n");
+//     return;
+
+// greater:
+//     // goto greater; 语句会跳转到这里
+//     printf("数字大于 5\n");
+//     return;
+}
