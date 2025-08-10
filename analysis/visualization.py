@@ -8,7 +8,7 @@
 from typing import List
 from graphviz import Digraph
 import html
-from .graph import Graph
+from .graph import Graph, EdgeType
 
 
 def visualize_cfg(cfgs: List[Graph], filename: str = 'CFG', pdf: bool = True, dot_format: bool = True, view: bool = False):
@@ -77,10 +77,10 @@ def visualize_ddg(ddgs: List[Graph], filename: str = 'DDG', pdf: bool = True, do
 
         # 添加数据依赖边
         for edge in ddg.edges:
-            if edge.type == 'DDG' and edge.source_node and edge.target_node:
+            if edge.type == EdgeType.DDG and edge.source_node and edge.target_node:
                 source_id = edge.source_node.id  # 源节点（定义/写入变量的节点）
                 target_id = edge.target_node.id  # 目标节点（使用变量的节点）
-                var_label = ', '.join(edge.token) if edge.token else ''
+                var_label = ', '.join(edge.token) if hasattr(edge, 'token') and edge.token else ''
                 dot.edge(str(source_id), str(target_id),
                         label=var_label, style='dotted', color='red')
 
@@ -122,14 +122,14 @@ def visualize_pdg(pdgs: List[Graph], filename: str = 'PDG', pdf: bool = True, do
 
         # 添加边
         for edge in pdg.edges:
-            if edge.type == 'DDG' and edge.source_node and edge.target_node:
+            if edge.type == EdgeType.DDG and edge.source_node and edge.target_node:
                 # 数据依赖边：红色虚线
                 source_id = edge.source_node.id  # 定义节点
                 target_id = edge.target_node.id  # 使用节点
-                var_label = ', '.join(edge.token) if edge.token else ''
+                var_label = ', '.join(edge.token) if hasattr(edge, 'token') and edge.token else ''
                 dot.edge(str(source_id), str(target_id),
                         label=var_label, style='dotted', color='red')
-            elif edge.type == 'CDG' and edge.source_node and edge.target_node:
+            elif edge.type == EdgeType.CDG and edge.source_node and edge.target_node:
                 # 控制依赖边：根据标签设置不同样式
                 source_id = edge.source_node.id  # 控制节点
                 target_id = edge.target_node.id  # 被控制节点
@@ -194,7 +194,7 @@ def visualize_cdg(cdgs: List[Graph], filename: str = 'CDG', pdf: bool = True, do
 
         # 添加控制依赖边
         for edge in cdg.edges:
-            if edge.type == 'CDG' and edge.source_node and edge.target_node:
+            if edge.type == EdgeType.CDG and edge.source_node and edge.target_node:
                 # 控制依赖边：从控制节点指向依赖节点
                 source_id = edge.source_node.id  # 控制节点
                 target_id = edge.target_node.id  # 被控制节点
