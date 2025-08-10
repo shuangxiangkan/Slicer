@@ -41,9 +41,38 @@ class CFG(BaseAnalyzer):
         elif node.type == 'compound_statement':
             # 如果是复合语句，则递归遍历复合语句的每一条statement
             CFG = []
-            for child in node.children:
+            pending_break_nodes = []  # 存储需要连接到后续语句的break节点
+            
+            for i, child in enumerate(node.children):
                 cfg, out_nodes = self.create_cfg(child, in_nodes)
                 CFG.extend(cfg)
+                
+                # 如果当前语句是循环，收集其中的break节点
+                if child.type in ['while_statement', 'for_statement', 'do_statement']:
+                    break_nodes, _ = self.get_break_continue_nodes(child)
+                    pending_break_nodes.extend([Node(bn) for bn in break_nodes])
+                
+                # 如果有待处理的break节点且当前不是循环语句，连接break节点到当前语句
+                if pending_break_nodes and child.type not in ['while_statement', 'for_statement', 'do_statement', '{', '}']:
+                    # 找到当前语句的节点
+                    current_stmt_node = None
+                    for node_info, _ in cfg:
+                        if node_info.text.strip() and node_info.text != '{':
+                            current_stmt_node = node_info
+                            break
+                    
+                    if current_stmt_node:
+                        # 为每个break节点添加到当前语句的边
+                        for break_node in pending_break_nodes:
+                            break_edge = Edge(label='', edge_type=EdgeType.CFG, 
+                                            source_node=break_node, target_node=current_stmt_node)
+                            # 找到break节点在CFG中的位置并添加边
+                            for j, (cfg_node, cfg_edges) in enumerate(CFG):
+                                if cfg_node.id == break_node.id:
+                                    CFG[j] = (cfg_node, list(cfg_edges) + [break_edge])
+                                    break
+                        pending_break_nodes = []  # 清空已处理的break节点
+                
                 in_nodes = out_nodes
             return CFG, in_nodes
 
@@ -133,10 +162,12 @@ class CFG(BaseAnalyzer):
         break_nodes, continue_nodes = self.get_break_continue_nodes(node)
 
         # 循环体的出口回到条件 - 为循环条件节点添加来自循环体出口的边
+        # 但是要排除 break 节点，因为 break 节点应该跳出循环
         loop_back_edges = []
-        for out_node, _ in body_out:
-            if out_node:
-                back_edge = Edge(label='', edge_type=EdgeType.CFG, source_node=out_node, target_node=node_info)
+        break_node_ids = {Node(break_node).id for break_node in break_nodes}
+        for out_node, label in body_out:
+            if out_node and out_node.id not in break_node_ids:
+                back_edge = Edge(label=label, edge_type=EdgeType.CFG, source_node=out_node, target_node=node_info)
                 loop_back_edges.append(back_edge)
         
         # continue语句也应该回到循环条件
@@ -155,10 +186,9 @@ class CFG(BaseAnalyzer):
                     CFG[i] = (cfg_node, list(cfg_edges) + loop_back_edges)
                     break
 
-        # break语句是循环的出口
+        # 循环的出口：循环条件为false时跳出
+        # break语句不应该作为出口节点返回，因为它们已经在循环内部处理了
         out_nodes = [(node_info, 'N')]  # 循环条件为false时跳出
-        for break_node in break_nodes:
-            out_nodes.append((Node(break_node), ''))
 
         return CFG, out_nodes
 

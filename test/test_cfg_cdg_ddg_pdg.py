@@ -106,6 +106,20 @@ def test_cfg_cdg_ddg_pdg():
                 if cfg_graph:
                     print(f"   ✅ CFG生成成功! 节点数: {len(cfg_graph.nodes)}, 边数: {len(cfg_graph.edges)}")
                     print(f"   📊 CFG已保存到: {cfg_output}.pdf")
+                    
+                    # 打印CFG边信息
+                    print(f"   🔍 CFG边信息:")
+                    if cfg_graph.edges:
+                        for i, edge in enumerate(cfg_graph.edges, 1):
+                            source_text = edge.source_node.text.strip()[:30] + "..." if len(edge.source_node.text.strip()) > 30 else edge.source_node.text.strip()
+                            target_text = edge.target_node.text.strip()[:30] + "..." if len(edge.target_node.text.strip()) > 30 else edge.target_node.text.strip()
+                            label = edge.label if hasattr(edge, 'label') and edge.label else "(无Label)"
+                            print(f"     📍 边 #{i}: 节点{edge.source_node.id} -> 节点{edge.target_node.id}")
+                            print(f"        Source: {source_text}")
+                            print(f"        Target: {target_text}")
+                            print(f"        Label: {label}")
+                    else:
+                        print(f"     ℹ️  该函数没有CFG边")
                 else:
                     print(f"   ❌ CFG生成失败")
                     
@@ -122,6 +136,20 @@ def test_cfg_cdg_ddg_pdg():
                 if cdg_graph:
                     print(f"   ✅ CDG生成成功! 节点数: {len(cdg_graph.nodes)}, 边数: {len(cdg_graph.edges)}")
                     print(f"   📊 CDG已保存到: {cdg_output}.pdf")
+                    
+                    # 打印CDG边信息
+                    print(f"   🔍 CDG边信息:")
+                    if cdg_graph.edges:
+                        for i, edge in enumerate(cdg_graph.edges, 1):
+                            source_text = edge.source_node.text.strip()[:30] + "..." if len(edge.source_node.text.strip()) > 30 else edge.source_node.text.strip()
+                            target_text = edge.target_node.text.strip()[:30] + "..." if len(edge.target_node.text.strip()) > 30 else edge.target_node.text.strip()
+                            label = edge.label if hasattr(edge, 'label') and edge.label else "(无Label)"
+                            print(f"     📍 边 #{i}: 节点{edge.source_node.id} -> 节点{edge.target_node.id}")
+                            print(f"        Source: {source_text}")
+                            print(f"        Target: {target_text}")
+                            print(f"        Label: {label}")
+                    else:
+                        print(f"     ℹ️  该函数没有CDG边")
                 else:
                     print(f"   ❌ CDG生成失败")
                     
@@ -139,25 +167,21 @@ def test_cfg_cdg_ddg_pdg():
                     print(f"   ✅ DDG生成成功! 节点数: {len(ddg_graph.nodes)}, 边数: {len(ddg_graph.edges)}")
                     print(f"   📊 DDG已保存到: {ddg_output}.pdf")
                     
-                    # 打印DDG边的token信息
-                    print(f"   🔍 DDG边的变量依赖信息:")
-                    ddg_edge_count = 0
-                    for edge in ddg_graph.edges:
-                        if edge.type == 'DDG' and edge.source_node and edge.target_node:
+                    # 打印DDG边信息
+                    print(f"   🔍 DDG边信息:")
+                    if ddg_graph.edges:
+                        for i, edge in enumerate(ddg_graph.edges, 1):
+                            source_text = edge.source_node.text.strip()[:30] + "..." if len(edge.source_node.text.strip()) > 30 else edge.source_node.text.strip()
+                            target_text = edge.target_node.text.strip()[:30] + "..." if len(edge.target_node.text.strip()) > 30 else edge.target_node.text.strip()
+                            label = edge.label if hasattr(edge, 'label') and edge.label else "(无Label)"
                             variables = edge.variables if hasattr(edge, 'variables') else (edge.token if hasattr(edge, 'token') else [])
-                            if variables:
-                                ddg_edge_count += 1
-                                source_text = edge.source_node.text[:30] + "..." if len(edge.source_node.text) > 30 else edge.source_node.text
-                                target_text = edge.target_node.text[:30] + "..." if len(edge.target_node.text) > 30 else edge.target_node.text
-                                print(f"     📍 边 #{ddg_edge_count}: 节点{edge.source_node.id} -> 节点{edge.target_node.id}")
-                                print(f"        源节点: {source_text}")
-                                print(f"        目标节点: {target_text}")
-                                print(f"        依赖变量: {', '.join(edge.token)}")
-                    
-                    if ddg_edge_count == 0:
-                        print(f"     ℹ️  该函数没有数据依赖边")
+                            var_info = f", 依赖变量: {', '.join(variables)}" if variables else ""
+                            print(f"     📍 边 #{i}: 节点{edge.source_node.id} -> 节点{edge.target_node.id}")
+                            print(f"        Source: {source_text}")
+                            print(f"        Target: {target_text}")
+                            print(f"        Label: {label}{var_info}")
                     else:
-                        print(f"     📊 总共找到 {ddg_edge_count} 条数据依赖边")
+                        print(f"     ℹ️  该函数没有DDG边")
                 else:
                     print(f"   ❌ DDG生成失败")
                     
@@ -174,6 +198,33 @@ def test_cfg_cdg_ddg_pdg():
                 if pdg_graph:
                     print(f"   ✅ PDG生成成功! 节点数: {len(pdg_graph.nodes)}, 边数: {len(pdg_graph.edges)}")
                     print(f"   📊 PDG已保存到: {pdg_output}.pdf")
+                    
+                    # 打印PDG边信息
+                    print(f"   🔍 PDG边信息:")
+                    if pdg_graph.edges:
+                        # 按边类型分组显示
+                        cfg_edges = [e for e in pdg_graph.edges if hasattr(e, 'type') and e.type == 'CFG']
+                        cdg_edges = [e for e in pdg_graph.edges if hasattr(e, 'type') and e.type == 'CDG']
+                        ddg_edges = [e for e in pdg_graph.edges if hasattr(e, 'type') and e.type == 'DDG']
+                        other_edges = [e for e in pdg_graph.edges if not hasattr(e, 'type') or e.type not in ['CFG', 'CDG', 'DDG']]
+                        
+                        edge_count = 0
+                        for edge_type, edges in [('CFG', cfg_edges), ('CDG', cdg_edges), ('DDG', ddg_edges), ('其他', other_edges)]:
+                            if edges:
+                                print(f"     🏷️  {edge_type}边 ({len(edges)}条):")
+                                for edge in edges:
+                                    edge_count += 1
+                                    source_text = edge.source_node.text.strip()[:30] + "..." if len(edge.source_node.text.strip()) > 30 else edge.source_node.text.strip()
+                                    target_text = edge.target_node.text.strip()[:30] + "..." if len(edge.target_node.text.strip()) > 30 else edge.target_node.text.strip()
+                                    label = edge.label if hasattr(edge, 'label') and edge.label else "(无Label)"
+                                    variables = edge.variables if hasattr(edge, 'variables') else (edge.token if hasattr(edge, 'token') else [])
+                                    var_info = f", 依赖变量: {', '.join(variables)}" if variables else ""
+                                    print(f"        📍 边 #{edge_count}: 节点{edge.source_node.id} -> 节点{edge.target_node.id}")
+                                    print(f"           Source: {source_text}")
+                                    print(f"           Target: {target_text}")
+                                    print(f"           Label: {label}{var_info}")
+                    else:
+                        print(f"     ℹ️  该函数没有PDG边")
                 else:
                     print(f"   ❌ PDG生成失败")
                     
