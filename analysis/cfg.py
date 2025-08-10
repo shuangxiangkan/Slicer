@@ -61,14 +61,14 @@ class CFG(BaseAnalyzer):
         
         elif node.type not in ['if_statement', 'while_statement', 'for_statement', 'switch_statement', 'case_statement', 'translation_unit', 'do_statement']:
             # 如果是普通的语句
-            edge = self.get_edge(in_nodes)
             node_info = Node(node)
+            edges = self.get_edge(in_nodes, node_info)
             in_nodes = [(node_info, '')]
             if node.type in ['return_statement', 'break_statement', 'continue_statement']:
                 # return，break，continue语句没有出节点
-                return [(node_info, edge)], []
+                return [(node_info, edges)], []
             else:
-                return [(node_info, edge)], in_nodes
+                return [(node_info, edges)], in_nodes
 
         elif node.type == 'if_statement':
             return self._handle_if_statement(node, in_nodes)
@@ -97,9 +97,9 @@ class CFG(BaseAnalyzer):
     def _handle_if_statement(self, node, in_nodes):
         """处理if语句"""
         CFG = []
-        edge = self.get_edge(in_nodes)
         node_info = Node(node)
-        CFG.append((node_info, edge))
+        edges = self.get_edge(in_nodes, node_info)
+        CFG.append((node_info, edges))
 
         # 处理then分支
         consequence = node.child_by_field_name('consequence')
@@ -120,9 +120,9 @@ class CFG(BaseAnalyzer):
     def _handle_loop_statement(self, node, in_nodes):
         """处理循环语句"""
         CFG = []
-        edge = self.get_edge(in_nodes)
         node_info = Node(node)
-        CFG.append((node_info, edge))
+        edges = self.get_edge(in_nodes, node_info)
+        CFG.append((node_info, edges))
 
         # 处理循环体
         body = node.child_by_field_name('body')
@@ -136,7 +136,8 @@ class CFG(BaseAnalyzer):
         loop_back_edges = []
         for out_node, _ in body_out:
             if out_node:
-                loop_back_edges.append((out_node.id, ''))
+                back_edge = Edge(label='', edge_type=EdgeType.CFG, source_node=out_node, target_node=node_info)
+                loop_back_edges.append(back_edge)
         
         # continue语句也应该回到循环条件
         for continue_node in continue_nodes:
@@ -144,7 +145,8 @@ class CFG(BaseAnalyzer):
             # 对于for循环，continue应该跳转到更新部分（如果有），然后到条件
             # 对于while循环和for(;;)，continue应该直接跳转到循环条件
             # 当前简化为直接跳转到循环条件
-            loop_back_edges.append((continue_node_info.id, ''))
+            back_edge = Edge(label='', edge_type=EdgeType.CFG, source_node=continue_node_info, target_node=node_info)
+            loop_back_edges.append(back_edge)
 
         # 更新循环条件节点的入边，添加回边
         if loop_back_edges:
@@ -187,7 +189,8 @@ class CFG(BaseAnalyzer):
 
         # 6. 将条件节点添加到CFG
         CFG = body_cfg
-        CFG.append((condition_node_info, self.get_edge(condition_in_nodes)))
+        condition_edges = self.get_edge(condition_in_nodes, condition_node_info)
+        CFG.append((condition_node_info, condition_edges))
 
         # 7. 从条件节点连接回循环体入口 (回边)
         if body_cfg:
@@ -195,7 +198,8 @@ class CFG(BaseAnalyzer):
             for i, (cfg_node, cfg_edges) in enumerate(CFG):
                 if cfg_node.id == first_node_in_body.id:
                     new_edges = list(cfg_edges)
-                    new_edges.append((condition_node_info.id, 'Y'))
+                    back_edge = Edge(label='Y', edge_type=EdgeType.CFG, source_node=condition_node_info, target_node=first_node_in_body)
+                    new_edges.append(back_edge)
                     CFG[i] = (cfg_node, new_edges)
                     break
         
@@ -209,9 +213,9 @@ class CFG(BaseAnalyzer):
     def _handle_switch_statement(self, node, in_nodes):
         """处理switch语句"""
         CFG = []
-        edge = self.get_edge(in_nodes)
         node_info = Node(node)
-        CFG.append((node_info, edge))
+        edges = self.get_edge(in_nodes, node_info)
+        CFG.append((node_info, edges))
 
         # 处理switch体
         body = node.child_by_field_name('body')
@@ -266,15 +270,15 @@ class CFG(BaseAnalyzer):
                 continue_nodes.extend(c_nodes)
         return break_nodes, continue_nodes
 
-    def get_edge(self, in_nodes):
-        """输入入节点，返回入边的列表，边为(parent_id, label)"""
-        edge = []
+    def get_edge(self, in_nodes, target_node):
+        """输入入节点和目标节点，返回完整的Edge对象列表"""
+        edges = []
         for in_node in in_nodes:
             parent, label = in_node
             if parent:
-                parent_id = parent.id
-                edge.append((parent_id, label))
-        return edge
+                edge = Edge(label=label, edge_type=EdgeType.CFG, source_node=parent, target_node=target_node)
+                edges.append(edge)
+        return edges
     
     def construct_cfg(self, code_or_node):
         """构建CFG - 可以接受代码字符串、函数节点或根节点"""
@@ -304,12 +308,9 @@ class CFG(BaseAnalyzer):
             cfg = Graph()
             for node_info, edges in cfg_edges:
                 cfg.add_node(node_info)
-                # 转换边格式 - edges是入边列表，添加到图的边列表中
-                for edge_info in edges:
-                    if isinstance(edge_info, tuple) and len(edge_info) == 2:
-                        source_id, label = edge_info
-                        source_node = cfg.id_to_nodes.get(source_id)
-                        edge = Edge(label=label, edge_type=EdgeType.CFG, source_node=source_node, target_node=node_info)
+                # edges现在已经是完整的Edge对象列表，直接添加到图的边列表中
+                for edge in edges:
+                    if isinstance(edge, Edge):
                         cfg.edges.append(edge)
 
             cfg.get_def_use_info()
