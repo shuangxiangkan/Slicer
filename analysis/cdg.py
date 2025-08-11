@@ -174,61 +174,79 @@ class CDG(CFG):
         
         return PDT
     
-    def dominance_frontier(self, code: str):
+    def construct_cfg_with_exit(self, code: str) -> Optional[Graph]:
         """
-        输入代码，返回CFG和支配边界
+        构建带虚拟出口节点的CFG（用于CDG分析）
+        
+        Args:
+            code: 函数代码
+            
+        Returns:
+            带虚拟出口节点的CFG，如果构建失败返回None
         """
         try:
-            # 构建CFG
+            # 构建基础CFG
             cfg = self.construct_cfg(code)
             if not cfg:
-                return [], []
-            
-            cfgs = [cfg]
+                return None
             
             # 计算逆向CFG
-            reverse_cfgs = [cfg.reverse() for cfg in cfgs]
+            reverse_cfg = cfg.reverse()
             
-            # 为每个反向CFG添加虚拟Exit节点
-            for i, reverse_cfg in enumerate(reverse_cfgs):
-                exit_id = -1
-                reverse_cfg.Exit = exit_id
-                
-                # 创建虚拟Exit节点
-                exit_node = CDGNode(exit_id, "EXIT", "virtual_exit")
-                reverse_cfg.add_node(exit_node)
-                
-                # 计算没有入边的节点（在反向图中），即原图中的出口节点
-                nodes_with_incoming = set()
-                for edge in reverse_cfg.edges:
-                    if edge.target_node:
-                        nodes_with_incoming.add(edge.target_node.id)
-                
-                # 为没有入边的节点从Exit添加出边：exit_node -> node
-                for node in reverse_cfg.nodes:
-                    if node.id != exit_id and node.id not in nodes_with_incoming:
-                        exit_edge = Edge(
-                            label='',
-                            edge_type=EdgeType.CFG,
-                            source_node=exit_node,
-                            target_node=node
-                        )
-                        reverse_cfg.edges.append(exit_edge)
+            # 为反向CFG添加虚拟Exit节点
+            exit_id = -1
+            reverse_cfg.Exit = exit_id
+            
+            # 创建虚拟Exit节点
+            exit_node = CDGNode(exit_id, "EXIT", "virtual_exit")
+            reverse_cfg.add_node(exit_node)
+            
+            # 计算没有入边的节点（在反向图中），即原图中的出口节点
+            nodes_with_incoming = set()
+            for edge in reverse_cfg.edges:
+                if edge.target_node:
+                    nodes_with_incoming.add(edge.target_node.id)
+            
+            # 为没有入边的节点从Exit添加出边：exit_node -> node
+            for node in reverse_cfg.nodes:
+                if node.id != exit_id and node.id not in nodes_with_incoming:
+                    exit_edge = Edge(
+                        label='',
+                        edge_type=EdgeType.CFG,
+                        source_node=exit_node,
+                        target_node=node
+                    )
+                    reverse_cfg.edges.append(exit_edge)
+            
+            return reverse_cfg
+            
         except Exception as e:
-            print(f'⚠️  CDG构建警告: dominance_frontier失败: {e}')
-            return [], []
+            print(f'⚠️  CDG构建警告: construct_cfg_with_exit失败: {e}')
+            return None
+    
+    def dominance_frontier(self, reverse_cfg: Graph) -> Dict[int, List[int]]:
+        """
+        基于带虚拟出口节点的反向CFG计算支配边界
         
-        # 计算每个节点的前驱节点
-        prev = self.get_prev(reverse_cfgs)
-        
-        # 输入逆向CFG，输出后支配树
-        PDT = self.post_dominator_tree(reverse_cfgs, prev)
-        
-        # 计算支配边界
-        DF = []
-        for cfg, tree in zip(reverse_cfgs, PDT):
-            V = {node.id for node in cfg.nodes}
-            df = {v: [] for v in V}
+        Args:
+            reverse_cfg: 带虚拟出口节点的反向CFG
+            
+        Returns:
+            支配边界字典 {node_id: [dominated_frontier_nodes]}
+        """
+        try:
+            # 计算每个节点的前驱节点
+            prev = self.get_prev([reverse_cfg])
+            
+            # 输入逆向CFG，输出后支配树
+            PDT = self.post_dominator_tree([reverse_cfg], prev)
+            if not PDT:
+                return {}
+            tree = PDT[0]
+            
+            # 计算支配边界
+            V = {node.id for node in reverse_cfg.nodes}
+            df: Dict[int, List[int]] = {v: [] for v in V}
             for v in V:
                 if len(prev.get(v, [])) > 1:
                     for p in prev[v]:
@@ -239,63 +257,72 @@ class CDG(CFG):
                             if runner == tree.parent.get(runner, runner):
                                 break
                             runner = tree.parent[runner]
-            DF.append(df)
-        
-        return cfgs, DF
+            
+            return df
+            
+        except Exception as e:
+            print(f'⚠️  CDG构建警告: dominance_frontier失败: {e}')
+            return {}
     
     def construct_cdg(self, code: str) -> Optional[Graph]:
         """
-        输入代码，返回CDG
+        输入代码，返回CDG（单个函数）
         """
         try:
-            cfgs, DF = self.dominance_frontier(code)
-            if not cfgs or not DF:
+            reverse_cfg = self.construct_cfg_with_exit(code)
+            if not reverse_cfg:
+                return None
+            df = self.dominance_frontier(reverse_cfg)
+            if not df:
                 return None
             
+            # 从反向CFG恢复原CFG的节点集合（reverse()应保持节点的标识与集合一致）
+            # 由于我们只需要节点集，用 reverse_cfg.nodes 即可
+            cfg_nodes = reverse_cfg.nodes
+            cfg_get_node = reverse_cfg.get_node_by_id
+            
             # 构建CDG
-            for cfg, df in zip(cfgs, DF):
-                # 清空CFG的边，用CDG边替换
-                cdg = Graph()
-                
-                # 复制所有节点
-                for node in cfg.nodes:
-                    cdg.add_node(node)
-                
-                # 找到函数入口节点（第一个函数定义节点）
-                entry_node = None
-                for node in cfg.nodes:
-                    if node.type == 'function_definition':
-                        entry_node = node
-                        break
-                
-                # 添加CDG边
-                for source_id in df:
-                    source_node = cfg.get_node_by_id(source_id)
-                    if source_node:
-                        for target_id in df[source_id]:
-                            if source_id == target_id:
-                                continue
-                            target_node = cfg.get_node_by_id(target_id)
-                            if target_node:
-                                # 确定边标签
-                                edge_label = ''
-                                if entry_node and source_node.id == entry_node.id:
-                                    if target_node.is_branch:
-                                        edge_label = 'branch'
-                                    else:
-                                        edge_label = 'entry'
-                                
-                                cdg_edge = Edge(
-                                    label=edge_label,
-                                    edge_type=EdgeType.CDG,
-                                    source_node=source_node,
-                                    target_node=target_node
-                                )
-                                cdg.edges.append(cdg_edge)
-                
-                cdg.get_def_use_info()
-                return cdg
-                
+            cdg = Graph()
+            
+            # 复制所有节点
+            for node in cfg_nodes:
+                cdg.add_node(node)
+            
+            # 找到函数入口节点（第一个函数定义节点）
+            entry_node = None
+            for node in cfg_nodes:
+                if node.type == 'function_definition':
+                    entry_node = node
+                    break
+            
+            # 添加CDG边
+            for source_id in df:
+                source_node = cfg_get_node(source_id)
+                if source_node:
+                    for target_id in df[source_id]:
+                        if source_id == target_id:
+                            continue
+                        target_node = cfg_get_node(target_id)
+                        if target_node:
+                            # 确定边标签
+                            edge_label = ''
+                            if entry_node and source_node.id == entry_node.id:
+                                if target_node.is_branch:
+                                    edge_label = 'branch'
+                                else:
+                                    edge_label = 'entry'
+                            
+                            cdg_edge = Edge(
+                                label=edge_label,
+                                edge_type=EdgeType.CDG,
+                                source_node=source_node,
+                                target_node=target_node
+                            )
+                            cdg.edges.append(cdg_edge)
+            
+            cdg.get_def_use_info()
+            return cdg
+            
         except Exception as e:
             print(f'⚠️  CDG构建警告: 构建失败: {e}')
             return None

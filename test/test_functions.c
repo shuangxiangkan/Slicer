@@ -1,20 +1,20 @@
 // // 测试函数集合 - 用于CDG/DDG/PDG分析
 // #include <stdio.h>
 
-// // http://zhuanlan.zhihu.com/p/572554127
-// int zhihu() {
-//     int i;
-//     scanf("%d", &i);
+// http://zhuanlan.zhihu.com/p/572554127
+int zhihu() {
+    int i;
+    scanf("%d", &i);
 
-//     if (i == 1) {
-//         printf("POS:\n");
-//     } else {
-//         i = 1;
-//     }
+    if (i == 1) {
+        printf("POS:\n");
+    } else {
+        i = 1;
+    }
 
-//     printf("%d\n", i);
-//     return 0;
-// }
+    printf("%d\n", i);
+    return 0;
+}
 
 // // https://uditagarwal.in/understanding-dependency-graphs-for-program-analysis/
 // int fuzzware() {
@@ -43,27 +43,27 @@
 //     return 0;
 // }
 
-// https://home.cs.colorado.edu/~kena/classes/5828/s99/lectures/lecture25.pdf
-int lecture25() {
-    int X, Y;
-    scanf("%d", &X);
-    scanf("%d", &Y);
+// // https://home.cs.colorado.edu/~kena/classes/5828/s99/lectures/lecture25.pdf
+// int lecture25() {
+//     int X, Y;
+//     scanf("%d", &X);
+//     scanf("%d", &Y);
 
-    while (X > 10) {
-        X = X - 10;
-        if (X == 10) {
-            break;
-        }
-    }
+//     while (X > 10) {
+//         X = X - 10;
+//         if (X == 10) {
+//             break;
+//         }
+//     }
 
-    if (Y < 20 && X % 2 == 0) {
-        Y = Y + 20;
-    } else {
-        Y = Y - 20;
-    }
+//     if (Y < 20 && X % 2 == 0) {
+//         Y = Y + 20;
+//     } else {
+//         Y = Y - 20;
+//     }
 
-    return 2 * X + Y;   
-}
+//     return 2 * X + Y;   
+// }
 
 
 // void ware() {
