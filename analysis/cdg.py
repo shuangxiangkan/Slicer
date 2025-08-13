@@ -2,8 +2,8 @@
 """
 控制依赖图(CDG)构建器
 
-基于CFG构建控制依赖图，使用后支配树和支配边界算法
-移植自static_program_analysis_by_tree_sitter/CDG.py
+基于CFG构建控制依赖图，使用Lengauer-Tarjan算法构建后支配树和支配边界算法
+移植自static_program_analysis_by_tree_sitter/CDG.py，并优化为使用高效的Lengauer-Tarjan算法
 """
 
 from typing import List, Dict, Optional, Set
@@ -25,7 +25,6 @@ class CDGNode(Node):
         self.is_branch = False
         self.defs = set()
         self.uses = set()
-
 
 class Tree:
     """支配树结构"""
@@ -54,39 +53,6 @@ class Tree:
             if v not in self.children:
                 self.children[v] = []
         
-        # 计算深度
-        self.depth = self.get_nodes_depth(root, {root: 0})
-    
-    def get_nodes_depth(self, root: int, depth: Dict[int, int]) -> Dict[int, int]:
-        """递归计算每个节点的深度"""
-        for child in self.children[root]:
-            depth[child] = depth[root] + 1
-            depth = self.get_nodes_depth(child, depth)
-        return depth
-    
-    def get_lca(self, a: int, b: int) -> int:
-        """计算a,b的最近公共祖先"""
-        if self.depth[a] > self.depth[b]:
-            diff = self.depth[a] - self.depth[b]
-            while diff > 0:
-                a = self.parent[a]
-                diff -= 1
-        elif self.depth[a] < self.depth[b]:
-            diff = self.depth[b] - self.depth[a]
-            while diff > 0:
-                b = self.parent[b]
-                diff -= 1
-        while a != b:
-            a = self.parent[a]
-            b = self.parent[b]
-        return a
-    
-    def reset_by_parent(self):
-        """根据parent字典重置children字典"""
-        self.children = {v: [] for v in self.vertex}
-        for node in self.parent:
-            if node != self.parent[node]:
-                self.children[self.parent[node]].append(node)
 
 
 class CDG(CFG):
@@ -96,41 +62,7 @@ class CDG(CFG):
         """初始化CDG构建器"""
         super().__init__(language)
         self.cdgs: Optional[List[Graph]] = None
-    
-    def get_subTree(self, cfg: Graph, exit_id: int) -> Dict[int, List[int]]:
-        """
-        按照广度优先遍历，找出一个子树
-        """
-        V = {node.id for node in cfg.nodes}
-        
-        # 构建出边字典 E: {node_id: [target_id, ...]}
-        E = {}
-        for edge in cfg.edges:
-            if edge.source_node and edge.target_node:
-                source_id = edge.source_node.id
-                target_id = edge.target_node.id
-                if source_id not in E:
-                    E[source_id] = []
-                E[source_id].append(target_id)
-        
-        visited = {v: False for v in V}
-        if exit_id in visited:
-            visited[exit_id] = True
-        queue = [exit_id]
-        subTree = {}
-        
-        while queue:
-            node = queue.pop(0)
-            if node not in E:
-                continue
-            for v in E[node]:
-                if v in visited and not visited[v]:
-                    queue.append(v)
-                    visited[v] = True
-                    subTree.setdefault(node, [])
-                    subTree[node].append(v)
-        
-        return subTree
+
     
     def get_prev(self, cfgs: List[Graph]) -> Dict[int, List[int]]:
         """
@@ -147,32 +79,157 @@ class CDG(CFG):
         
         return prev
     
-    def post_dominator_tree(self, cfgs: List[Graph], prev: Dict[int, List[int]]) -> List[Tree]:
+    def post_dominator_tree(self, cfg: Graph, prev: Dict[int, List[int]]) -> Tree:
         """
-        生成后支配树
+        使用Lengauer-Tarjan算法生成后支配树
         """
-        PDT = []
-        for cfg in cfgs:
-            exit_id = getattr(cfg, 'Exit', -1)
-            subTree = self.get_subTree(cfg, exit_id)
-            V = {node.id for node in cfg.nodes}
-            tree = Tree(V, subTree, exit_id)
-            changed = True
-            
-            while changed:
-                changed = False
-                for v in V:
-                    if v != exit_id and v in tree.parent:
-                        for u in prev.get(v, []):
-                            parent_v = tree.parent[v]
-                            if u in tree.vertex and u != parent_v and parent_v != tree.get_lca(u, parent_v):
-                                tree.parent[v] = tree.get_lca(u, parent_v)
-                                changed = True
-            
-            tree.reset_by_parent()
-            PDT.append(tree)
+        exit_id = getattr(cfg, 'Exit', -1)
+        V = {node.id for node in cfg.nodes}
         
-        return PDT
+        # 构建后继节点字典（用于DFS）
+        succ = {}
+        for edge in cfg.edges:
+            if edge.source_node and edge.target_node:
+                source_id = edge.source_node.id
+                target_id = edge.target_node.id
+                succ.setdefault(source_id, [])
+                succ[source_id].append(target_id)
+        
+        # 执行Lengauer-Tarjan算法
+        idom = self.lengauer_tarjan(V, succ, exit_id)
+        
+        # 构建支配树
+        children = {v: [] for v in V}
+        parent = {}
+        for v in V:
+            if v in idom and idom[v] != v:
+                children[idom[v]].append(v)
+                parent[v] = idom[v]
+            else:
+                parent[v] = v  # 根节点
+        
+        tree = Tree(V, children, exit_id)
+        tree.parent = parent
+        return tree
+    
+    def lengauer_tarjan(self, V: Set[int], succ: Dict[int, List[int]], root: int) -> Dict[int, int]:
+        """
+        Lengauer-Tarjan算法实现
+        返回直接支配者字典 {node: immediate_dominator}
+        """
+        # 初始化数据结构
+        n = len(V)
+        vertex = {}  # DFS编号到节点的映射
+        dfnum = {}   # 节点到DFS编号的映射
+        parent = {}  # DFS树中的父节点
+        semi = {}    # 半支配者
+        idom = {}    # 直接支配者
+        ancestor = {} # 祖先节点（用于路径压缩）
+        label = {}   # 标签（用于路径压缩）
+        bucket = {}  # 桶，存储半支配者相同的节点
+        
+        # Step 1: DFS编号
+        counter = [0]
+        self._dfs(root, succ, dfnum, vertex, parent, counter)
+        
+        # 初始化（在DFS之后，因为需要DFS编号）
+        for v in V:
+            if v in dfnum:  # 只处理可达节点
+                semi[v] = dfnum[v]
+                idom[v] = 0
+                ancestor[v] = 0
+                label[v] = v
+                bucket[v] = []
+        
+        # Step 2: 计算半支配者
+        for i in range(counter[0] - 1, 0, -1):
+            w = vertex[i]
+            
+            # 计算w的半支配者
+            for v in self._get_predecessors(w, succ, V):
+                if v in dfnum:  # 确保前驱节点在DFS树中
+                    u = self._eval(v, ancestor, label, semi, dfnum)
+                    if semi[u] < semi[w]:
+                        semi[w] = semi[u]
+            
+            # 将w添加到其半支配者的桶中
+            if semi[w] < len(vertex) and semi[w] in vertex:
+                semi_dom = vertex[semi[w]]
+                bucket[semi_dom].append(w)
+            
+            # 链接w到其父节点
+            if w in parent and parent[w] != 0:
+                self._link(parent[w], w, ancestor, label)
+                
+                # 处理父节点桶中的节点
+                for v in bucket[parent[w]]:
+                    u = self._eval(v, ancestor, label, semi, dfnum)
+                    if semi[u] < semi[v]:
+                        idom[v] = u
+                    else:
+                        idom[v] = parent[w]
+                
+                bucket[parent[w]] = []
+        
+        # Step 3: 计算直接支配者
+        for i in range(1, counter[0]):
+            w = vertex[i]
+            if w in idom and idom[w] != 0 and semi[w] < len(vertex) and semi[w] in vertex:
+                if idom[w] != vertex[semi[w]]:
+                    idom[w] = idom[idom[w]]
+        
+        # 设置根节点和不可达节点
+        idom[root] = root
+        for v in V:
+            if v not in dfnum:
+                idom[v] = root  # 不可达节点由根节点支配
+        
+        return idom
+    
+    def _dfs(self, v: int, succ: Dict[int, List[int]], dfnum: Dict[int, int], 
+             vertex: Dict[int, int], parent: Dict[int, int], counter: List[int]):
+        """深度优先搜索，进行DFS编号"""
+        dfnum[v] = counter[0]
+        vertex[counter[0]] = v
+        counter[0] += 1
+        
+        for w in succ.get(v, []):
+            if w not in dfnum:
+                parent[w] = v
+                self._dfs(w, succ, dfnum, vertex, parent, counter)
+    
+    def _get_predecessors(self, node: int, succ: Dict[int, List[int]], V: Set[int]) -> List[int]:
+        """获取节点的前驱节点"""
+        pred = []
+        for v in V:
+            if node in succ.get(v, []):
+                pred.append(v)
+        return pred
+    
+    def _eval(self, v: int, ancestor: Dict[int, int], label: Dict[int, int], 
+              semi: Dict[int, int], dfnum: Dict[int, int]) -> int:
+        """路径压缩的eval操作"""
+        if ancestor[v] == 0:
+            return label[v]
+        else:
+            self._compress(v, ancestor, label, semi, dfnum)
+            if semi[label[ancestor[v]]] >= semi[label[v]]:
+                return label[v]
+            else:
+                return label[ancestor[v]]
+    
+    def _compress(self, v: int, ancestor: Dict[int, int], label: Dict[int, int], 
+                  semi: Dict[int, int], dfnum: Dict[int, int]):
+        """路径压缩"""
+        if ancestor[ancestor[v]] != 0:
+            self._compress(ancestor[v], ancestor, label, semi, dfnum)
+            if semi[label[ancestor[v]]] < semi[label[v]]:
+                label[v] = label[ancestor[v]]
+            ancestor[v] = ancestor[ancestor[v]]
+    
+    def _link(self, v: int, w: int, ancestor: Dict[int, int], label: Dict[int, int]):
+        """链接操作"""
+        ancestor[w] = v
     
     def construct_cfg_with_exit(self, code: str) -> Optional[Graph]:
         """
@@ -239,10 +296,18 @@ class CDG(CFG):
             prev = self.get_prev([reverse_cfg])
             
             # 输入逆向CFG，输出后支配树
-            PDT = self.post_dominator_tree([reverse_cfg], prev)
-            if not PDT:
+            tree = self.post_dominator_tree(reverse_cfg, prev)
+            if not tree:
                 return {}
-            tree = PDT[0]
+            
+            # 打印后支配树
+            print("\n=== 后支配树 ===")
+            node_map = {node.id: node.text.strip().replace('\n', ' ')[:30] for node in reverse_cfg.nodes}
+            for node_id, parent_id in tree.parent.items():
+                if node_id != parent_id:  # 避免自环
+                    node_text = node_map.get(node_id, f"节点{node_id}")
+                    parent_text = node_map.get(parent_id, f"节点{parent_id}")
+                    print(f"{node_text} ({node_id}) --> {parent_text} ({parent_id})")
             
             # 计算支配边界
             V = {node.id for node in reverse_cfg.nodes}
@@ -272,6 +337,15 @@ class CDG(CFG):
             reverse_cfg = self.construct_cfg_with_exit(code)
             if not reverse_cfg:
                 return None
+            
+            # 调试：打印反向CFG的边信息
+            print(f"\n=== 反向CFG构建完成，共有 {len(reverse_cfg.edges)} 条边 ===")
+            for i, edge in enumerate(reverse_cfg.edges, 1):
+                if edge.source_node and edge.target_node:
+                    source_text = edge.source_node.text.strip().replace('\n', ' ')[:30]
+                    target_text = edge.target_node.text.strip().replace('\n', ' ')[:30]
+                    print(f"{i:3d}. {source_text} ({edge.source_node.id}) --> {target_text} ({edge.target_node.id})")
+            
             df = self.dominance_frontier(reverse_cfg)
             if not df:
                 return None
@@ -296,27 +370,32 @@ class CDG(CFG):
                     break
             
             # 添加CDG边
-            for source_id in df:
-                source_node = cfg_get_node(source_id)
-                if source_node:
-                    for target_id in df[source_id]:
-                        if source_id == target_id:
+            # 注意：在支配边界计算中，df[runner].append(v) 表示 runner 在 v 的支配边界中
+            # 这意味着 v 控制依赖于 runner，所以边应该从 runner 指向 v
+            # 但根据控制依赖的语义，应该是控制节点指向被控制节点
+            # 因此需要交换source和target的角色
+            for controlled_id in df:  # controlled_id 是被控制的节点
+                controlled_node = cfg_get_node(controlled_id)
+                if controlled_node:
+                    for controller_id in df[controlled_id]:  # controller_id 是控制节点
+                        if controlled_id == controller_id:
                             continue
-                        target_node = cfg_get_node(target_id)
-                        if target_node:
+                        controller_node = cfg_get_node(controller_id)
+                        if controller_node:
                             # 确定边标签
                             edge_label = ''
-                            if entry_node and source_node.id == entry_node.id:
-                                if target_node.is_branch:
+                            if entry_node and controller_node.id == entry_node.id:
+                                if controlled_node.is_branch:
                                     edge_label = 'branch'
                                 else:
                                     edge_label = 'entry'
                             
+                            # 控制依赖边：从控制节点指向被控制节点
                             cdg_edge = Edge(
                                 label=edge_label,
                                 edge_type=EdgeType.CDG,
-                                source_node=source_node,
-                                target_node=target_node
+                                source_node=controller_node,   # 控制节点
+                                target_node=controlled_node    # 被控制节点
                             )
                             cdg.edges.append(cdg_edge)
             
