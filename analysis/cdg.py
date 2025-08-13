@@ -3,7 +3,7 @@
 控制依赖图(CDG)构建器
 
 基于CFG构建控制依赖图，使用Lengauer-Tarjan算法构建后支配树和支配边界算法
-移植自static_program_analysis_by_tree_sitter/CDG.py，并优化为使用高效的Lengauer-Tarjan算法
+借鉴static_program_analysis_by_tree_sitter/CDG.py, 并优化为使用高效的Lengauer-Tarjan算法
 """
 
 from typing import List, Dict, Optional, Set
@@ -37,7 +37,6 @@ class Tree:
             children: 字典 {parent_id: [child_id, ...]}
             root: 根节点ID
         """
-        self.vertex = V
         self.children = children
         self.root = root
         self.parent = {}
@@ -46,15 +45,13 @@ class Tree:
         for node in children:
             for each in children[node]:
                 self.parent[each] = node
-        self.parent[root] = root
+        self.parent[self.root] = self.root
         
         # 确保所有节点都在children中
         for v in V:
             if v not in self.children:
                 self.children[v] = []
         
-
-
 class CDG(CFG):
     """控制依赖图构建器"""
     
@@ -300,15 +297,6 @@ class CDG(CFG):
             if not tree:
                 return {}
             
-            # 打印后支配树
-            print("\n=== 后支配树 ===")
-            node_map = {node.id: node.text.strip().replace('\n', ' ')[:30] for node in reverse_cfg.nodes}
-            for node_id, parent_id in tree.parent.items():
-                if node_id != parent_id:  # 避免自环
-                    node_text = node_map.get(node_id, f"节点{node_id}")
-                    parent_text = node_map.get(parent_id, f"节点{parent_id}")
-                    print(f"{node_text} ({node_id}) --> {parent_text} ({parent_id})")
-            
             # 计算支配边界
             V = {node.id for node in reverse_cfg.nodes}
             df: Dict[int, List[int]] = {v: [] for v in V}
@@ -337,14 +325,6 @@ class CDG(CFG):
             reverse_cfg = self.construct_cfg_with_exit(code)
             if not reverse_cfg:
                 return None
-            
-            # 调试：打印反向CFG的边信息
-            print(f"\n=== 反向CFG构建完成，共有 {len(reverse_cfg.edges)} 条边 ===")
-            for i, edge in enumerate(reverse_cfg.edges, 1):
-                if edge.source_node and edge.target_node:
-                    source_text = edge.source_node.text.strip().replace('\n', ' ')[:30]
-                    target_text = edge.target_node.text.strip().replace('\n', ' ')[:30]
-                    print(f"{i:3d}. {source_text} ({edge.source_node.id}) --> {target_text} ({edge.target_node.id})")
             
             df = self.dominance_frontier(reverse_cfg)
             if not df:
