@@ -321,10 +321,12 @@ class CDG(CFG):
                             cdg.edges.append(cdg_edge)
             
             cdg.get_def_use_info()
+            self.cdg = cdg
             return cdg
             
         except Exception as e:
             print(f'⚠️  CDG构建警告: 构建失败: {e}')
+            self.cdg = None
             return None
     
     def see_cdg(self, code: str, filename: str = 'CDG', pdf: bool = True, dot_format: bool = True, view: bool = False):
@@ -333,3 +335,35 @@ class CDG(CFG):
         if cdg:
             visualize_cdg([cdg], filename, pdf, dot_format, view)
         return cdg
+    
+    def print_cdg_edges(self):
+        """打印CDG的边信息，格式：语句A (序号) --> 语句B (序号)"""
+        if not hasattr(self, 'cdg') or not self.cdg:
+            print("CDG未构建，请先调用construct_cdg()")
+            return
+        
+        print("=== CDG 边信息 ===")
+        if not self.cdg.edges:
+            print("该图没有边")
+            return
+            
+        for i, edge in enumerate(self.cdg.edges, 1):
+            if edge.source_node and edge.target_node:
+                source_text = edge.source_node.text.strip().replace('\n', ' ')
+                target_text = edge.target_node.text.strip().replace('\n', ' ')
+                source_id = edge.source_node.id
+                target_id = edge.target_node.id
+                
+                # 限制文本长度，避免过长
+                if len(source_text) > 50:
+                    source_text = source_text[:47] + "..."
+                if len(target_text) > 50:
+                    target_text = target_text[:47] + "..."
+                
+                # 显示边的标签信息（如entry、branch等）
+                label_info = f" [{edge.label}]" if edge.label else ""
+                print(f"{i:3d}. {source_text} ({source_id}) --> {target_text} ({target_id}){label_info}")
+            else:
+                print(f"{i:3d}. [无效边: 缺少源节点或目标节点]")
+        
+        print(f"\n总计: {len(self.cdg.edges)} 条边")

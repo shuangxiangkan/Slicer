@@ -213,6 +213,44 @@ class DDG(CFG):
                 })
         
         return func_deps
+    
+    def print_ddg_edges(self):
+        """打印DDG的边信息，格式：语句A (序号) --> 语句B (序号) [变量]"""
+        if not hasattr(self, 'ddg') or not self.ddg:
+            print("DDG未构建，请先调用construct_ddg()")
+            return
+        
+        print("=== DDG 边信息 ===")
+        if not self.ddg.edges:
+            print("该图没有边")
+            return
+            
+        for i, edge in enumerate(self.ddg.edges, 1):
+            if edge.source_node and edge.target_node:
+                source_text = edge.source_node.text.strip().replace('\n', ' ')
+                target_text = edge.target_node.text.strip().replace('\n', ' ')
+                source_id = edge.source_node.id
+                target_id = edge.target_node.id
+                
+                # 限制文本长度，避免过长
+                if len(source_text) > 50:
+                    source_text = source_text[:47] + "..."
+                if len(target_text) > 50:
+                    target_text = target_text[:47] + "..."
+                
+                # 显示依赖的变量信息
+                variables = []
+                if hasattr(edge, 'variables') and edge.variables:
+                    variables = edge.variables
+                elif hasattr(edge, 'token') and edge.token:
+                    variables = edge.token
+                
+                var_info = f" [变量: {', '.join(variables)}]" if variables else ""
+                print(f"{i:3d}. {source_text} ({source_id}) --> {target_text} ({target_id}){var_info}")
+            else:
+                print(f"{i:3d}. [无效边: 缺少源节点或目标节点]")
+        
+        print(f"\n总计: {len(self.ddg.edges)} 条边")
 
 
 

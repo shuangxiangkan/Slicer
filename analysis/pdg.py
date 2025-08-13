@@ -135,6 +135,104 @@ class PDG(CFG):
                 func_info['total_dependencies'] += 1
         
         return func_info
+    
+    def print_pdg_edges(self):
+        """打印PDG的边信息，格式：语句A (序号) --> 语句B (序号) [类型]"""
+        if not hasattr(self, 'pdg') or not self.pdg:
+            print("PDG未构建，请先调用construct_pdg()")
+            return
+        
+        print("=== PDG 边信息 ===")
+        if not self.pdg.edges:
+            print("该图没有边")
+            return
+            
+        # 按边类型分组统计
+        control_edges = []
+        data_edges = []
+        other_edges = []
+        
+        for edge in self.pdg.edges:
+            if hasattr(edge, 'type'):
+                if edge.type.name == 'CDG':
+                    control_edges.append(edge)
+                elif edge.type.name == 'DDG':
+                    data_edges.append(edge)
+                else:
+                    other_edges.append(edge)
+            else:
+                other_edges.append(edge)
+        
+        edge_count = 1
+        
+        # 打印控制依赖边
+        if control_edges:
+            print("\n--- 控制依赖边 (CDG) ---")
+            for edge in control_edges:
+                if edge.source_node and edge.target_node:
+                    source_text = edge.source_node.text.strip().replace('\n', ' ')
+                    target_text = edge.target_node.text.strip().replace('\n', ' ')
+                    source_id = edge.source_node.id
+                    target_id = edge.target_node.id
+                    
+                    # 限制文本长度
+                    if len(source_text) > 50:
+                        source_text = source_text[:47] + "..."
+                    if len(target_text) > 50:
+                        target_text = target_text[:47] + "..."
+                    
+                    label_info = f" [{edge.label}]" if hasattr(edge, 'label') and edge.label else ""
+                    print(f"{edge_count:3d}. {source_text} ({source_id}) --> {target_text} ({target_id}) [控制依赖]{label_info}")
+                    edge_count += 1
+        
+        # 打印数据依赖边
+        if data_edges:
+            print("\n--- 数据依赖边 (DDG) ---")
+            for edge in data_edges:
+                if edge.source_node and edge.target_node:
+                    source_text = edge.source_node.text.strip().replace('\n', ' ')
+                    target_text = edge.target_node.text.strip().replace('\n', ' ')
+                    source_id = edge.source_node.id
+                    target_id = edge.target_node.id
+                    
+                    # 限制文本长度
+                    if len(source_text) > 50:
+                        source_text = source_text[:47] + "..."
+                    if len(target_text) > 50:
+                        target_text = target_text[:47] + "..."
+                    
+                    # 显示依赖的变量信息
+                    variables = []
+                    if hasattr(edge, 'variables') and edge.variables:
+                        variables = edge.variables
+                    elif hasattr(edge, 'token') and edge.token:
+                        variables = edge.token
+                    
+                    var_info = f" [变量: {', '.join(variables)}]" if variables else ""
+                    print(f"{edge_count:3d}. {source_text} ({source_id}) --> {target_text} ({target_id}) [数据依赖]{var_info}")
+                    edge_count += 1
+        
+        # 打印其他类型边
+        if other_edges:
+            print("\n--- 其他类型边 ---")
+            for edge in other_edges:
+                if edge.source_node and edge.target_node:
+                    source_text = edge.source_node.text.strip().replace('\n', ' ')
+                    target_text = edge.target_node.text.strip().replace('\n', ' ')
+                    source_id = edge.source_node.id
+                    target_id = edge.target_node.id
+                    
+                    # 限制文本长度
+                    if len(source_text) > 50:
+                        source_text = source_text[:47] + "..."
+                    if len(target_text) > 50:
+                        target_text = target_text[:47] + "..."
+                    
+                    edge_type = edge.type.name if hasattr(edge, 'type') and hasattr(edge.type, 'name') else "未知"
+                    print(f"{edge_count:3d}. {source_text} ({source_id}) --> {target_text} ({target_id}) [{edge_type}]")
+                    edge_count += 1
+        
+        print(f"\n总计: {len(self.pdg.edges)} 条边 (控制依赖: {len(control_edges)}, 数据依赖: {len(data_edges)}, 其他: {len(other_edges)})")
 
 
 

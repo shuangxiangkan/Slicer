@@ -362,3 +362,33 @@ class CFG(BaseAnalyzer):
             print(f'⚠️  CFG构建警告: 代码解析失败: {e}')
             self.cfg = None
             return None
+    
+    def print_cfg_edges(self):
+        """打印CFG的边信息，格式：语句A (序号) --> 语句B (序号)"""
+        if not hasattr(self, 'cfg') or not self.cfg:
+            print("CFG未构建，请先调用construct_cfg()")
+            return
+        
+        print("=== CFG 边信息 ===")
+        if not self.cfg.edges:
+            print("该图没有边")
+            return
+            
+        for i, edge in enumerate(self.cfg.edges, 1):
+            if edge.source_node and edge.target_node:
+                source_text = edge.source_node.text.strip().replace('\n', ' ')
+                target_text = edge.target_node.text.strip().replace('\n', ' ')
+                source_id = edge.source_node.id
+                target_id = edge.target_node.id
+                
+                # 限制文本长度，避免过长
+                if len(source_text) > 50:
+                    source_text = source_text[:47] + "..."
+                if len(target_text) > 50:
+                    target_text = target_text[:47] + "..."
+                
+                print(f"{i:3d}. {source_text} ({source_id}) --> {target_text} ({target_id})")
+            else:
+                print(f"{i:3d}. [无效边: 缺少源节点或目标节点]")
+        
+        print(f"\n总计: {len(self.cfg.edges)} 条边")
