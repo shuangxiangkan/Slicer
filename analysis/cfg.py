@@ -392,3 +392,34 @@ class CFG(BaseAnalyzer):
                 print(f"{i:3d}. [无效边: 缺少源节点或目标节点]")
         
         print(f"\n总计: {len(self.cfg.edges)} 条边")
+    
+    def print_statement_defs_uses(self):
+        """打印CFG中每条语句的defs和uses信息"""
+        if not hasattr(self, 'cfg') or not self.cfg:
+            print("CFG未构建，请先调用construct_cfg()")
+            return
+        
+        print("=== CFG 语句的 Defs 和 Uses 信息 ===")
+        if not self.cfg.nodes:
+            print("该图没有节点")
+            return
+        
+        # 按行号排序节点
+        sorted_nodes = sorted(self.cfg.nodes, key=lambda node: node.line)
+        
+        for i, node in enumerate(sorted_nodes, 1):
+            # 获取语句文本，限制长度
+            stmt_text = node.text.strip().replace('\n', ' ')
+            if len(stmt_text) > 60:
+                stmt_text = stmt_text[:57] + "..."
+            
+            # 格式化defs和uses
+            defs_str = ', '.join(sorted(node.defs)) if node.defs else "无"
+            uses_str = ', '.join(sorted(node.uses)) if node.uses else "无"
+            
+            print(f"{i:3d}. 行{node.line:3d}: {stmt_text}")
+            print(f"     Defs: {defs_str}")
+            print(f"     Uses: {uses_str}")
+            print()
+        
+        print(f"总计: {len(sorted_nodes)} 个语句节点")

@@ -5,7 +5,7 @@
 基于CFG构建数据依赖图
 """
 
-from typing import Dict, Optional
+from typing import Optional
 from .cfg import CFG
 from .graph import Graph, DDGEdge
 from .visualization import visualize_ddg

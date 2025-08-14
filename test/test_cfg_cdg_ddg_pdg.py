@@ -120,6 +120,10 @@ def test_cfg_cdg_ddg_pdg():
                     # 使用新的打印函数打印CFG边信息
                     print(f"   🔍 CFG边信息:")
                     cfg_analyzer.print_cfg_edges()
+                    
+                    # 打印每条语句的defs和uses信息
+                    print(f"   📝 语句的Defs和Uses信息:")
+                    cfg_analyzer.print_statement_defs_uses()
                 else:
                     stats['CFG']['failure'] += 1
                     print(f"   ❌ CFG生成失败")

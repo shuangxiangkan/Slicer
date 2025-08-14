@@ -70,8 +70,11 @@ class Node:
         
         # 获取定义和使用信息
         # 对于分支语句，只分析条件部分，不包括语句体
-        if tree_sitter_node.type in ['if_statement', 'while_statement', 'for_statement', 'switch_statement']:
+        if tree_sitter_node.type in ['if_statement', 'while_statement', 'switch_statement']:
             self.defs, self.uses = self._get_branch_condition_def_use_info(tree_sitter_node)
+        elif tree_sitter_node.type == 'for_statement':
+            # for 循环需要特殊处理，因为它包含初始化、条件和更新三个部分
+            self.defs, self.uses = self._get_for_statement_def_use_info(tree_sitter_node)
         else:
             self.defs, self.uses = self._get_def_use_info(tree_sitter_node)
     
@@ -148,6 +151,28 @@ class Node:
         
         return defs, uses
     
+    def _get_for_statement_def_use_info(self, for_node):
+        """获取 for 循环语句的定义和使用信息"""
+        defs = set()
+        uses = set()
+        
+        # for 循环包含三个部分：初始化、条件、更新
+        # 分析到语句体之前的所有子节点
+        body = for_node.child_by_field_name('body')
+        
+        for child in for_node.children:
+            if child == body:
+                break
+            # 分析每个子节点的标识符
+            identifiers = self._get_all_identifiers(child)
+            for identifier in identifiers:
+                if self._is_definition(identifier, child):
+                    defs.add(text(identifier))
+                else:
+                    uses.add(text(identifier))
+        
+        return defs, uses
+    
     def _get_function_signature_identifiers(self, function_node):
         """获取函数签名中的标识符（只包括参数，不包括函数体）"""
         identifiers = []
@@ -212,6 +237,13 @@ class Node:
         # 函数参数
         if parent.type == 'parameter_declaration':
             return True
+        
+        # 数组声明器中的标识符（如函数参数 int arr[]）
+        if parent.type == 'array_declarator':
+            # 检查是否在参数声明中
+            grandparent = parent.parent
+            if grandparent and grandparent.type == 'parameter_declaration':
+                return True
 
         # 赋值表达式的左侧
         if parent.type == 'assignment_expression':
