@@ -5,12 +5,10 @@
 基于CFG构建数据依赖图
 """
 
-from typing import List, Dict, Set, Optional
+from typing import Dict, Optional
 from .cfg import CFG
-from .graph import Graph, Edge, DDGEdge, EdgeType
-from .node import Node
+from .graph import Graph, DDGEdge
 from .visualization import visualize_ddg
-
 
 class DDG(CFG):
     """数据依赖图构建器 - 单函数版本"""
@@ -179,41 +177,6 @@ class DDG(CFG):
             visualize_ddg([ddg], filename, pdf, dot_format, view)  # 传入单元素列表以兼容可视化函数
         return ddg
     
-    def get_data_dependencies(self, code: str) -> Optional[Dict]:
-        """
-        获取数据依赖关系信息 - 单函数版本
-        Returns:
-            单个函数的数据依赖信息
-        """
-        ddg = self.construct_ddg(code)
-        if not ddg:
-            return None
-        
-        func_deps = {
-            'nodes': len(ddg.nodes),
-            'dependencies': []
-        }
-        
-        for edge in ddg.edges:
-            if edge.type == 'DDG' and edge.source_node and edge.target_node:
-                func_deps['dependencies'].append({
-                    'source': {
-                        'id': edge.source_node.id,
-                        'line': edge.source_node.line,
-                        'text': edge.source_node.text,
-                        'type': edge.source_node.type
-                    },
-                    'target': {
-                        'id': edge.target_node.id,
-                        'line': edge.target_node.line,
-                        'text': edge.target_node.text,
-                        'type': edge.target_node.type
-                    },
-                    'variables': edge.variables if hasattr(edge, 'variables') else edge.token
-                })
-        
-        return func_deps
-    
     def print_ddg_edges(self):
         """打印DDG的边信息，格式：语句A (序号) --> 语句B (序号) [变量]"""
         if not hasattr(self, 'ddg') or not self.ddg:
@@ -251,6 +214,3 @@ class DDG(CFG):
                 print(f"{i:3d}. [无效边: 缺少源节点或目标节点]")
         
         print(f"\n总计: {len(self.ddg.edges)} 条边")
-
-
-

@@ -58,7 +58,7 @@ class CDG(CFG):
     def __init__(self, language: str = "c"):
         """初始化CDG构建器"""
         super().__init__(language)
-        self.cdgs: Optional[List[Graph]] = None
+        self.cdg: Optional[Graph] = None
 
     
     def get_prev(self, cfgs: List[Graph]) -> Dict[int, List[int]]:
@@ -116,7 +116,7 @@ class CDG(CFG):
         """
         # 初始化数据结构
         n = len(V)
-        vertex = {}  # DFS编号到节点的映射
+        node_map = {}  # DFS编号到节点的映射
         dfnum = {}   # 节点到DFS编号的映射
         parent = {}  # DFS树中的父节点
         semi = {}    # 半支配者
@@ -127,7 +127,7 @@ class CDG(CFG):
         
         # Step 1: DFS编号
         counter = [0]
-        self._dfs(root, succ, dfnum, vertex, parent, counter)
+        self._dfs(root, succ, dfnum, node_map, parent, counter)
         
         # 初始化（在DFS之后，因为需要DFS编号）
         for v in V:
@@ -140,7 +140,7 @@ class CDG(CFG):
         
         # Step 2: 计算半支配者
         for i in range(counter[0] - 1, 0, -1):
-            w = vertex[i]
+            w = node_map[i]
             
             # 计算w的半支配者
             for v in self._get_predecessors(w, succ, V):
@@ -150,8 +150,8 @@ class CDG(CFG):
                         semi[w] = semi[u]
             
             # 将w添加到其半支配者的桶中
-            if semi[w] < len(vertex) and semi[w] in vertex:
-                semi_dom = vertex[semi[w]]
+            if semi[w] < len(node_map) and semi[w] in node_map:
+                semi_dom = node_map[semi[w]]
                 bucket[semi_dom].append(w)
             
             # 链接w到其父节点
@@ -170,9 +170,9 @@ class CDG(CFG):
         
         # Step 3: 计算直接支配者
         for i in range(1, counter[0]):
-            w = vertex[i]
-            if w in idom and idom[w] != 0 and semi[w] < len(vertex) and semi[w] in vertex:
-                if idom[w] != vertex[semi[w]]:
+            w = node_map[i]
+            if w in idom and idom[w] != 0 and semi[w] < len(node_map) and semi[w] in node_map:
+                if idom[w] != node_map[semi[w]]:
                     idom[w] = idom[idom[w]]
         
         # 设置根节点和不可达节点
@@ -184,16 +184,16 @@ class CDG(CFG):
         return idom
     
     def _dfs(self, v: int, succ: Dict[int, List[int]], dfnum: Dict[int, int], 
-             vertex: Dict[int, int], parent: Dict[int, int], counter: List[int]):
+             node_map: Dict[int, int], parent: Dict[int, int], counter: List[int]):
         """深度优先搜索，进行DFS编号"""
         dfnum[v] = counter[0]
-        vertex[counter[0]] = v
+        node_map[counter[0]] = v
         counter[0] += 1
         
         for w in succ.get(v, []):
             if w not in dfnum:
                 parent[w] = v
-                self._dfs(w, succ, dfnum, vertex, parent, counter)
+                self._dfs(w, succ, dfnum, node_map, parent, counter)
     
     def _get_predecessors(self, node: int, succ: Dict[int, List[int]], V: Set[int]) -> List[int]:
         """获取节点的前驱节点"""
