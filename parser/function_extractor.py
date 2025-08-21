@@ -7,8 +7,7 @@
 import tree_sitter_c as tsc
 import tree_sitter_cpp as tscpp
 from tree_sitter import Language, Parser, Node
-from pathlib import Path
-from typing import List, Optional, Dict
+from typing import List, Optional
 import logging
 from .function_info import FunctionInfo
 from .type_registry import TypeRegistry

@@ -167,13 +167,6 @@ class RepoAnalyzer:
                 functions = self.function_extractor.extract_from_file(file_path)
                 all_functions.extend(functions)
                 
-                # 分别显示定义和声明的数量
-                definitions = len([f for f in functions if not f.is_declaration])
-                declarations = len([f for f in functions if f.is_declaration])
-                logger.debug(f" -> {definitions}定义 + {declarations}声明 = {len(functions)}函数")
-                
-                logger.debug(f"处理文件 {file_path}: 找到 {len(functions)} 个函数")
-                
             except Exception as e:
                 failed_files.append((file_path, str(e)))
                 logger.error(f"处理文件 {file_path} 失败: {e}")
@@ -712,13 +705,6 @@ class RepoAnalyzer:
             
         Returns:
             直接调用者函数名列表，如果函数不存在或未构建Call Graph则返回空列表
-            
-        Example:
-            # 获取malloc的所有调用者
-            callers = analyzer.get_function_callers("malloc")
-            print(f"malloc 被 {len(callers)} 个函数调用")
-            for caller in callers:
-                print(f"  - {caller}")
         """
         if not self.call_graph._graph_built:
             return []
