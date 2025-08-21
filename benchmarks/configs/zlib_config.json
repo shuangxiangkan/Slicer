@@ -1,5 +1,5 @@
 {
-    "library_path": "/home/kansx/SVF-Tools/Slicer/benchmarks/zlib",
+    "library_path": "benchmarks/zlib",
     "include_files": [
       "adler32.c",
       "compress.c",
@@ -29,4 +29,4 @@
       "zutil.h"
     ],
     "exclude_files": []
-  } 
+  }

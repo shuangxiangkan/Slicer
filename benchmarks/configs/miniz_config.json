@@ -1,16 +1,16 @@
 {
-  "library_path": "/Users/shuangxiangkan/Tools/Slicer/benchmarks/miniz",
+  "library_path": "benchmarks/miniz",
   "include_files": [
     "miniz.c",
     "miniz.h"
   ],
   "exclude_files": [],
   "analysis_targets": [
-    "/home/kansx/SVF-Tools/Slicer/benchmark/miniz"
+    "benchmarks/miniz"
   ],
   "exclude_targets": [
   ],
   "file_extensions": [".c", ".h", ".cpp", ".hpp"],
   "description": "Miniz库分析配置",
   "notes": "分析miniz压缩库的函数定义和类型定义"
-} 
+}

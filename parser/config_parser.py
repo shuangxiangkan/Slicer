@@ -44,7 +44,18 @@ class ConfigParser:
     
     def get_library_path(self) -> str:
         """获取库路径"""
-        return self.config['library_path']
+        library_path = self.config['library_path']
+        
+        # 如果是相对路径，转换为绝对路径
+        if not os.path.isabs(library_path):
+            # 获取项目根目录（configs目录的上上级目录）
+            config_dir = os.path.dirname(os.path.abspath(self.config_path))
+            benchmarks_dir = os.path.dirname(config_dir)  # benchmarks目录
+            project_root = os.path.dirname(benchmarks_dir)  # 项目根目录
+            library_path = os.path.join(project_root, library_path)
+            library_path = os.path.abspath(library_path)
+        
+        return library_path
     
     def is_include_mode(self) -> bool:
         """判断是否为包含模式"""
@@ -130,4 +141,4 @@ class ConfigParser:
         else:
             summary += "   ➤ 分析整个库（未指定包含或排除文件）"
         
-        return summary 
+        return summary
