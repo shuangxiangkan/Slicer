@@ -67,28 +67,23 @@ class HeaderAnalyzer:
         """分析单个头文件的include关系（向后兼容）"""
         return self.analyze_single_file(file_path)
     
-    def analyze_from_repo(self, config_parser, target_files: List[str] = None, 
-                         progress_callback=None) -> Dict:
+    def analyze_from_repo(self, config_parser, target_files: List[str] = None) -> Dict:
         """
         从repo配置分析头文件
         
         Args:
             config_parser: 配置解析器对象
             target_files: 指定要分析的头文件列表（可选）
-            progress_callback: 进度回调函数
             
         Returns:
             头文件分析结果
         """
-        if progress_callback:
-            progress_callback("🔍 开始头文件批量include分析", "start")
-            progress_callback(self._get_repo_summary_text(config_parser), "config")
+        logger.info("开始头文件批量include分析")
         
         # 收集要分析的头文件
         header_files = self._collect_header_files_from_repo(config_parser, target_files)
         
-        if progress_callback:
-            progress_callback(f"📂 找到 {len(header_files)} 个头文件", "files")
+        logger.info(f"找到 {len(header_files)} 个头文件")
         
         if not header_files:
             return {
@@ -98,32 +93,27 @@ class HeaderAnalyzer:
             }
         
         # 批量分析
-        if progress_callback:
-            progress_callback(f"🔍 批量分析 {len(header_files)} 个头文件", "analyzing")
+        logger.info(f"批量分析 {len(header_files)} 个头文件")
         
         analysis_result = self.analyze_files(header_files)
         analysis_result['message'] = f'成功分析 {analysis_result["summary"]["total_files"]} 个头文件'
         
-        if progress_callback:
-            summary = analysis_result['summary']
-            progress_callback(f"✅ 头文件分析完成: {summary['total_includes']} 个include", "complete")
+        summary = analysis_result['summary']
+        logger.info(f"头文件分析完成: {summary['total_includes']} 个include")
         
         return analysis_result
     
-    def analyze_from_single_file_mode(self, file_path: str, progress_callback=None) -> Dict:
+    def analyze_from_single_file_mode(self, file_path: str) -> Dict:
         """
         单文件模式分析
         
         Args:
             file_path: 头文件路径
-            progress_callback: 进度回调函数
             
         Returns:
             头文件分析结果
         """
-        if progress_callback:
-            progress_callback("🔍 开始单头文件include分析", "start")
-            progress_callback(self._get_single_file_summary_text(file_path), "config")
+        logger.info("开始单头文件include分析")
         
         # 检查是否是头文件
         if not self._is_header_file(file_path):
@@ -139,10 +129,9 @@ class HeaderAnalyzer:
                 }
             }
         
-        if progress_callback:
-            progress_callback("📂 找到 1 个头文件", "files")
-            file_name = os.path.basename(file_path)
-            progress_callback(f"🔍 分析头文件: {file_name}", "analyzing")
+        logger.info("找到 1 个头文件")
+        file_name = os.path.basename(file_path)
+        logger.info(f"分析头文件: {file_name}")
         
         result = self.analyze_single_file(file_path)
         
@@ -173,9 +162,8 @@ class HeaderAnalyzer:
             }
         }
         
-        if progress_callback:
-            summary = analysis_result['summary']
-            progress_callback(f"✅ 头文件分析完成: {summary['total_includes']} 个include", "complete")
+        summary = analysis_result['summary']
+        logger.info(f"头文件分析完成: {summary['total_includes']} 个include")
         
         return analysis_result
     
@@ -381,4 +369,4 @@ class HeaderAnalyzer:
                         'is_system': include.is_system
                     })
         
-        return matches 
+        return matches

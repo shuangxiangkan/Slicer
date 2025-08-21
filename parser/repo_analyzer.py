@@ -21,8 +21,6 @@ from .header_analyzer import HeaderAnalyzer
 # 配置logging
 logger = logging.getLogger(__name__)
 
-
-
 class RepoAnalyzer:
     """代码仓库分析器（核心分析功能）"""
     
@@ -72,68 +70,57 @@ class RepoAnalyzer:
         file_ext = Path(file_path).suffix.lower()
         return file_ext in supported_extensions
     
-    
-    def analyze(self, show_progress: bool = False, progress_callback=None) -> dict:
+    def analyze(self) -> dict:
         """
         执行代码分析
         
         Args:
-            show_progress: 是否显示进度（已废弃，使用progress_callback）
-            progress_callback: 进度回调函数，接收(message: str, stage: str)参数
         
         Returns:
             分析结果字典
         """
         start_time = time.time()
         
-        if progress_callback:
-            if self.is_single_file_mode:
-                progress_callback("🔍 开始单文件代码分析", "start")
-            else:
-                progress_callback("🔍 开始基于配置文件的代码分析", "start")
-            progress_callback(self._get_config_summary_text(), "config")
+        logger.info("开始代码分析")
+        if self.is_single_file_mode:
+            logger.info("单文件模式分析")
+        else:
+            logger.info("基于配置文件的代码分析")
         
         # 收集文件
-        if progress_callback:
-            progress_callback("📂 正在收集C/C++文件...", "files")
+        logger.info("正在收集C/C++文件...")
         
         files, error_msg = self._collect_files()
         if error_msg:
             error_msg = f"错误: {error_msg}"
-            if progress_callback:
-                progress_callback(error_msg, "error")
+            logger.error(error_msg)
             return {'error': error_msg}
         
         if not files:
             error_msg = "❌ 未找到任何C/C++文件"
-            if progress_callback:
-                progress_callback(error_msg, "error")
+            logger.error(error_msg)
             return {'error': error_msg}
         
         # 显示文件统计
-        if progress_callback:
-            file_stats = self._get_file_statistics(files)
-            progress_callback(self._format_file_stats(file_stats), "file_stats")
+        file_stats = self._get_file_statistics(files)
+        logger.info(f"找到 {file_stats['total_files']} 个文件")
         
         # 提取类型定义
-        if progress_callback:
-            progress_callback("🔍 正在提取类型定义...", "types")
+        logger.info("正在提取类型定义...")
         
-        self._extract_types(files, progress_callback)
+        self._extract_types(files)
         
         # 提取函数
-        if progress_callback:
-            progress_callback("🔧 正在提取函数定义...", "functions")
+        logger.info("正在提取函数定义...")
         
-        self.all_functions = self._extract_functions(files, progress_callback)
+        self.all_functions = self._extract_functions(files)
         
         processing_time = time.time() - start_time
         
         # 计算统计信息
         stats = self._calculate_stats(files, processing_time)
         
-        if progress_callback:
-            progress_callback("📊 分析完成！", "complete")
+        logger.info("分析完成！")
         
         return stats
     
@@ -166,7 +153,7 @@ class RepoAnalyzer:
         
         return filtered_files, ""
     
-    def _extract_functions(self, files: List[str], progress_callback=None) -> List[FunctionInfo]:
+    def _extract_functions(self, files: List[str]) -> List[FunctionInfo]:
         """提取函数定义"""
         all_functions = []
         failed_files = []
@@ -175,29 +162,24 @@ class RepoAnalyzer:
             try:
                 rel_path = self._get_relative_path(file_path)
                 
-                if progress_callback:
-                    progress_callback(f"  处理文件 {i}/{len(files)}: {rel_path}", "function_progress")
+                logger.debug(f"处理文件 {i}/{len(files)}: {rel_path}")
                 
                 functions = self.function_extractor.extract_from_file(file_path)
                 all_functions.extend(functions)
                 
-                if progress_callback:
-                    # 分别显示定义和声明的数量
-                    definitions = len([f for f in functions if not f.is_declaration])
-                    declarations = len([f for f in functions if f.is_declaration])
-                    progress_callback(f" -> {definitions}定义 + {declarations}声明 = {len(functions)}函数", "function_result")
+                # 分别显示定义和声明的数量
+                definitions = len([f for f in functions if not f.is_declaration])
+                declarations = len([f for f in functions if f.is_declaration])
+                logger.debug(f" -> {definitions}定义 + {declarations}声明 = {len(functions)}函数")
                 
                 logger.debug(f"处理文件 {file_path}: 找到 {len(functions)} 个函数")
                 
             except Exception as e:
                 failed_files.append((file_path, str(e)))
                 logger.error(f"处理文件 {file_path} 失败: {e}")
-                if progress_callback:
-                    progress_callback(f" -> 失败: {e}", "function_error")
         
         # 构建Call Graph
-        if progress_callback:
-            progress_callback("🔗 正在构建Call Graph...", "call_graph")
+        logger.info("正在构建Call Graph...")
         
         # 将所有函数添加到Call Graph
         for func in all_functions:
@@ -206,8 +188,7 @@ class RepoAnalyzer:
         # 构建调用关系图
         self.call_graph.build_graph()
         
-        if progress_callback:
-            progress_callback("✅ Call Graph构建完成", "call_graph_complete")
+        logger.info("Call Graph构建完成")
         
         return all_functions
     
@@ -249,7 +230,7 @@ class RepoAnalyzer:
         
         return filtered_files
     
-    def _extract_types(self, files: List[str], progress_callback=None) -> None:
+    def _extract_types(self, files: List[str]) -> None:
         """提取类型定义"""
         type_count = 0
         
@@ -257,8 +238,7 @@ class RepoAnalyzer:
             try:
                 rel_path = self._get_relative_path(file_path)
                 
-                if progress_callback:
-                    progress_callback(f"  分析类型 {i}/{len(files)}: {rel_path}", "type_progress")
+                logger.debug(f"分析类型 {i}/{len(files)}: {rel_path}")
                 
                 # 读取文件内容
                 with open(file_path, 'r', encoding='utf-8') as f:
@@ -280,21 +260,16 @@ class RepoAnalyzer:
                 # 从预处理器指令中提取类型（如#define的类型别名）
                 self.type_extractor.extract_from_preprocessor(content)
                 
-                if progress_callback:
-                    progress_callback(f" -> OK", "type_result")
+                logger.debug(f" -> OK")
                 
             except Exception as e:
                 logger.error(f"提取类型定义失败 {file_path}: {e}")
-                if progress_callback:
-                    progress_callback(f" -> 失败: {e}", "type_error")
         
         # 获取类型统计
         type_stats = self.type_registry.get_statistics()
         type_count = type_stats.get('total_types', 0)
         
-        if progress_callback:
-            progress_callback(f"✅ 类型提取完成，找到 {type_count} 个类型定义", "type_complete")
-            progress_callback(self._get_type_summary_text(), "type_summary")
+        logger.info(f"类型提取完成，找到 {type_count} 个类型定义")
     
     def _get_type_summary_text(self) -> str:
         """获取类型摘要文本"""
@@ -358,12 +333,13 @@ class RepoAnalyzer:
         
         return stats
     
-    def search_functions(self, pattern: str, case_sensitive: bool = False) -> List[FunctionInfo]:
+    def search_functions(self, function_name: str, exact_match: bool = True, case_sensitive: bool = True) -> List[FunctionInfo]:
         """
-        搜索函数名匹配指定模式的函数
+        搜索函数名匹配的函数
         
         Args:
-            pattern: 搜索模式（支持正则表达式）
+            function_name: 要搜索的函数名
+            exact_match: 是否精确匹配，False时进行包含匹配
             case_sensitive: 是否大小写敏感
             
         Returns:
@@ -371,18 +347,17 @@ class RepoAnalyzer:
         """
         matches = []
         
-        flags = 0 if case_sensitive else re.IGNORECASE
-        try:
-            regex = re.compile(pattern, flags)
-            for func in self.all_functions:
-                if regex.search(func.name):
+        # 预处理搜索条件
+        search_name = function_name if case_sensitive else function_name.lower()
+        
+        for func in self.all_functions:
+            func_name = func.name if case_sensitive else func.name.lower()
+            
+            if exact_match:
+                if func_name == search_name:
                     matches.append(func)
-        except re.error:
-            # 如果正则表达式无效，回退到简单字符串匹配
-            pattern_lower = pattern.lower() if not case_sensitive else pattern
-            for func in self.all_functions:
-                func_name = func.name.lower() if not case_sensitive else func.name
-                if pattern_lower in func_name:
+            else:
+                if search_name in func_name:
                     matches.append(func)
         
         return matches
@@ -434,7 +409,7 @@ class RepoAnalyzer:
             合并后的完整注释字符串
         """
         # 找到所有同名函数（声明和定义）
-        matching_functions = [func for func in self.all_functions if func.name == function_name]
+        matching_functions = self.search_functions(function_name, exact_match=True, case_sensitive=True)
         
         if not matching_functions:
             return ""
@@ -497,7 +472,7 @@ class RepoAnalyzer:
         Returns:
             包含注释统计和源信息的字典
         """
-        matching_functions = [func for func in self.all_functions if func.name == function_name]
+        matching_functions = self.search_functions(function_name, exact_match=True, case_sensitive=True)
         
         if not matching_functions:
             return {
@@ -558,15 +533,8 @@ class RepoAnalyzer:
         Returns:
             匹配的函数信息列表
         """
-        matches = []
-        for func in self.all_functions:
-            if exact_match:
-                if func.name == function_name:
-                    matches.append(func)
-            else:
-                if function_name.lower() in func.name.lower():
-                    matches.append(func)
-        return matches
+        # 使用 search_functions 来避免代码重复
+        return self.search_functions(function_name, exact_match=exact_match, case_sensitive=False)
     
     def get_function_body(self, function_name: str, exact_match: bool = True) -> Dict[str, str]:
         """
@@ -705,15 +673,13 @@ class RepoAnalyzer:
         """获取函数复杂度统计"""
         return self.call_graph.get_function_complexity_stats()
     
-    def analyze_headers(self, target_files: List[str] = None, show_progress: bool = False, 
-                       progress_callback=None) -> dict:
+    def analyze_headers(self, target_files: List[str] = None) -> dict:
         """
         分析头文件的include关系
         
         Args:
             target_files: 指定要分析的头文件列表（可选）
             show_progress: 是否显示进度
-            progress_callback: 进度回调函数
             
         Returns:
             头文件分析结果
@@ -721,13 +687,11 @@ class RepoAnalyzer:
         analyzer = HeaderAnalyzer()
         
         if self.is_single_file_mode:
-            # 单文件模式：委托给HeaderAnalyzer
-            return analyzer.analyze_from_single_file_mode(self.single_file_path, progress_callback)
+            # single file mode
+            return analyzer.analyze_from_single_file_mode(self.single_file_path)
         else:
-            # repo模式：委托给HeaderAnalyzer
-            return analyzer.analyze_from_repo(self.config_parser, target_files, progress_callback)
-    
-
+            # repo mode
+            return analyzer.analyze_from_repo(self.config_parser, target_files)
     
     def search_includes(self, header_results: dict, pattern: str) -> List[dict]:
         """在头文件分析结果中搜索include"""
@@ -738,8 +702,6 @@ class RepoAnalyzer:
         """获取include依赖关系图"""
         analyzer = HeaderAnalyzer()
         return analyzer.get_dependency_graph(header_results)
-    
-    # ===== 函数调用关系接口 =====
     
     def get_function_callers(self, function_name: str) -> List[str]:
         """
@@ -767,4 +729,3 @@ class RepoAnalyzer:
         # 获取直接调用者并排序
         direct_callers = self.get_direct_callers(function_name)
         return sorted(list(direct_callers))
- 
