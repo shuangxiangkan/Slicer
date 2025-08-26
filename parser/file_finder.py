@@ -6,60 +6,60 @@
 import os
 import logging
 from pathlib import Path
-from typing import List, Set
+from typing import List
 
-# 配置logging
+from .file_extensions import (
+    C_EXTENSIONS, CPP_EXTENSIONS, ALL_C_CPP_EXTENSIONS,
+    is_c_file, is_cpp_file, is_header_file, is_supported_file
+)
+
+# Configure logging
 logger = logging.getLogger(__name__)
 
 
 class FileFinder:
-    """C/C++文件查找器"""
-    
-    # C/C++文件扩展名定义
-    C_EXTENSIONS = {'.c', '.h'}
-    CPP_EXTENSIONS = {'.cpp', '.cxx', '.cc', '.hpp', '.hxx', '.hh'}
-    ALL_EXTENSIONS = C_EXTENSIONS | CPP_EXTENSIONS
+    """C/C++ file finder"""
     
     def __init__(self):
         self.found_files = []
     
     def find_files(self, path: str, recursive: bool = True) -> List[str]:
         """
-        查找指定路径下的C/C++文件
+        Find C/C++ files in the specified path.
         
         Args:
-            path: 文件或目录路径
-            recursive: 是否递归查找子目录
+            path: File or directory path
+            recursive: Whether to search recursively in subdirectories
             
         Returns:
-            找到的文件路径列表
+            List of found file paths
         """
         path_obj = Path(path)
         
         if not path_obj.exists():
-            raise FileNotFoundError(f"路径不存在: {path}")
+            raise FileNotFoundError(f"Path does not exist: {path}")
         
         self.found_files = []
         
         if path_obj.is_file():
-            # 如果是单个文件，检查是否为C/C++文件
+            # If it's a single file, check if it's a C/C++ file
             if self._is_c_cpp_file(path_obj):
                 self.found_files.append(str(path_obj.absolute()))
         else:
-            # 如果是目录，搜索其中的C/C++文件
+            # If it's a directory, search for C/C++ files in it
             self._search_directory(path_obj, recursive)
         
         return sorted(self.found_files)
     
     def _is_c_cpp_file(self, file_path: Path) -> bool:
-        """检查文件是否为C/C++文件"""
-        return file_path.suffix.lower() in self.ALL_EXTENSIONS
+        """Check if the file is a C/C++ file"""
+        return is_supported_file(str(file_path))
     
     def _search_directory(self, dir_path: Path, recursive: bool):
-        """搜索目录中的C/C++文件"""
+        """Search for C/C++ files in the directory"""
         try:
             if recursive:
-                # 递归搜索
+                # Recursively search
                 for root, dirs, files in os.walk(dir_path):
                     for file in files:
                         file_path = Path(root) / file
@@ -86,12 +86,11 @@ class FileFinder:
         }
         
         for file_path in self.found_files:
-            ext = Path(file_path).suffix.lower()
-            if ext == '.c':
+            if is_c_file(file_path) and not is_header_file(file_path):
                 stats['c_files'] += 1
-            elif ext in {'.cpp', '.cxx', '.cc'}:
+            elif is_cpp_file(file_path) and not is_header_file(file_path):
                 stats['cpp_files'] += 1
-            elif ext in {'.h', '.hpp', '.hxx', '.hh'}:
+            elif is_header_file(file_path):
                 stats['header_files'] += 1
         
         return stats
@@ -118,4 +117,4 @@ class FileFinder:
         if show_stats:
             file_info["stats"] = self.get_file_stats()
         
-        return file_info 
+        return file_info

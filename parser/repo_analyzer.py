@@ -7,7 +7,7 @@ import time
 import logging
 import os
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional
 from .file_finder import FileFinder
 from .function_extractor import FunctionExtractor
 from .function_info import FunctionInfo
@@ -16,6 +16,7 @@ from .type_extractor import TypeExtractor
 from .config_parser import ConfigParser
 from .call_graph import CallGraph
 from .header_analyzer import HeaderAnalyzer
+from .file_extensions import ALL_C_CPP_EXTENSIONS, is_supported_file, is_cpp_file
 
 # 配置logging
 logger = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ class RepoAnalyzer:
         self.processed_files = []
         
         # 智能识别输入类型
-        self.is_single_file_mode = self._is_cpp_file(config_or_file_path)
+        self.is_single_file_mode = is_supported_file(config_or_file_path)
         self.input_file_path = config_or_file_path
         
         if self.is_single_file_mode:
@@ -55,19 +56,6 @@ class RepoAnalyzer:
         else:
             # 配置文件模式：解析配置文件
             self.config_parser = ConfigParser(config_or_file_path)
-    
-    def _is_cpp_file(self, file_path: str) -> bool:
-        """检查是否为C/C++文件"""
-        if not os.path.exists(file_path):
-            return False
-        
-        if not os.path.isfile(file_path):
-            return False
-        
-        # 检查文件扩展名
-        supported_extensions = {'.c', '.h', '.cpp', '.cxx', '.cc', '.hpp', '.hxx', '.hh'}
-        file_ext = Path(file_path).suffix.lower()
-        return file_ext in supported_extensions
     
     def analyze(self) -> dict:
         """
@@ -182,7 +170,7 @@ class RepoAnalyzer:
     
     def _is_supported_file(self, file_path: str) -> bool:
         """Check if the file is a supported C/C++ file"""
-        return self.file_finder._is_c_cpp_file(Path(file_path))
+        return is_supported_file(file_path)
     
     def _apply_exclusions(self, files: List[str]) -> List[str]:
         """Apply exclusion rules to filter files"""
@@ -233,7 +221,7 @@ class RepoAnalyzer:
                     content = f.read()
                 
                 # Check if it's a C++ file
-                is_cpp = any(file_path.endswith(ext) for ext in ['.cpp', '.cxx', '.cc', '.hpp', '.hxx', '.hh'])
+                is_cpp = is_cpp_file(file_path)
                 
                 # Select appropriate parser
                 parser = self.function_extractor.cpp_parser if is_cpp else self.function_extractor.c_parser

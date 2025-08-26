@@ -11,6 +11,7 @@ from typing import List, Optional
 import logging
 from .function_info import FunctionInfo
 from .type_registry import TypeRegistry
+from .file_extensions import is_cpp_file
 
 # 配置logging
 logger = logging.getLogger(__name__)
@@ -50,7 +51,7 @@ class FunctionExtractor:
         functions = []
         
         # 判断是否为C++文件
-        is_cpp = any(file_path.endswith(ext) for ext in ['.cpp', '.cxx', '.cc', '.hpp', '.hxx', '.hh'])
+        is_cpp = is_cpp_file(file_path)
         
         # 选择合适的解析器
         parser = self.cpp_parser if is_cpp else self.c_parser

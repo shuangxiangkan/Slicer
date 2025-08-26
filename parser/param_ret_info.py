@@ -3,9 +3,9 @@
 参数和返回值信息类 - 存储函数参数和返回值的详细信息
 """
 
-from typing import List, Optional
+from typing import List
 import re
-from .type_registry import TypeRegistry, TypeKind
+from .type_registry import TypeRegistry
 
 
 class ParameterInfo:

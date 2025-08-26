@@ -8,6 +8,8 @@ import re
 import logging
 from typing import List, Dict, Optional
 from pathlib import Path
+from .config_parser import ConfigParser
+from .file_extensions import HEADER_EXTENSIONS, is_header_file
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +38,21 @@ class IncludeInfo:
 class HeaderAnalyzer:
     """头文件include分析器"""
     
-    def __init__(self):
-        pass
+    def __init__(self, header_file: Optional[str] = None, config_file: Optional[str] = None):
+        """初始化头文件分析器
+        
+        Args:
+            header_file: 单个头文件路径
+            config_file: 配置文件路径
+        """
+        self.header_file = header_file
+        self.config_file = config_file
+        self.config_parser = None
+        self.includes = []  # 存储include信息
+        self.dependency_graph = {}  # 依赖图
+        
+        # 配置logging
+        self.logger = logging.getLogger(__name__)
     
     def analyze_single_file(self, file_path: str) -> Dict:
         """分析单个头文件的include关系"""
@@ -264,9 +279,7 @@ class HeaderAnalyzer:
     
     def _is_header_file(self, file_path: str) -> bool:
         """判断是否是头文件"""
-        header_extensions = {'.h', '.hpp', '.hxx', '.hh', '.h++', '.inc'}
-        file_ext = Path(file_path).suffix.lower()
-        return file_ext in header_extensions
+        return is_header_file(file_path)
     
     def _extract_includes(self, content: str, file_path: str) -> List[IncludeInfo]:
         """提取include语句"""

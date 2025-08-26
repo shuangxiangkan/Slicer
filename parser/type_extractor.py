@@ -6,10 +6,10 @@
 
 import logging
 import re
-from typing import List, Optional
+from typing import List
 from tree_sitter import Node
 
-from .type_registry import TypeRegistry, TypeKind
+from .type_registry import TypeRegistry
 
 logger = logging.getLogger(__name__)
 

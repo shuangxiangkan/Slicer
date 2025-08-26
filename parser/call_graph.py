@@ -3,7 +3,7 @@
 Call Graph分析器 - 分析函数调用关系和依赖
 """
 
-from typing import Dict, List, Set, Optional, Tuple
+from typing import Dict, List, Set
 from collections import defaultdict, deque
 import logging
 

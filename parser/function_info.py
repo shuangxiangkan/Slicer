@@ -6,6 +6,7 @@
 from typing import List, Optional
 from .param_ret_info import ParameterInfo, ReturnTypeInfo
 from .type_registry import TypeRegistry
+from .file_extensions import is_cpp_file
 import tree_sitter_c as tsc
 import tree_sitter_cpp as tscpp
 from tree_sitter import Language, Parser
@@ -76,7 +77,7 @@ class FunctionInfo:
             # 导入tree-sitter相关模块
             
             # 判断是否为C++文件
-            is_cpp = any(self.file_path.endswith(ext) for ext in ['.cpp', '.cxx', '.cc', '.hpp', '.hxx', '.hh'])
+            is_cpp = is_cpp_file(self.file_path)
             
             # 初始化解析器
             if is_cpp:
@@ -637,4 +638,4 @@ class FunctionInfo:
     
     def clear_api_cache(self):
         """清除API关键字缓存"""
-        self._api_keywords_cache.clear()  
+        self._api_keywords_cache.clear()
