@@ -6,7 +6,6 @@
 import time
 import logging
 import os
-from pathlib import Path
 from typing import List, Dict, Optional
 from .file_finder import FileFinder
 from .function_extractor import FunctionExtractor
@@ -16,9 +15,9 @@ from .type_extractor import TypeExtractor
 from .config_parser import ConfigParser
 from .call_graph import CallGraph
 from .header_analyzer import HeaderAnalyzer
-from .file_extensions import ALL_C_CPP_EXTENSIONS, is_supported_file, is_cpp_file
+from .file_extensions import is_supported_file, is_cpp_file
 
-# 配置logging
+# logging
 logger = logging.getLogger(__name__)
 
 class RepoAnalyzer:
@@ -52,10 +51,12 @@ class RepoAnalyzer:
         if self.is_single_file_mode:
             # 单文件模式：直接设置文件信息
             self.single_file_path = os.path.abspath(config_or_file_path)
+            self.analysis_target_path = self.single_file_path  # 记录被分析的目标路径
             self.config_parser = None
         else:
             # 配置文件模式：解析配置文件
             self.config_parser = ConfigParser(config_or_file_path)
+            self.analysis_target_path = self.config_parser.get_library_path()  # 记录被分析的目标路径
     
     def analyze(self) -> dict:
         """
@@ -681,3 +682,118 @@ class RepoAnalyzer:
         # Get direct callers and sort them
         direct_callers = self.get_direct_callers(function_name)
         return sorted(list(direct_callers))
+    
+    def get_analysis_target_path(self) -> str:
+        """
+        Get the target path being analyzed
+        
+        Returns:
+            Single file mode: returns the absolute path of the file
+            Config file mode: returns the library root directory path
+        """
+        return self.analysis_target_path
+    
+    def get_analysis_mode(self) -> str:
+        """
+        Get the current analysis mode
+        
+        Returns:
+            "single_file" or "config_file"
+        """
+        return "single_file" if self.is_single_file_mode else "config_file"
+    
+    def _get_usage_finder_and_repo_root(self, repo_root: str = None) -> tuple:
+        """
+        获取FunctionUsageFinder实例和repo_root路径的辅助方法
+        
+        Args:
+            repo_root: 仓库根目录，如果为None则使用分析目标路径
+        
+        Returns:
+            tuple: (usage_finder, repo_root)
+        """
+        from .function_usage_finder import FunctionUsageFinder
+        
+        # 处理repo_root
+        if repo_root is None:
+            if self.is_single_file_mode:
+                repo_root = os.path.dirname(self.analysis_target_path)
+            else:
+                repo_root = self.analysis_target_path
+        
+        # 创建FunctionUsageFinder实例（支持config_parser为None的情况）
+        usage_finder = FunctionUsageFinder(self.config_parser)
+        
+        return usage_finder, repo_root
+    
+    def find_usage_in_include_files(self, function_name: str) -> Dict[str, List[str]]:
+        """
+        在include_files中查找函数使用
+        
+        Args:
+            function_name: 要查找的函数名
+        
+        Returns:
+            Dict[str, List[str]]: 文件路径 -> 调用者函数名列表的映射
+        """
+        # 单文件模式下没有config_parser，返回空结果
+        if self.config_parser is None:
+            return {}
+        
+        usage_finder, _ = self._get_usage_finder_and_repo_root()
+        return usage_finder.find_usage_in_include_files(
+            function_name=function_name,
+            analyzed_functions=self.all_functions
+        )
+    
+    def find_usage_in_non_include_files(self, function_name: str, repo_root: str = None) -> Dict[str, List[str]]:
+        """
+        在非include_files中查找函数使用
+        
+        Args:
+            function_name: 要查找的函数名
+            repo_root: 仓库根目录，如果为None则使用分析目标路径
+        
+        Returns:
+            Dict[str, List[str]]: 文件路径 -> 调用者函数名列表的映射
+        """
+        usage_finder, repo_root = self._get_usage_finder_and_repo_root(repo_root)
+        return usage_finder.find_usage_in_non_include_files(
+            function_name=function_name,
+            repo_root=repo_root
+        )
+    
+    def find_usage_in_all_files(self, function_name: str, repo_root: str = None) -> Dict[str, List[str]]:
+        """
+        在所有文件中查找函数使用
+        
+        Args:
+            function_name: 要查找的函数名
+            repo_root: 仓库根目录，如果为None则使用分析目标路径
+        
+        Returns:
+            Dict[str, List[str]]: 文件路径 -> 调用者函数名列表的映射
+        """
+        usage_finder, repo_root = self._get_usage_finder_and_repo_root(repo_root)
+        return usage_finder.find_usage_in_all_files(
+            function_name=function_name,
+            repo_root=repo_root,
+            analyzed_functions=self.all_functions
+        )
+    
+    def find_usage_in_test_files(self, function_name: str, repo_root: str = None) -> Dict[str, List[str]]:
+        """
+        在test文件中查找函数使用
+        
+        Args:
+            function_name: 要查找的函数名
+            repo_root: 仓库根目录，如果为None则使用分析目标路径
+        
+        Returns:
+            Dict[str, List[str]]: 文件路径 -> 调用者函数名列表的映射
+        """
+        usage_finder, repo_root = self._get_usage_finder_and_repo_root(repo_root)
+        return usage_finder.find_usage_in_test_files(
+            function_name=function_name,
+            repo_root=repo_root
+        )

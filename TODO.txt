@@ -1,0 +1,5 @@
+function_usage_finder.py写的不好：
+1. 对于tree-sitter之类的重复代码比较多，可以考虑新建一个utils.py，把重复的代码都放到其中
+
+
+repo_analyzer.py中对于几个查看usage方法的接口写的不太好需要优化一下
