@@ -7,9 +7,7 @@ from typing import List, Optional
 from .param_ret_info import ParameterInfo, ReturnTypeInfo
 from .type_registry import TypeRegistry
 from .file_extensions import is_cpp_file
-import tree_sitter_c as tsc
-import tree_sitter_cpp as tscpp
-from tree_sitter import Language, Parser
+from .utils import create_parser_for_content
 import logging
 import re
 
@@ -74,26 +72,16 @@ class FunctionInfo:
             return
         
         try:
-            # 导入tree-sitter相关模块
-            
             # 判断是否为C++文件
             is_cpp = is_cpp_file(self.file_path)
             
-            # 初始化解析器
-            if is_cpp:
-                language = Language(tscpp.language(), "cpp")
-            else:
-                language = Language(tsc.language(), "c")
-            
-            parser = Parser()
-            parser.set_language(language)
-            
-            # 解析函数体
-            tree = parser.parse(body.encode('utf-8'))
-            root_node = tree.root_node
+            # 使用utils中的便利函数创建解析器
+            parser, language, tree = create_parser_for_content(body, is_cpp)
+            if not tree:
+                raise Exception("无法解析函数体")
             
             # 递归查找函数调用
-            self._find_function_calls_recursive(root_node)
+            self._find_function_calls_recursive(tree.root_node)
             
         except Exception as e:
             # 如果tree-sitter解析失败，回退到正则表达式方法

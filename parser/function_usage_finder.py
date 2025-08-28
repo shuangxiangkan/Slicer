@@ -6,14 +6,9 @@
 import os
 import logging
 from typing import Dict, List, Optional
-
-import tree_sitter_c as tsc
-import tree_sitter_cpp as tscpp
-from tree_sitter import Language, Parser
-
 from .file_finder import FileFinder
 from .config_parser import ConfigParser
-from .file_extensions import is_cpp_file
+from .utils import get_tree_sitter_manager
 
 class FunctionUsageFinder:
     """
@@ -33,26 +28,8 @@ class FunctionUsageFinder:
         self.file_finder = FileFinder()
         self.logger = logging.getLogger(__name__)
         
-        # 初始化tree-sitter解析器
-        self._init_tree_sitter()
-    
-    def _init_tree_sitter(self):
-        """
-        初始化tree-sitter解析器
-        """
-        try:
-            self.c_language = Language(tsc.language(), "c")
-            self.c_parser = Parser()
-            self.c_parser.set_language(self.c_language)
-            
-            self.cpp_language = Language(tscpp.language(), "cpp")
-            self.cpp_parser = Parser()
-            self.cpp_parser.set_language(self.cpp_language)
-            
-            self.parser_available = True
-        except Exception as e:
-            self.logger.warning(f"无法初始化tree-sitter解析器: {e}")
-            self.parser_available = False
+        # 使用统一的tree-sitter管理器
+        self.tree_sitter_manager = get_tree_sitter_manager()
     
     def find_usage_in_include_files(self, function_name: str, analyzed_functions: List = None) -> Dict[str, List[str]]:
         """
@@ -230,12 +207,11 @@ class FunctionUsageFinder:
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 source_code = f.read()
             
-            # 选择合适的解析器
-            is_cpp = is_cpp_file(file_path)
-            parser = self.cpp_parser if is_cpp else self.c_parser
-            
-            # 解析源代码
-            tree = parser.parse(bytes(source_code, 'utf-8'))
+            # 使用tree-sitter管理器解析源代码
+            tree = self.tree_sitter_manager.parse_content(source_code, file_path)
+            if not tree:
+                self.logger.warning(f"无法解析文件: {file_path}")
+                return callers
             
             # 查找函数定义和函数调用
             function_definitions = self._find_function_definitions(tree.root_node, source_code)

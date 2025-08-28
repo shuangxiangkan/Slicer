@@ -4,14 +4,13 @@
 重构版本：完全使用node.text API，不依赖content参数
 """
 
-import tree_sitter_c as tsc
-import tree_sitter_cpp as tscpp
-from tree_sitter import Language, Parser, Node
+from tree_sitter import Node
 from typing import List, Optional
 import logging
 from .function_info import FunctionInfo
 from .type_registry import TypeRegistry
 from .file_extensions import is_cpp_file
+from .utils import get_tree_sitter_manager
 
 # 配置logging
 logger = logging.getLogger(__name__)
@@ -23,18 +22,11 @@ class FunctionExtractor:
     def __init__(self, type_registry: TypeRegistry = None):
         self.type_registry = type_registry
         
-        # 初始化C和C++解析器
-        try:
-            self.c_language = Language(tsc.language(), "c")
-            self.c_parser = Parser()
-            self.c_parser.set_language(self.c_language)
-            
-            self.cpp_language = Language(tscpp.language(), "cpp")
-            self.cpp_parser = Parser()
-            self.cpp_parser.set_language(self.cpp_language)
-        except Exception as e:
-            logger.error(f"初始化解析器失败: {e}")
-            raise
+        # 使用统一的tree-sitter管理器
+        self.tree_sitter_manager = get_tree_sitter_manager()
+        if not self.tree_sitter_manager.parser_available:
+            logger.error("Tree-sitter解析器不可用")
+            raise RuntimeError("Tree-sitter解析器初始化失败")
     
     def extract_from_file(self, file_path: str) -> List[FunctionInfo]:
         """从文件中提取函数"""
@@ -53,12 +45,13 @@ class FunctionExtractor:
         # 判断是否为C++文件
         is_cpp = is_cpp_file(file_path)
         
-        # 选择合适的解析器
-        parser = self.cpp_parser if is_cpp else self.c_parser
-        
         try:
-            # 解析代码
-            tree = parser.parse(content.encode('utf-8'))
+            # 使用tree-sitter管理器解析内容
+            tree = self.tree_sitter_manager.parse_content(content, file_path)
+            if not tree:
+                logger.warning(f"无法解析文件内容: {file_path}")
+                return []
+            
             root_node = tree.root_node
             
             # 递归提取函数 - 只传递node，不传递content
