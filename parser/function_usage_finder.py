@@ -124,7 +124,8 @@ class FunctionUsageFinder:
     
     def find_usage_in_test_files(self, function_name: str, repo_root: str) -> Dict[str, List[str]]:
         """
-        在文件路径名中包含test的文件中查找函数使用
+        在测试和示例文件中查找函数使用
+        包括路径中包含test、example、demo、sample等关键词的文件
         
         Args:
             function_name: 要查找的函数名
@@ -140,10 +141,12 @@ class FunctionUsageFinder:
         # 获取所有C/C++文件
         all_files = self.file_finder.find_files(repo_root, recursive=True)
         
-        # 过滤出路径中包含test的文件
+        # 过滤出路径中包含测试和示例关键词的文件
+        test_keywords = ['test', 'example', 'demo', 'sample', 'tutorial', 'benchmark']
         test_files = []
         for file_path in all_files:
-            if 'test' in file_path.lower():
+            file_path_lower = file_path.lower()
+            if any(keyword in file_path_lower for keyword in test_keywords):
                 test_files.append(file_path)
         
         return self._find_usage_in_files(function_name, test_files)
