@@ -70,7 +70,7 @@ class FunctionUsageFinder:
         Returns:
             Dict[str, List[str]]: 文件路径 -> 调用者函数名列表的映射
         """
-        if not self.parser_available:
+        if not self.tree_sitter_manager.parser_available:
             self.logger.warning("tree-sitter解析器未初始化，无法解析文件")
             return {}
         
@@ -133,7 +133,7 @@ class FunctionUsageFinder:
         Returns:
             Dict[str, List[str]]: 文件路径 -> 调用者函数名列表的映射
         """
-        if not self.parser_available:
+        if not self.tree_sitter_manager.parser_available:
             self.logger.warning("tree-sitter解析器未初始化，无法解析文件")
             return {}
         

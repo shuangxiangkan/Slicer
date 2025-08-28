@@ -16,6 +16,7 @@ from .config_parser import ConfigParser
 from .call_graph import CallGraph
 from .header_analyzer import HeaderAnalyzer
 from .file_extensions import is_supported_file, is_cpp_file
+from .function_usage_finder import FunctionUsageFinder
 
 # logging
 logger = logging.getLogger(__name__)
@@ -125,7 +126,7 @@ class RepoAnalyzer:
             
             if os.path.isfile(target_path):
                 # Single file
-                if self._is_supported_file(target_path):
+                if is_supported_file(target_path):
                     all_files.append(target_path)
             else:
                 # Directory
@@ -168,10 +169,6 @@ class RepoAnalyzer:
         logger.info("Call Graph building completed")
         
         return all_functions
-    
-    def _is_supported_file(self, file_path: str) -> bool:
-        """Check if the file is a supported C/C++ file"""
-        return is_supported_file(file_path)
     
     def _apply_exclusions(self, files: List[str]) -> List[str]:
         """Apply exclusion rules to filter files"""
@@ -224,11 +221,11 @@ class RepoAnalyzer:
                 # Check if it's a C++ file
                 is_cpp = is_cpp_file(file_path)
                 
-                # Select appropriate parser
-                parser = self.function_extractor.cpp_parser if is_cpp else self.function_extractor.c_parser
-                
-                # Parse code
-                tree = parser.parse(content.encode('utf-8'))
+                # Parse code using tree_sitter_manager
+                tree = self.function_extractor.tree_sitter_manager.parse_content(content, file_path)
+                if tree is None:
+                    logger.warning(f"Failed to parse {file_path}")
+                    continue
                 root_node = tree.root_node
                 
                 # Extract type definitions
@@ -712,7 +709,6 @@ class RepoAnalyzer:
         Returns:
             tuple: (usage_finder, repo_root)
         """
-        from .function_usage_finder import FunctionUsageFinder
         
         # 处理repo_root
         if repo_root is None:
@@ -746,53 +742,50 @@ class RepoAnalyzer:
             analyzed_functions=self.all_functions
         )
     
-    def find_usage_in_non_include_files(self, function_name: str, repo_root: str = None) -> Dict[str, List[str]]:
+    def find_usage_in_non_include_files(self, function_name: str) -> Dict[str, List[str]]:
         """
         在非include_files中查找函数使用
         
         Args:
             function_name: 要查找的函数名
-            repo_root: 仓库根目录，如果为None则使用分析目标路径
         
         Returns:
             Dict[str, List[str]]: 文件路径 -> 调用者函数名列表的映射
         """
-        usage_finder, repo_root = self._get_usage_finder_and_repo_root(repo_root)
+        usage_finder, repo_root = self._get_usage_finder_and_repo_root()
         return usage_finder.find_usage_in_non_include_files(
             function_name=function_name,
             repo_root=repo_root
         )
     
-    def find_usage_in_all_files(self, function_name: str, repo_root: str = None) -> Dict[str, List[str]]:
+    def find_usage_in_all_files(self, function_name: str) -> Dict[str, List[str]]:
         """
         在所有文件中查找函数使用
         
         Args:
             function_name: 要查找的函数名
-            repo_root: 仓库根目录，如果为None则使用分析目标路径
         
         Returns:
             Dict[str, List[str]]: 文件路径 -> 调用者函数名列表的映射
         """
-        usage_finder, repo_root = self._get_usage_finder_and_repo_root(repo_root)
+        usage_finder, repo_root = self._get_usage_finder_and_repo_root()
         return usage_finder.find_usage_in_all_files(
             function_name=function_name,
             repo_root=repo_root,
             analyzed_functions=self.all_functions
         )
     
-    def find_usage_in_test_files(self, function_name: str, repo_root: str = None) -> Dict[str, List[str]]:
+    def find_usage_in_test_files(self, function_name: str) -> Dict[str, List[str]]:
         """
         在test文件中查找函数使用
         
         Args:
             function_name: 要查找的函数名
-            repo_root: 仓库根目录，如果为None则使用分析目标路径
         
         Returns:
             Dict[str, List[str]]: 文件路径 -> 调用者函数名列表的映射
         """
-        usage_finder, repo_root = self._get_usage_finder_and_repo_root(repo_root)
+        usage_finder, repo_root = self._get_usage_finder_and_repo_root()
         return usage_finder.find_usage_in_test_files(
             function_name=function_name,
             repo_root=repo_root
