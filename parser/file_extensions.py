@@ -24,6 +24,16 @@ CPP_SPECIFIC_EXTENSIONS = {'.cpp', '.cxx', '.cc', '.hpp', '.hxx', '.hh'}
 # C特有的扩展名
 C_SPECIFIC_EXTENSIONS = {'.c', '.h'}
 
+# 可能包含API使用说明的文档文件扩展名
+DOCUMENT_EXTENSIONS = {
+    '.txt', '.md', '.rst', '.doc', '.docx', '.pdf', '.rtf', '.tex', '.html', '.htm'
+}
+
+# 可以直接读取的文本格式文档扩展名
+TEXT_BASED_DOCUMENT_EXTENSIONS = {
+    '.txt', '.md', '.rst', '.html', '.htm', '.tex', '.rtf'
+}
+
 
 def is_c_file(file_path: str) -> bool:
     """判断是否为C文件"""
@@ -50,11 +60,29 @@ def is_supported_file(file_path: str) -> bool:
     return any(file_path.endswith(ext) for ext in ALL_C_CPP_EXTENSIONS)
 
 
+def is_document_file(file_path: str) -> bool:
+    """判断是否为文档文件"""
+    import os
+    
+    # 检查文件扩展名
+    ext = os.path.splitext(file_path)[1].lower()
+    return ext in DOCUMENT_EXTENSIONS
+
+
+def is_text_based_document(file_path: str) -> bool:
+    """判断是否为基于文本的文档文件（可以直接读取内容）"""
+    import os
+    ext = os.path.splitext(file_path)[1].lower()
+    return ext in TEXT_BASED_DOCUMENT_EXTENSIONS
+
+
 def get_file_type(file_path: str) -> str:
     """获取文件类型"""
     if is_cpp_file(file_path):
         return 'cpp'
     elif is_c_file(file_path):
         return 'c'
+    elif is_document_file(file_path):
+        return 'document'
     else:
         return 'unknown'

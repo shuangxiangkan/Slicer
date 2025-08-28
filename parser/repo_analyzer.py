@@ -17,6 +17,7 @@ from .call_graph import CallGraph
 from .header_analyzer import HeaderAnalyzer
 from .file_extensions import is_supported_file, is_cpp_file
 from .function_usage_finder import FunctionUsageFinder
+from .doc_api_searcher import DocumentApiSearcher
 
 # logging
 logger = logging.getLogger(__name__)
@@ -40,6 +41,9 @@ class RepoAnalyzer:
         
         # 初始化Call Graph
         self.call_graph = CallGraph()
+        
+        # 初始化文档API搜索器
+        self.doc_api_searcher = DocumentApiSearcher()
         
         self.all_functions = []
         self.analysis_stats = {}
@@ -790,3 +794,24 @@ class RepoAnalyzer:
             function_name=function_name,
             repo_root=repo_root
         )
+    
+    def search_api_in_documents(self, api_name: str, search_path: str = None, 
+                               use_paragraph_extraction: bool = True) -> List[Dict]:
+        """
+        在文档文件中搜索API使用说明
+        
+        Args:
+            api_name: 要搜索的API名称
+            search_path: 搜索路径，如果为None则使用分析目标路径
+            use_paragraph_extraction: 是否使用段落提取，默认为True
+            
+        Returns:
+            包含API文档信息的列表
+        """
+        if search_path is None:
+            search_path = self.get_analysis_target_path()
+        
+        results = self.doc_api_searcher.search_api_in_documents(
+            api_name, search_path, use_paragraph_extraction=use_paragraph_extraction
+        )
+        return [result.to_dict() for result in results]
