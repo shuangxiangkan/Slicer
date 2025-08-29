@@ -1,0 +1,7 @@
+{
+  "library_path": "benchmarks/Little-CMS",
+  "include_files": [
+    "src/"
+  ],
+  "exclude_files": []
+}

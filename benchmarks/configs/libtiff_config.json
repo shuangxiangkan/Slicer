@@ -1,0 +1,7 @@
+{
+  "library_path": "benchmarks/libtiff",
+  "include_files": [
+    "libtiff/"
+  ],
+  "exclude_files": []
+}
