@@ -29,22 +29,26 @@ class APIStatistics:
     def __init__(self):
         """初始化"""
         self.libraries = {
-            'cJSON': {
-                'config_file': 'benchmarks/configs/cjson_config.json',
-                'api_keywords': ['CJSON_PUBLIC']
+            # 'cJSON': {
+            #     'config_file': 'benchmarks/configs/cjson_config.json',
+            #     'api_keywords': ['CJSON_PUBLIC']
+            # },
+            # 'miniz': {
+            #     'config_file': 'benchmarks/configs/miniz_config.json', 
+            #     'api_keywords': ['MINIZ_EXPORT']
+            # },
+            # 'utf8': {
+            #     'config_file': 'benchmarks/configs/utf8_config.json',
+            #     'api_keywords': ['utf8']  # utf8库的函数都以utf8开头
+            # },
+            # 'zlib': {
+            #     'config_file': 'benchmarks/configs/zlib_config.json',
+            #     'api_keywords': ['ZEXPORT', 'ZEXTERN']
+            # },
+            'libtiff': {
+                'config_file': 'benchmarks/configs/libtiff_config.json',
+                'api_keywords': ['extern', 'TIFF_EXTERN']
             },
-            'miniz': {
-                'config_file': 'benchmarks/configs/miniz_config.json', 
-                'api_keywords': ['MINIZ_EXPORT']
-            },
-            'utf8': {
-                'config_file': 'benchmarks/configs/utf8_config.json',
-                'api_keywords': ['utf8']  # utf8库的函数都以utf8开头
-            },
-            'zlib': {
-                'config_file': 'benchmarks/configs/zlib_config.json',
-                'api_keywords': ['ZEXPORT', 'ZEXTERN']
-            }
         }
         
         # 切换到项目根目录
@@ -57,28 +61,33 @@ class APIStatistics:
     def get_usage_details(self, file_path, function_name):
         """
         获取函数在文件中的详细usage信息
-        返回: [(line_number, context_lines), ...]
+        返回: [line_number, ...] - 只返回行号列表
         """
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
+            # 尝试多种编码方式
+            encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+            lines = None
+            
+            for encoding in encodings:
+                try:
+                    with open(file_path, 'r', encoding=encoding) as f:
+                        lines = f.readlines()
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if lines is None:
+                print(f"   ⚠️  无法读取文件 {file_path}: 所有编码都失败")
+                return []
             
             usages = []
             for i, line in enumerate(lines, 1):
                 if function_name in line:
-                    # 获取前后各2行作为上下文
-                    start_idx = max(0, i - 3)
-                    end_idx = min(len(lines), i + 2)
-                    context_lines = []
-                    for j in range(start_idx, end_idx):
-                        prefix = ">>> " if j == i - 1 else "    "
-                        context_lines.append(f"{prefix}{j+1:4d}: {lines[j].rstrip()}")
-                    
-                    usages.append((i, context_lines))
+                    usages.append(i)
             
             return usages
         except Exception as e:
-            print(f"   ❌ 读取文件失败 {file_path}: {e}")
+            print(f"   ❌❌ 读取文件失败 {file_path}: {e}")
             return []
     
     def get_all_functions_with_keywords(self, analyzer, keywords):
@@ -104,28 +113,45 @@ class APIStatistics:
         api_with_usage = 0
         api_usage_details = {}
         
-        for func in api_functions:
+        print(f"   🔍 开始分析 {len(api_functions)} 个API函数的usage...")
+        
+        for i, func in enumerate(api_functions, 1):
+            print(f"   [{i}/{len(api_functions)}] 处理函数: {func.name}")
+            
             # 查找所有文件中的usage
             all_usage = analyzer.find_usage_in_all_files(function_name=func.name)
             
             if all_usage:
                 api_with_usage += 1
+                total_usage_count = sum(len(callers) for callers in all_usage.values())
+                print(f"      ✅ 找到 {total_usage_count} 个usage，分布在 {len(all_usage)} 个文件中")
+                
                 file_details = {}
                 
                 for file_path, callers in all_usage.items():
-                    # 获取详细的usage信息（行号和上下文）
-                    usage_details = self.get_usage_details(file_path, func.name)
+                    # 获取详细的usage信息（仅行号）
+                    usage_line_numbers = self.get_usage_details(file_path, func.name)
+                    
+                    # 处理callers格式：List[Dict] 包含 name, start_line, end_line
+                    caller_info = []
+                    for caller in callers:
+                        if isinstance(caller, dict):
+                            caller_info.append({
+                                'name': caller.get('name', 'unknown'),
+                                'start_line': caller.get('start_line', 0),
+                                'end_line': caller.get('end_line', 0)
+                            })
+                        else:
+                            caller_info.append({
+                                'name': str(caller),
+                                'start_line': 0,
+                                'end_line': 0
+                            })
                     
                     file_details[file_path] = {
-                        'callers': callers,
-                        'usage_count': len(usage_details),
-                        'usage_locations': [
-                            {
-                                'line_number': line_num,
-                                'context': context_lines
-                            }
-                            for line_num, context_lines in usage_details
-                        ]
+                        'callers': caller_info,
+                        'usage_count': len(usage_line_numbers),
+                        'usage_locations': usage_line_numbers
                     }
                 
                 api_usage_details[func.name] = {
@@ -133,36 +159,62 @@ class APIStatistics:
                     'total_usages': sum(len(self.get_usage_details(fp, func.name)) for fp in all_usage.keys()),
                     'files': file_details
                 }
+            else:
+                print(f"      ❌ 未找到usage")
         
+        print(f"   📊 总结: {api_with_usage}/{len(api_functions)} 个API有usage")
         return api_with_usage, api_usage_details
     
-    def count_api_with_test_usage(self, analyzer, api_functions):
+    def count_api_with_test_usage(self, analyzer, api_functions, all_usage_cache=None):
         """统计在test中有usage的API数量"""
         api_with_test_usage = 0
         test_usage_details = {}
         
-        for func in api_functions:
-            # 查找测试文件中的usage
-            test_usage = analyzer.find_usage_in_test_files(function_name=func.name)
+        print(f"   🧪 开始分析 {len(api_functions)} 个API函数的test usage...")
+        
+        for i, func in enumerate(api_functions, 1):
+            print(f"   [{i}/{len(api_functions)}] 处理函数: {func.name}")
+            
+            # 如果有缓存的all_usage数据，直接使用它来过滤测试文件
+            if all_usage_cache and func.name in all_usage_cache:
+                all_usage = all_usage_cache[func.name]
+                # 使用重构后的find_usage_in_test_files，传入all_usage数据
+                test_usage = analyzer.find_usage_in_test_files(function_name=func.name, all_usage=all_usage)
+            else:
+                # 查找测试文件中的usage（原有逻辑）
+                test_usage = analyzer.find_usage_in_test_files(function_name=func.name)
             
             if test_usage:
                 api_with_test_usage += 1
+                total_test_usage_count = sum(len(callers) for callers in test_usage.values())
+                print(f"      ✅ 找到 {total_test_usage_count} 个test usage，分布在 {len(test_usage)} 个测试文件中")
+                
                 test_file_details = {}
                 
                 for file_path, callers in test_usage.items():
-                    # 获取详细的usage信息（行号和上下文）
-                    usage_details = self.get_usage_details(file_path, func.name)
+                    # 获取详细的usage信息（仅行号）
+                    usage_line_numbers = self.get_usage_details(file_path, func.name)
+                    
+                    # 处理callers格式：List[str] 包含调用者函数名
+                    caller_info = []
+                    for caller in callers:
+                        if isinstance(caller, dict):
+                            caller_info.append({
+                                'name': caller.get('name', 'unknown'),
+                                'start_line': caller.get('start_line', 0),
+                                'end_line': caller.get('end_line', 0)
+                            })
+                        else:
+                            caller_info.append({
+                                'name': str(caller),
+                                'start_line': 0,
+                                'end_line': 0
+                            })
                     
                     test_file_details[file_path] = {
-                        'callers': callers,
-                        'usage_count': len(usage_details),
-                        'usage_locations': [
-                            {
-                                'line_number': line_num,
-                                'context': context_lines
-                            }
-                            for line_num, context_lines in usage_details
-                        ]
+                        'callers': caller_info,
+                        'usage_count': len(usage_line_numbers),
+                        'usage_locations': usage_line_numbers
                     }
                 
                 test_usage_details[func.name] = {
@@ -170,7 +222,10 @@ class APIStatistics:
                     'total_test_usages': sum(len(self.get_usage_details(fp, func.name)) for fp in test_usage.keys()),
                     'files': test_file_details
                 }
+            else:
+                print(f"      ❌ 未找到test usage")
         
+        print(f"   📊 总结: {api_with_test_usage}/{len(api_functions)} 个API有test usage")
         return api_with_test_usage, test_usage_details
     
     def analyze_library(self, lib_name, config):
@@ -211,12 +266,20 @@ class APIStatistics:
             print(f"📊 找到 {len(api_functions)} 个API函数")
             
             # 统计有usage的API
-            print("🔍 统计API usage...")
+            print("🔍 统计API usage in the whole repository...")
             api_with_usage, usage_details = self.count_api_with_usage(analyzer, api_functions)
             
-            # 统计在test中有usage的API
-            print("🧪 统计test usage...")
-            api_with_test_usage, test_usage_details = self.count_api_with_test_usage(analyzer, api_functions)
+            # 统计在test中有usage的API（利用已获取的usage数据）
+            print("🧪 统计API usage in the test files of the repository...")
+            
+            # 构建all_usage_cache，将usage_details转换为find_usage_in_all_files的格式
+            all_usage_cache = {}
+            for func_name, details in usage_details.items():
+                all_usage_cache[func_name] = {}
+                for file_path, file_info in details['files'].items():
+                    all_usage_cache[func_name][file_path] = file_info['callers']
+            
+            api_with_test_usage, test_usage_details = self.count_api_with_test_usage(analyzer, api_functions, all_usage_cache)
             
             # 计算比率
             usage_rate = (api_with_usage / len(api_functions)) * 100 if api_functions else 0

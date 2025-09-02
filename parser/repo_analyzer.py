@@ -779,21 +779,28 @@ class RepoAnalyzer:
             analyzed_functions=self.all_functions
         )
     
-    def find_usage_in_test_files(self, function_name: str) -> Dict[str, List[str]]:
+    def find_usage_in_test_files(self, function_name: str, all_usage: Dict[str, List[Dict]] = None) -> Dict[str, List[str]]:
         """
         在test文件中查找函数使用
         
         Args:
             function_name: 要查找的函数名
+            all_usage: 可选的所有文件usage数据，如果提供则直接过滤，否则重新搜索
         
         Returns:
             Dict[str, List[str]]: 文件路径 -> 调用者函数名列表的映射
         """
         usage_finder, repo_root = self._get_usage_finder_and_repo_root()
-        return usage_finder.find_usage_in_test_files(
+        
+        # 调用重构后的find_usage_in_test_files方法
+        test_usage = usage_finder.find_usage_in_test_files(
             function_name=function_name,
-            repo_root=repo_root
+            repo_root=repo_root,
+            all_usage=all_usage
         )
+        
+        # 直接返回字典格式，保持调用者的详细信息
+        return test_usage
     
     def search_api_in_documents(self, api_name: str, search_path: str = None, 
                                use_paragraph_extraction: bool = True) -> List[Dict]:
