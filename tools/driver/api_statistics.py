@@ -51,7 +51,7 @@ class APIStatistics:
             # },
             'libtiff': {
                 'config_file': 'benchmarks/configs/libtiff_config.json',
-                'api_keywords': ['extern', 'TIFF'],
+                'api_keywords': ['extern'],
                 'api_prefix': 'TIFF'  # libtiff的API函数以TIFF开头
             },
         }
@@ -279,11 +279,11 @@ class APIStatistics:
             print(f"📊 找到 {len(api_functions)} 个API函数")
             
             # 统计有usage的API
-            print("🔍 统计API usage in the whole repository...")
+            print("🔍 ======================= 统计API usage in the whole repository...  ======================= ")
             api_with_usage, usage_details = self.count_api_with_usage(analyzer, api_functions)
             
             # 统计在test中有usage的API（利用已获取的usage数据）
-            print("🧪 统计API usage in the test files of the repository...")
+            print("\n\n🧪 ======================= 统计API usage in the test files of the repository... ======================= ")
             
             # 构建all_usage_cache，将usage_details转换为find_usage_in_all_files的格式
             all_usage_cache = {}

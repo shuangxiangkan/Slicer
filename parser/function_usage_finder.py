@@ -153,7 +153,7 @@ class FunctionUsageFinder:
             all_usage = self.find_usage_in_all_files(function_name, repo_root)
         
         # 过滤出路径中包含测试和示例关键词的文件
-        test_keywords = ['test', 'example', 'demo', 'sample', 'tutorial', 'benchmark']
+        test_keywords = ['test', 'example', 'demo', 'sample', 'tutorial']
         test_usage = {}
         
         for file_path, callers in all_usage.items():
