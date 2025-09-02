@@ -340,7 +340,7 @@ class RepoAnalyzer:
         return matches
     
     def get_api_functions(self, api_keyword: str, include_declarations: bool = True, 
-                         include_definitions: bool = True) -> List[FunctionInfo]:
+                         include_definitions: bool = True, header_files: List[str] = None) -> List[FunctionInfo]:
         """
         Extract functions that contain the specified API keyword
         
@@ -348,6 +348,7 @@ class RepoAnalyzer:
             api_keyword: API keyword (e.g., "CJSON_PUBLIC", "API", "EXPORT" etc.)
             include_declarations: Whether to include function declarations
             include_definitions: Whether to include function definitions
+            header_files: List of header files (absolute paths), if None then no header file check
             
         Returns:
             A list of FunctionInfo objects that contain the API keyword
@@ -365,8 +366,8 @@ class RepoAnalyzer:
             if not func.is_declaration and not include_definitions:
                 continue
             
-            # Use FunctionInfo method to check if it contains the API keyword
-            if func.is_api_function(api_keyword):
+            # Use FunctionInfo method to check if it contains the API keyword and is in specified header files
+            if func.is_api_function(api_keyword, header_files):
                 api_functions.append(func)
         
         return api_functions

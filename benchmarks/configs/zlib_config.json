@@ -1,5 +1,8 @@
 {
     "library_path": "benchmarks/zlib",
+    "header_files": [
+      "zlib.h"
+    ],
     "include_files": [
       "adler32.c",
       "compress.c",

@@ -1,5 +1,8 @@
 {
   "library_path": "benchmarks/utf8",
+  "header_files": [
+    "utf8.h"
+  ],
   "include_files": [
     "utf8.h"
   ],

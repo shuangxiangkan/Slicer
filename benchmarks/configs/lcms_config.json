@@ -1,5 +1,8 @@
 {
   "library_path": "benchmarks/Little-CMS",
+   "header_files": [
+    "lcms2.h"
+  ],
   "include_files": [
     "src/"
   ],

@@ -24,11 +24,12 @@ class ConfigParser:
             
             # 验证必要的配置项
             if 'library_path' not in config:
-                raise ValueError("配置文件缺少 'library_path' 配置项")
+                raise ValueError("配置文件缺少必要的 'library_path' 字段")
             
             # 设置默认值
             config.setdefault('include_files', [])
             config.setdefault('exclude_files', [])
+            config.setdefault('header_files', [])
             
             # 验证互斥性
             if config['include_files'] and config['exclude_files']:
@@ -40,6 +41,8 @@ class ConfigParser:
             raise FileNotFoundError(f"配置文件不存在: {self.config_path}")
         except json.JSONDecodeError as e:
             raise ValueError(f"配置文件格式错误: {e}")
+        except Exception as e:
+            raise ValueError(f"加载配置文件失败: {e}")
     
     def get_library_path(self) -> str:
         """获取库路径"""
@@ -126,10 +129,29 @@ class ConfigParser:
         else:
             return []
     
+    def get_header_files(self) -> List[str]:
+        """获取头文件列表（绝对路径）"""
+        library_path = self.get_library_path()
+        header_files = []
+        
+        for header_file in self.config['header_files']:
+            if os.path.isabs(header_file):
+                # 如果是绝对路径，直接使用
+                header_files.append(header_file)
+            else:
+                # 如果是相对路径，相对于library_path
+                header_path = os.path.join(library_path, header_file)
+                header_files.append(os.path.abspath(header_path))
+        
+        return header_files
+    
     def get_config_summary_text(self) -> str:
         """获取配置文件摘要文本"""
         summary = "📋 配置文件摘要:\n"
         summary += f"   库路径: {self.get_library_path()}\n"
+        
+        if self.config['header_files']:
+            summary += f"   头文件: {self.config['header_files']}\n"
         
         if self.is_include_mode():
             summary += f"   包含文件: {self.config['include_files']}\n"

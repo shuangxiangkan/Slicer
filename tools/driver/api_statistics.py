@@ -47,7 +47,7 @@ class APIStatistics:
             # },
             'libtiff': {
                 'config_file': 'benchmarks/configs/libtiff_config.json',
-                'api_keywords': ['extern', 'TIFF_EXTERN']
+                'api_keywords': ['extern', 'TIFF']
             },
         }
         
@@ -94,8 +94,13 @@ class APIStatistics:
         """获取包含关键字的所有函数"""
         all_api_functions = []
         
+        # 获取header_files配置
+        header_files = None
+        if hasattr(analyzer, 'config_parser') and analyzer.config_parser:
+            header_files = analyzer.config_parser.get_header_files()
+        
         for keyword in keywords:
-            api_functions = analyzer.get_api_functions(keyword)
+            api_functions = analyzer.get_api_functions(keyword, header_files=header_files)
             all_api_functions.extend(api_functions)
         
         # 去重（基于函数名）

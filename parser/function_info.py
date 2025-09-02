@@ -603,17 +603,59 @@ class FunctionInfo:
         
         return result
     
-    def is_api_function(self, api_keyword: str) -> bool:
+    def is_api_function(self, api_keyword: str, header_files: List[str] = None) -> bool:
         """
-        判断函数是否是API函数（包含指定关键字）
+        判断函数是否是API函数（包含指定关键字且在指定头文件中）
         
         Args:
             api_keyword: API关键字
+            header_files: 头文件列表（绝对路径），如果为None则不检查头文件
             
         Returns:
             是否是API函数
         """
-        return self.contains_api_keyword(api_keyword)
+        # 首先检查是否包含API关键字
+        if not self.contains_api_keyword(api_keyword):
+            return False
+        
+        # 如果没有指定头文件列表，则只检查关键字
+        if not header_files:
+            return True
+        
+        # 检查函数是否在指定的头文件中
+        return self._is_in_header_files(header_files)
+    
+    def _is_in_header_files(self, header_files: List[str]) -> bool:
+        """
+        检查函数是否在指定的头文件中
+        
+        Args:
+            header_files: 头文件列表（绝对路径）
+            
+        Returns:
+            是否在头文件中
+        """
+        import os
+        
+        # 获取函数所在文件的绝对路径
+        function_file = os.path.abspath(self.file_path)
+        
+        # 检查是否在任何一个头文件中
+        for header_file in header_files:
+            header_abs_path = os.path.abspath(header_file)
+            if function_file == header_abs_path:
+                return True
+            
+            # 如果头文件路径是目录，检查函数文件是否在该目录下
+            if os.path.isdir(header_abs_path):
+                if function_file.startswith(header_abs_path + os.sep):
+                    return True
+            
+            # 检查文件名匹配（支持相对路径匹配）
+            if function_file.endswith(header_file) or header_file in function_file:
+                return True
+        
+        return False
     
     def get_api_keywords(self) -> List[str]:
         """

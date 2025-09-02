@@ -57,9 +57,12 @@ def test_api_extraction():
             print(f"✅ 分析完成，总共找到 {result['total_functions']} 个函数")
             
             # 提取API函数
+            header_files = analyzer.config_parser.get_header_files() if analyzer.config_parser else None
             for keyword in config['api_keywords']:
                 print(f"\n🔍 搜索关键字: '{keyword}'")
-                api_functions = analyzer.get_api_functions(keyword)
+                if header_files:
+                    print(f"📁 限制在头文件: {header_files}")
+                api_functions = analyzer.get_api_functions(keyword, header_files=header_files)
                 
                 if api_functions:
                     print(f"找到 {len(api_functions)} 个API函数:")
@@ -79,4 +82,4 @@ def test_api_extraction():
 
 
 if __name__ == '__main__':
-    test_api_extraction() 
+    test_api_extraction()

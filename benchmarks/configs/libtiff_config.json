@@ -1,5 +1,8 @@
 {
   "library_path": "benchmarks/libtiff",
+  "header_files": [
+    "libtiff/tiffio.h"
+  ],
   "include_files": [
     "libtiff/"
   ],

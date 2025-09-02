@@ -1,5 +1,8 @@
 {
   "library_path": "benchmarks/cJSON",
+   "header_files": [
+    "cJSON.h"
+  ],
   "include_files": [
     "cJSON.h",
     "cJSON.c"
