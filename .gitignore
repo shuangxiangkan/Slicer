@@ -219,3 +219,4 @@ test/graph_outputs*
 tools/driver/library_api_usage_statistics/
 tools/driver/library_api_similarity_results/
 tools/driver/idea.md
+llm/.env
