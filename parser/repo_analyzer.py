@@ -340,7 +340,8 @@ class RepoAnalyzer:
         return matches
     
     def get_api_functions(self, api_keyword: str, include_declarations: bool = True, 
-                         include_definitions: bool = True, header_files: List[str] = None) -> List[FunctionInfo]:
+                         include_definitions: bool = True, header_files: List[str] = None,
+                         api_prefix: str = None) -> List[FunctionInfo]:
         """
         Extract functions that contain the specified API keyword
         
@@ -349,6 +350,7 @@ class RepoAnalyzer:
             include_declarations: Whether to include function declarations
             include_definitions: Whether to include function definitions
             header_files: List of header files (absolute paths), if None then no header file check
+            api_prefix: API function name prefix (e.g., "TIFF", "cJSON"), if None then no prefix check
             
         Returns:
             A list of FunctionInfo objects that contain the API keyword
@@ -367,7 +369,7 @@ class RepoAnalyzer:
                 continue
             
             # Use FunctionInfo method to check if it contains the API keyword and is in specified header files
-            if func.is_api_function(api_keyword, header_files):
+            if func.is_api_function(api_keyword, header_files, api_prefix):
                 api_functions.append(func)
         
         return api_functions

@@ -31,23 +31,28 @@ class APIStatistics:
         self.libraries = {
             # 'cJSON': {
             #     'config_file': 'benchmarks/configs/cjson_config.json',
-            #     'api_keywords': ['CJSON_PUBLIC']
+            #     'api_keywords': ['CJSON_PUBLIC'],
+            #     'api_prefix': 'cJSON'
             # },
             # 'miniz': {
             #     'config_file': 'benchmarks/configs/miniz_config.json', 
-            #     'api_keywords': ['MINIZ_EXPORT']
+            #     'api_keywords': ['MINIZ_EXPORT'],
+            #     'api_prefix': 'mz_'
             # },
             # 'utf8': {
             #     'config_file': 'benchmarks/configs/utf8_config.json',
-            #     'api_keywords': ['utf8']  # utf8库的函数都以utf8开头
+            #     'api_keywords': ['utf8'],  # utf8库的函数都以utf8开头
+            #     'api_prefix': 'utf8'
             # },
             # 'zlib': {
             #     'config_file': 'benchmarks/configs/zlib_config.json',
-            #     'api_keywords': ['ZEXPORT', 'ZEXTERN']
+            #     'api_keywords': ['ZEXPORT', 'ZEXTERN'],
+            #     'api_prefix': None  # zlib没有统一前缀
             # },
             'libtiff': {
                 'config_file': 'benchmarks/configs/libtiff_config.json',
-                'api_keywords': ['extern', 'TIFF']
+                'api_keywords': ['extern', 'TIFF'],
+                'api_prefix': 'TIFF'  # libtiff的API函数以TIFF开头
             },
         }
         
@@ -90,7 +95,7 @@ class APIStatistics:
             print(f"   ❌❌ 读取文件失败 {file_path}: {e}")
             return []
     
-    def get_all_functions_with_keywords(self, analyzer, keywords):
+    def get_all_functions_with_keywords(self, analyzer, keywords, api_prefix=None):
         """获取包含关键字的所有函数"""
         all_api_functions = []
         
@@ -100,7 +105,7 @@ class APIStatistics:
             header_files = analyzer.config_parser.get_header_files()
         
         for keyword in keywords:
-            api_functions = analyzer.get_api_functions(keyword, header_files=header_files)
+            api_functions = analyzer.get_api_functions(keyword, header_files=header_files, api_prefix=api_prefix)
             all_api_functions.extend(api_functions)
         
         # 去重（基于函数名）
@@ -253,8 +258,11 @@ class APIStatistics:
             print(f"✅ 基础分析完成，总共找到 {result['total_functions']} 个函数")
             
             # 获取API函数
+            api_prefix = config.get('api_prefix')
             print(f"🔍 搜索API关键字: {', '.join(config['api_keywords'])}")
-            api_functions = self.get_all_functions_with_keywords(analyzer, config['api_keywords'])
+            if api_prefix:
+                print(f"🏷️  限制函数前缀: '{api_prefix}'")
+            api_functions = self.get_all_functions_with_keywords(analyzer, config['api_keywords'], api_prefix)
             
             if not api_functions:
                 print("⚠️  未找到API函数")

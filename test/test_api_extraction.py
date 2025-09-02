@@ -22,15 +22,18 @@ def test_api_extraction():
     test_configs = {
         'cJSON': {
             'config_file': 'benchmarks/configs/cjson_config.json',
-            'api_keywords': ['CJSON_PUBLIC']
+            'api_keywords': ['CJSON_PUBLIC'],
+            'api_prefix': 'cJSON'
         },
         'miniz': {
             'config_file': 'benchmarks/configs/miniz_config.json', 
-            'api_keywords': ['MINIZ_EXPORT']
+            'api_keywords': ['MINIZ_EXPORT'],
+            'api_prefix': 'mz_'
         },
         'zlib': {
             'config_file': 'benchmarks/configs/zlib_config.json',
-            'api_keywords': ['ZEXPORT']
+            'api_keywords': ['ZEXPORT'],
+            'api_prefix': None  # zlib没有统一前缀
         }
     }
     
@@ -58,11 +61,16 @@ def test_api_extraction():
             
             # 提取API函数
             header_files = analyzer.config_parser.get_header_files() if analyzer.config_parser else None
+            api_prefix = config.get('api_prefix')
+            
             for keyword in config['api_keywords']:
                 print(f"\n🔍 搜索关键字: '{keyword}'")
                 if header_files:
                     print(f"📁 限制在头文件: {header_files}")
-                api_functions = analyzer.get_api_functions(keyword, header_files=header_files)
+                if api_prefix:
+                    print(f"🏷️  限制函数前缀: '{api_prefix}'")
+                    
+                api_functions = analyzer.get_api_functions(keyword, header_files=header_files, api_prefix=api_prefix)
                 
                 if api_functions:
                     print(f"找到 {len(api_functions)} 个API函数:")

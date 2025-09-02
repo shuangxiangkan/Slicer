@@ -603,13 +603,14 @@ class FunctionInfo:
         
         return result
     
-    def is_api_function(self, api_keyword: str, header_files: List[str] = None) -> bool:
+    def is_api_function(self, api_keyword: str, header_files: List[str] = None, api_prefix: str = None) -> bool:
         """
-        判断函数是否是API函数（包含指定关键字且在指定头文件中）
+        判断函数是否是API函数（包含指定关键字且在指定头文件中，且函数名以指定前缀开头）
         
         Args:
             api_keyword: API关键字
             header_files: 头文件列表（绝对路径），如果为None则不检查头文件
+            api_prefix: API函数名前缀（如"TIFF", "cJSON"），如果为None则不检查前缀
             
         Returns:
             是否是API函数
@@ -618,7 +619,11 @@ class FunctionInfo:
         if not self.contains_api_keyword(api_keyword):
             return False
         
-        # 如果没有指定头文件列表，则只检查关键字
+        # 检查函数名是否以指定前缀开头
+        if api_prefix and not self.name.startswith(api_prefix):
+            return False
+        
+        # 如果没有指定头文件列表，则只检查关键字和前缀
         if not header_files:
             return True
         
