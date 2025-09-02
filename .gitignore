@@ -217,3 +217,5 @@ slice_results/
 static_program_analysis_by_tree_sitter/
 test/graph_outputs*
 tools/driver/library_api_usage_statistics/
+tools/driver/library_api_similarity_results/
+tools/driver/idea.md
