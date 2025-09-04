@@ -1,0 +1,134 @@
+[
+  {
+    "harness": "harness5_linear_coverage_compiled",
+    "binary_path": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/output/harness5_linear_coverage_compiled",
+    "valid_seed_results": [
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/data_sample.txt",
+        "success": true,
+        "output": "Processing 72 bytes\nFound d at 0\nFound a at 1\nFound t at 2\nFound a at 3\nOther char at 4\nFound p at 5\nFound r at 6\nFound o at 7\nFound c at 8\nFound e at 9\nFound s at 10\nFound s at 11\nFound i at 12\nFound",
+        "return_code": 0
+      },
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/short.txt",
+        "success": true,
+        "output": "Processing 4 bytes\nFound t at 0\nFound e at 1\nFound s at 2\nFound t at 3\n000005:1\n000011:1\n000025:1\n000026:2\n000034:4\n000035:1\n000037:1\n000043:1\n000057:1\n000058:2\n000066:4\n000067:1\n\u001b[0;36mafl-showmap++4",
+        "return_code": 0
+      },
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/test_json.txt",
+        "success": true,
+        "output": "Processing 63 bytes\nOther char at 0\nOther char at 1\nFound t at 2\nFound e at 3\nFound s at 4\nFound t at 5\nOther char at 6\nOther char at 7\nOther char at 8\nOther char at 9\nFound j at 10\nFound s at 11\nFoun",
+        "return_code": 0
+      },
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/test_xml.txt",
+        "success": true,
+        "output": "Processing 43 bytes\nOther char at 0\nFound t at 1\nFound e at 2\nFound s at 3\nFound t at 4\nOther char at 5\nOther char at 6\nFound x at 7\nFound m at 8\nFound l at 9\nOther char at 10\nOther char at 11\nFound d",
+        "return_code": 0
+      }
+    ],
+    "crashed": false,
+    "timeout": false,
+    "execution_success": true
+  },
+  {
+    "harness": "harness1_good_compiled",
+    "binary_path": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/output/harness1_good_compiled",
+    "valid_seed_results": [
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/data_sample.txt",
+        "success": true,
+        "output": "Found test string\nMedium input\n000005:1\n000006:1\n000012:1\n000022:1\n000025:1\n000027:1\n000028:1\n000034:1\n000044:1\n000047:1\n\u001b[0;36mafl-showmap++4.22a\u001b[0m by Michal Zalewski\n\u001b[1;94m[*] \u001b[0mExecuting '/hom",
+        "return_code": 0
+      },
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/short.txt",
+        "success": true,
+        "output": "Found test string\nShort input\n000005:1\n000006:1\n000012:1\n000021:1\n000025:1\n000027:1\n000028:1\n000034:1\n000043:1\n000047:1\n\u001b[0;36mafl-showmap++4.22a\u001b[0m by Michal Zalewski\n\u001b[1;94m[*] \u001b[0mExecuting '/home",
+        "return_code": 0
+      },
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/test_json.txt",
+        "success": true,
+        "output": "Found test string\nJSON test detected\nJSON bracket at position 0\nJSON bracket at position 46\nJSON bracket at position 61\nJSON bracket at position 62\nMedium input\n000005:1\n000007:2\n000008:7\n000009:2\n000",
+        "return_code": 0
+      },
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/test_xml.txt",
+        "success": true,
+        "output": "Found test string\nXML test detected\nXML bracket at position 0\nXML bracket at position 5\nXML bracket at position 6\nXML bracket at position 10\nXML bracket at position 11\nXML bracket at position 16\nXML b",
+        "return_code": 0
+      }
+    ],
+    "crashed": false,
+    "timeout": false,
+    "execution_success": true
+  },
+  {
+    "harness": "harness3_crash_compiled",
+    "binary_path": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/output/harness3_crash_compiled",
+    "valid_seed_results": [
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/data_sample.txt",
+        "success": true,
+        "output": "Exit code 2: 000005:1\n000007:1\n000009:1\n000012:1\n000014:1\n000016:1\n\u001b[0;36mafl-showmap++4.22a\u001b[0m by Michal Zalewski\n\u001b[1;94m[*] \u001b[0mExecuting '/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_d",
+        "return_code": 2
+      },
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/short.txt",
+        "success": true,
+        "output": "Input processed: test\n000005:1\n000007:1\n000009:1\n000012:1\n000014:1\n000016:1\n\u001b[0;36mafl-showmap++4.22a\u001b[0m by Michal Zalewski\n\u001b[1;94m[*] \u001b[0mExecuting '/home/kansx/SVF-Tools/Slicer/tools/driver/harness",
+        "return_code": 0
+      },
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/test_json.txt",
+        "success": true,
+        "output": "Exit code 2: 000005:1\n000007:1\n000009:1\n000012:1\n000014:1\n000016:1\n\u001b[0;36mafl-showmap++4.22a\u001b[0m by Michal Zalewski\n\u001b[1;94m[*] \u001b[0mExecuting '/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_d",
+        "return_code": 2
+      },
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/test_xml.txt",
+        "success": true,
+        "output": "Exit code 2: 000005:1\n000007:1\n000009:1\n000012:1\n000014:1\n000016:1\n\u001b[0;36mafl-showmap++4.22a\u001b[0m by Michal Zalewski\n\u001b[1;94m[*] \u001b[0mExecuting '/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_d",
+        "return_code": 2
+      }
+    ],
+    "crashed": false,
+    "timeout": false,
+    "execution_success": true
+  },
+  {
+    "harness": "harness4_no_input_dependency_compiled",
+    "binary_path": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/output/harness4_no_input_dependency_compiled",
+    "valid_seed_results": [
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/data_sample.txt",
+        "success": true,
+        "output": "Starting fixed execution path\nLoop iteration 0\nLoop iteration 1\nLoop iteration 2\nLoop iteration 3\nLoop iteration 4\nLoop iteration 5\nLoop iteration 6\nLoop iteration 7\nLoop iteration 8\nLoop iteration 9\n",
+        "return_code": 0
+      },
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/short.txt",
+        "success": true,
+        "output": "Starting fixed execution path\nLoop iteration 0\nLoop iteration 1\nLoop iteration 2\nLoop iteration 3\nLoop iteration 4\nLoop iteration 5\nLoop iteration 6\nLoop iteration 7\nLoop iteration 8\nLoop iteration 9\n",
+        "return_code": 0
+      },
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/test_json.txt",
+        "success": true,
+        "output": "Starting fixed execution path\nLoop iteration 0\nLoop iteration 1\nLoop iteration 2\nLoop iteration 3\nLoop iteration 4\nLoop iteration 5\nLoop iteration 6\nLoop iteration 7\nLoop iteration 8\nLoop iteration 9\n",
+        "return_code": 0
+      },
+      {
+        "seed_file": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp/test_xml.txt",
+        "success": true,
+        "output": "Starting fixed execution path\nLoop iteration 0\nLoop iteration 1\nLoop iteration 2\nLoop iteration 3\nLoop iteration 4\nLoop iteration 5\nLoop iteration 6\nLoop iteration 7\nLoop iteration 8\nLoop iteration 9\n",
+        "return_code": 0
+      }
+    ],
+    "crashed": false,
+    "timeout": false,
+    "execution_success": true
+  }
+]

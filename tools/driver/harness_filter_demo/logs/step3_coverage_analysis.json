@@ -1,0 +1,58 @@
+[
+  {
+    "harness": "harness5_linear_coverage_compiled",
+    "binary_path": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/output/harness5_linear_coverage_compiled",
+    "total_bitmap": [],
+    "new_coverage": [],
+    "coverage_gain": 0,
+    "fuzz_duration": 10,
+    "total_executions": 0,
+    "execution_speed": 0,
+    "stability": 0.0,
+    "unique_crashes": 0,
+    "coverage_growth_rate": 0.0,
+    "coverage_quality": "execution_failed"
+  },
+  {
+    "harness": "harness1_good_compiled",
+    "binary_path": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/output/harness1_good_compiled",
+    "total_bitmap": [],
+    "new_coverage": [],
+    "coverage_gain": 0,
+    "fuzz_duration": 10,
+    "total_executions": 0,
+    "execution_speed": 0,
+    "stability": 0.0,
+    "unique_crashes": 0,
+    "coverage_growth_rate": 0.0,
+    "coverage_quality": "execution_failed"
+  },
+  {
+    "harness": "harness3_crash_compiled",
+    "binary_path": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/output/harness3_crash_compiled",
+    "total_bitmap": [],
+    "new_coverage": [],
+    "coverage_gain": 0,
+    "fuzz_duration": 10,
+    "total_executions": 0,
+    "execution_speed": 0,
+    "stability": 0.0,
+    "unique_crashes": 0,
+    "coverage_growth_rate": 0.0,
+    "coverage_quality": "execution_failed"
+  },
+  {
+    "harness": "harness4_no_input_dependency_compiled",
+    "binary_path": "/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/output/harness4_no_input_dependency_compiled",
+    "total_bitmap": [],
+    "new_coverage": [],
+    "coverage_gain": 0,
+    "fuzz_duration": 10,
+    "total_executions": 0,
+    "execution_speed": 0,
+    "stability": 0.0,
+    "unique_crashes": 0,
+    "coverage_growth_rate": 0.0,
+    "coverage_quality": "execution_failed"
+  }
+]
