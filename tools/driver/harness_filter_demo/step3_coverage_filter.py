@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-OGHarn 三步筛选流程演示 - 第三步：代码覆盖率筛选
-模拟 OGHarn 的 Oracle 引导机制，通过代码覆盖率分析选择最佳 harness
+三步筛选流程演示 - 第三步：代码覆盖率筛选: 通过代码覆盖率分析选择最佳 harness
 """
 
+import os
 import subprocess
 import json
 import shutil
@@ -52,14 +52,6 @@ class CoverageFilter:
         
         return seed_files
     
-    def get_coverage_bitmap(self, binary_path: Path, seed_file: Path) -> Set[str]:
-        """获取代码覆盖率位图，只使用 AFL++ 的 showmap"""
-        try:
-            return self.get_afl_coverage(binary_path, seed_file)
-        except Exception as e:
-            print(f"    获取覆盖率失败: {str(e)}")
-            return set()
-    
     def _check_afl_available(self) -> bool:
         """检查AFL++是否可用"""
         try:
@@ -69,34 +61,48 @@ class CoverageFilter:
         except:
             return False
     
-    def get_afl_coverage(self, binary_path: Path, seed_file: Path) -> Set[str]:
-        """使用 AFL++ showmap 获取覆盖率位图"""
+    def get_afl_coverage(self, binary_path: Path, queue_dir: Path) -> Set[str]:
+        """批量使用 AFL++ showmap 获取queue目录中所有文件的覆盖率位图"""
         try:
-            # 创建临时文件存储覆盖率输出
-            coverage_file = self.log_dir / f"coverage_{binary_path.stem}_{seed_file.stem}.txt"
+            # 检查queue目录是否存在
+            if not queue_dir.exists():
+                print(f"      Queue目录不存在: {queue_dir}")
+                return set()
             
+            # 获取queue目录中的所有文件
+            queue_files = [f for f in queue_dir.iterdir() if f.is_file()]
+            if not queue_files:
+                print(f"      Queue目录为空: {queue_dir}")
+                return set()
+            
+            print(f"      批量处理 {len(queue_files)} 个queue文件获取覆盖率...")
+            
+            # 创建临时文件保存覆盖率结果
+            coverage_file = Path(f"/tmp/afl_batch_coverage_{binary_path.stem}_{os.getpid()}.txt")
+            
+            # 使用afl-showmap批量处理
             cmd = [
                 'afl-showmap',
+                '-C',  # 收集覆盖率模式
+                '-i', str(queue_dir),  # 输入目录
                 '-o', str(coverage_file),
                 '-m', '50',  # 内存限制
                 '-t', '5000',  # 超时5秒
+                '-q',  # 静默模式
                 '--',
-                str(binary_path)
+                str(binary_path),
+                '@@'  # 文件路径占位符
             ]
-            
-            # 读取种子文件
-            with open(seed_file, 'rb') as f:
-                seed_data = f.read()
             
             result = subprocess.run(
                 cmd,
-                input=seed_data,
                 capture_output=True,
-                timeout=10
+                timeout=30,  # 批量处理需要更长时间
+                text=True
             )
             
             if result.returncode == 0 and coverage_file.exists():
-                # 解析覆盖率文件，模拟 OGHarn 的 getBitmap 方法
+                # 解析覆盖率文件
                 bitmap = set()
                 with open(coverage_file, 'r') as f:
                     for line in f:
@@ -108,12 +114,17 @@ class CoverageFilter:
                 
                 # 清理临时文件
                 coverage_file.unlink()
+                print(f"      批量覆盖率获取成功: {len(bitmap)} 个覆盖点")
                 return bitmap
+            else:
+                print(f"      批量覆盖率获取失败 (返回码: {result.returncode})")
+                if result.stderr:
+                    print(f"      错误信息: {result.stderr}")
+                return set()
             
         except Exception as e:
-            print(f"    AFL++ 覆盖率获取失败: {str(e)}")
-        
-        return set()
+            print(f"    批量AFL++覆盖率获取失败: {str(e)}")
+            return set()
       
     def fuzz_harness_with_timeout(self, binary_path: Path, fuzz_duration=10) -> Dict:
         """对harness进行限时模糊测试，评估其真实的模糊测试质量"""
@@ -185,12 +196,18 @@ class CoverageFilter:
                 
                 print(f"      启动AFL++模糊测试: {' '.join(cmd)}")
                 
+                # 设置AFL++环境变量
+                env = os.environ.copy()
+                env['AFL_SKIP_CPUFREQ'] = '1'
+                env['AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES'] = '1'
+                
                 # 启动AFL++进程
                 process = subprocess.Popen(
                     cmd,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    text=True
+                    text=True,
+                    env=env
                 )
                 
                 # 等待指定时间
@@ -204,7 +221,7 @@ class CoverageFilter:
                     process.kill()
                 
                 # 分析AFL++输出结果
-                stats_file = output_dir / "fuzzer_stats"
+                stats_file = output_dir / "default" / "fuzzer_stats"
                 if stats_file.exists():
                     with open(stats_file, 'r') as f:
                         stats_content = f.read()
@@ -213,22 +230,21 @@ class CoverageFilter:
                     for line in stats_content.split('\n'):
                         if 'execs_done' in line:
                             fuzz_result['total_executions'] = int(line.split(':')[1].strip())
-                        elif 'unique_crashes' in line:
+                        elif 'saved_crashes' in line:
                             fuzz_result['unique_crashes'] = int(line.split(':')[1].strip())
-                        elif 'exec_speed' in line:
+                        elif 'execs_per_sec' in line:
                             fuzz_result['execution_speed'] = float(line.split(':')[1].strip())
                         elif 'stability' in line:
                             stability_str = line.split(':')[1].strip().rstrip('%')
                             fuzz_result['stability'] = float(stability_str) / 100.0
                 
                 # 收集覆盖率信息
-                queue_dir = output_dir / "queue"
+                queue_dir = output_dir / "default" / "queue"
                 if queue_dir.exists():
-                    for queue_file in queue_dir.iterdir():
-                        if queue_file.is_file():
-                            bitmap = self.get_coverage_bitmap(binary_path, queue_file)
-                            fuzz_result['coverage_bitmap'].update(bitmap)
-                            fuzz_result['coverage_growth'].append(len(fuzz_result['coverage_bitmap']))
+                    # 使用批量处理获取所有queue文件的覆盖率
+                    batch_bitmap = self.get_afl_coverage(binary_path, queue_dir)
+                    fuzz_result['coverage_bitmap'].update(batch_bitmap)
+                    fuzz_result['coverage_growth'].append(len(fuzz_result['coverage_bitmap']))
                 
                 print(f"      AFL++测试完成: 执行{fuzz_result['total_executions']}次, 覆盖率{len(fuzz_result['coverage_bitmap'])}")
                 
@@ -240,8 +256,6 @@ class CoverageFilter:
             print(f"      AFL++模糊测试失败: {str(e)}")
             
         return fuzz_result
-    
-
     
     def analyze_harness_coverage(self, harness_info: Dict) -> Dict:
         """通过实际模糊测试分析harness的质量"""
