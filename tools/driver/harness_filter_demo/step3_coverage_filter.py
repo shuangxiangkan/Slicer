@@ -63,6 +63,7 @@ class CoverageFilter:
     
     def get_afl_coverage(self, binary_path: Path, queue_dir: Path) -> Set[str]:
         """批量使用 AFL++ showmap 获取queue目录中所有文件的覆盖率位图"""
+        coverage_file = None
         try:
             # 检查queue目录是否存在
             if not queue_dir.exists():
@@ -112,8 +113,6 @@ class CoverageFilter:
                             edge_id = line.split(':')[0]
                             bitmap.add(edge_id)
                 
-                # 清理临时文件
-                coverage_file.unlink()
                 print(f"      批量覆盖率获取成功: {len(bitmap)} 个覆盖点")
                 return bitmap
             else:
@@ -125,6 +124,14 @@ class CoverageFilter:
         except Exception as e:
             print(f"    批量AFL++覆盖率获取失败: {str(e)}")
             return set()
+        finally:
+            # 确保临时文件在所有情况下都被删除
+            if coverage_file and coverage_file.exists():
+                try:
+                    coverage_file.unlink()
+                    print(f"      已清理临时文件: {coverage_file}")
+                except Exception as cleanup_error:
+                    print(f"      警告: 清理临时文件失败: {cleanup_error}")
       
     def fuzz_harness_with_timeout(self, binary_path: Path, fuzz_duration=10) -> Dict:
         """对harness进行限时模糊测试，评估其真实的模糊测试质量"""
