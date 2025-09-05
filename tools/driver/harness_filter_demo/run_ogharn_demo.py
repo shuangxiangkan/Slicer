@@ -142,7 +142,7 @@ def main():
     """主函数入口"""
     # 写死参数，无需命令行输入
     harness_dir = '/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/harness_samples'
-    seeds_valid_dir = '/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds_validcp'
+    seeds_valid_dir = '/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/seeds'
     output_dir = '/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/output'
     log_dir = '/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/logs'
     final_dir = '/home/kansx/SVF-Tools/Slicer/tools/driver/harness_filter_demo/final_best'
