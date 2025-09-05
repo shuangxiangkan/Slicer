@@ -8,7 +8,7 @@ import subprocess
 import json
 import shutil
 from pathlib import Path
-from utils import *
+from logging import *
 
 class CompileFilter:
     def __init__(self, harness_dir, output_dir, log_dir):

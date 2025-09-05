@@ -12,7 +12,7 @@ import time
 import sys
 from pathlib import Path
 from typing import List, Dict, Set
-from utils import *
+from logging import *
 
 class CoverageFilter:
     def __init__(self, log_dir, seeds_valid_dir):
