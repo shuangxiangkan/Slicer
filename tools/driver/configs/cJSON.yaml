@@ -1,0 +1,55 @@
+library:
+  name: "cJSON"
+  version: "1.7.17"
+  repo_url: "https://github.com/DaveGamble/cJSON.git"
+  language: "c"
+
+# compiler & sanitizer 
+compiler:
+  CC_FUZZ: "afl-clang-fast"
+  CXX_FUZZ: "afl-clang-fast++"
+  CFLAGS_ASAN: "-fsanitize=address,undefined"
+  CXXFLAGS_ASAN: "-fsanitize=address,undefined"
+
+headers:           # required, header file name, do not include path
+  - "cJSON.h"
+
+source_dirs:       # required，folder or files
+  - "cJSON/cJSON.h"            
+  - "cJSON/cJSON.c"       
+
+exclude_dirs:      # optional
+  - ""
+
+static_build:      # required
+  output: "cJSON/build/libcjson.a"
+  command: |
+    rm -rf cJSON && \
+    git clone {repo_url} cJSON && \
+    cd cJSON && \
+    mkdir -p build && cd build && \
+    CC={CC_FUZZ} cmake .. -DENABLE_CJSON_TEST=OFF -DENABLE_CJSON_UTILS=OFF && \
+    make -j$(nproc)
+
+shared_build:     # optional
+  output: "cJSON/build/libcjson.so"
+  command: |
+    rm -rf cJSON && \
+    git clone {repo_url} cJSON && \
+    cd cJSON && \
+    mkdir -p build && cd build && \
+    CC={CC_FUZZ} cmake .. -DBUILD_SHARED_LIBS=ON -DENABLE_CJSON_TEST=OFF -DENABLE_CJSON_UTILS=OFF && \
+    make -j$(nproc)
+
+static_driver_build: |    # required
+  {CC_FUZZ} -I. -o {output} {driver} cJSON/build/libcjson.a {CFLAGS_ASAN}
+
+shared_driver_build: |    # optional
+  {CC_FUZZ} -I. -o {output} {driver} cJSON/build/libcjson.so {CFLAGS_ASAN}
+
+api_selection:
+  include_prefix:      # required
+    - "cJSON_"
+  keywords:           # required
+    - "CJSON_PUBLIC"
+  exclude: []         # optional
