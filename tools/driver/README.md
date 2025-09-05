@@ -4,39 +4,12 @@
 
 This directory is dedicated to generating driver programs for C/C++ library APIs.
 
-## Functionality
+## IDEA
 
-The driver directory contains code and tools for automatically generating test driver programs for C/C++ library APIs. These driver programs are primarily used for:
-
-- **API Testing**: Generate test driver code for various API functions in C/C++ libraries
-- **Fuzz Testing**: Generate harness programs for fuzzing
-- **Functional Verification**: Create test programs to verify the correctness of library functions
-- **Performance Testing**: Generate driver code for performance benchmarking
-
-## Use Cases
-
-1. **Automated Testing**: Quickly generate comprehensive test coverage for large C/C++ libraries
-2. **Security Testing**: Generate security test cases targeting specific APIs
-3. **Regression Testing**: Create regression test driver programs for continuous integration
-4. **API Documentation Validation**: Verify the correctness of example code in API documentation
-
-## Related Components
-
-This driver generator works collaboratively with other components in the project:
-
-- **parser/**: Parse header files and source code of C/C++ libraries
-- **analysis/**: Perform static analysis, generate control flow graphs, data dependency graphs, etc.
-- **slicer/**: Execute program slicing, extract relevant code snippets
-
-## Output Format
-
-Generated driver programs typically include:
-
-- Standard C/C++ testing framework integration
-- Appropriate error handling and boundary condition testing
-- Memory management and resource cleanup
-- Configurable test parameters and options
-
----
-
-*This directory is an important component of the SVF-Tools/Slicer project, focusing on automated test driver program generation for C/C++ libraries.*
+library API fuzz driver生成的一个我觉得很好的idea：
+1. 先找到library中所有有usage的API， 比如在test文件中实际使用的API
+2. 根据这些API， 生成对应的fuzz driver，编译运行，获得实际可用的API的driver
+3. 对那些没有usage的API，计算这些API和那些已经生成有效fuzz driver的API的相似度，找到相似度最高的那个，仿照其写法生成对应的fuzz driver
+4. 采用bottom-up的方式，逐个生成所有没有usage的API的fuzz driver
+   
+我觉得这个idea的实现起来应该不是很难， 但是实现起来的效果应该会很好，最好情况可能会生成所有API的fuzz driver
