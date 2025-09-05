@@ -28,7 +28,7 @@ def run_ogharn_demo(harness_dir, seeds_valid_dir, output_dir="output", log_dir="
         dict: 包含各步骤结果的字典
     """
     
-    log_section("OGHarn 三步筛选流程演示")
+    log_info("OGHarn 三步筛选流程演示")
     log_info(f"Harness目录: {harness_dir}")
     log_info(f"种子文件目录: {seeds_valid_dir}")
     log_info(f"输出目录: {output_dir}")
@@ -46,7 +46,7 @@ def run_ogharn_demo(harness_dir, seeds_valid_dir, output_dir="output", log_dir="
     
     try:
         # 第一步：编译筛选
-        log_step("编译筛选", 1)
+        log_info("第一步: 编译筛选")
         
         # 创建中间目录
         stage1_dir = Path(log_dir) / "stage1_passed"
@@ -67,7 +67,7 @@ def run_ogharn_demo(harness_dir, seeds_valid_dir, output_dir="output", log_dir="
         log_success(f"第一步完成，{len(step1_result)}个harness通过编译筛选")
         
         # 第二步：执行筛选
-        log_step("执行筛选", 2)
+        log_info("第二步: 执行筛选")
         
         # 创建中间目录
         stage2_dir = Path(log_dir) / "stage2_passed"
@@ -87,7 +87,7 @@ def run_ogharn_demo(harness_dir, seeds_valid_dir, output_dir="output", log_dir="
         log_success(f"第二步完成，{len(step2_result)}个harness通过执行筛选")
         
         # 第三步：覆盖率筛选
-        log_step("覆盖率筛选", 3)
+        log_info("第三步: 覆盖率筛选")
         
         step3_result = coverage_filter(
             log_dir=log_dir,
@@ -106,7 +106,7 @@ def run_ogharn_demo(harness_dir, seeds_valid_dir, output_dir="output", log_dir="
         log_success(f"第三步完成，{len(step3_result)}个harness通过覆盖率筛选")
         
         # 总结
-        log_section("🎉 OGHarn 三步筛选流程完成")
+        log_info("🎉 OGHarn 三步筛选流程完成")
         log_info(f"📁 原始harness目录: {harness_dir}")
         log_info(f"📊 编译通过: {len(step1_result)}个")
         log_info(f"🚀 执行通过: {len(step2_result)}个")
@@ -115,7 +115,7 @@ def run_ogharn_demo(harness_dir, seeds_valid_dir, output_dir="output", log_dir="
         log_info(f"📋 详细日志保存在: {log_dir}")
         
         if step3_result:
-            log_subsection("🏆 最终选择的最佳harness")
+            log_info("🏆 最终选择的最佳harness")
             for i, harness in enumerate(step3_result, 1):
                 harness_name = harness.get('harness', 'unknown')
                 quality_score = harness.get('quality_score', 0)

@@ -77,7 +77,7 @@ class CoverageFilter:
                 log_warning(f"      Queue目录为空: {queue_dir}")
                 return set()
             
-            log_afl(f"      批量处理 {len(queue_files)} 个queue文件获取覆盖率...")
+            log_info(f"      批量处理 {len(queue_files)} 个queue文件获取覆盖率...")
             
             # 创建临时文件保存覆盖率结果
             coverage_file = Path(f"/tmp/afl_batch_coverage_{binary_path.stem}_{os.getpid()}.txt")
@@ -114,7 +114,7 @@ class CoverageFilter:
                             edge_id = line.split(':')[0]
                             bitmap.add(edge_id)
                 
-                log_coverage(f"      批量覆盖率获取成功: {len(bitmap)} 个覆盖点")
+                log_info(f"      批量覆盖率获取成功: {len(bitmap)} 个覆盖点")
                 return bitmap
             else:
                 log_error(f"      批量覆盖率获取失败 (返回码: {result.returncode})")
@@ -136,7 +136,7 @@ class CoverageFilter:
       
     def fuzz_harness_with_timeout(self, binary_path: Path, fuzz_duration=10) -> Dict:
         """对harness进行限时模糊测试，评估其真实的模糊测试质量"""
-        log_afl(f"    开始对 {binary_path.name} 进行 {fuzz_duration} 秒模糊测试...")
+        log_info(f"    开始对 {binary_path.name} 进行 {fuzz_duration} 秒模糊测试...")
         
         fuzz_result = {
             'total_executions': 0,
@@ -155,7 +155,7 @@ class CoverageFilter:
                 return fuzz_result
             
             # 使用所有种子文件进行模糊测试
-            log_afl(f"      使用 {len(seed_files)} 个种子文件进行模糊测试")
+            log_info(f"      使用 {len(seed_files)} 个种子文件进行模糊测试")
             
             # AFL++已在初始化时检查，此处直接进行模糊测试
             return self.run_afl_fuzz(binary_path, seed_files, fuzz_duration)
@@ -202,7 +202,7 @@ class CoverageFilter:
                     str(binary_path)
                 ]
                 
-                log_afl(f"      启动AFL++模糊测试: {' '.join(cmd)}")
+                log_info(f"      启动AFL++模糊测试: {' '.join(cmd)}")
                 
                 # 设置AFL++环境变量
                 env = os.environ.copy()
@@ -254,7 +254,7 @@ class CoverageFilter:
                     fuzz_result['coverage_bitmap'].update(batch_bitmap)
                     fuzz_result['coverage_growth'].append(len(fuzz_result['coverage_bitmap']))
                 
-                log_afl(f"      AFL++测试完成: 执行{fuzz_result['total_executions']}次, 覆盖率{len(fuzz_result['coverage_bitmap'])}")
+                log_info(f"      AFL++测试完成: 执行{fuzz_result['total_executions']}次, 覆盖率{len(fuzz_result['coverage_bitmap'])}")
                 
                 # 如果AFL++没有执行任何测试用例，可能是因为程序没有用AFL++编译
                 if fuzz_result['total_executions'] == 0:
@@ -270,7 +270,7 @@ class CoverageFilter:
         binary_path = Path(harness_info['binary'])
         harness_name = binary_path.name
         
-        log_coverage(f"  分析harness质量: {harness_name}")
+        log_info(f"  分析harness质量: {harness_name}")
         
         analysis_result = {
             'harness': harness_name,
@@ -323,7 +323,7 @@ class CoverageFilter:
         else:
             analysis_result['coverage_quality'] = 'good'
         
-        log_coverage(f"    质量评估: {analysis_result['coverage_quality']} (执行{analysis_result['total_executions']}次, 稳定性{analysis_result['stability']:.2f}, 新覆盖率{analysis_result['coverage_gain']})")
+        log_info(f"    质量评估: {analysis_result['coverage_quality']} (执行{analysis_result['total_executions']}次, 稳定性{analysis_result['stability']:.2f}, 新覆盖率{analysis_result['coverage_gain']})")
         
         # 转换set为list以便JSON序列化
         analysis_result['total_bitmap'] = list(analysis_result['total_bitmap'])
@@ -333,7 +333,7 @@ class CoverageFilter:
     
     def select_best_harnesses(self, coverage_analyses: List[Dict], max_harnesses=3) -> List[Dict]:
         """基于模糊测试质量选择最佳harness"""
-        log_subsection(f"选择最佳 Harness (基于模糊测试质量) - 最多选择{max_harnesses}个")
+        log_info(f"选择最佳 Harness (基于模糊测试质量) - 最多选择{max_harnesses}个")
         
         # 过滤掉质量不好的harness
         good_harnesses = []
@@ -397,7 +397,7 @@ class CoverageFilter:
     
     def filter_harnesses(self, final_dir=None, max_harnesses=3) -> List[Dict]:
         """执行代码覆盖率筛选"""
-        log_section("OGHarn 第三步：代码覆盖率筛选 (Oracle 引导机制)")
+        log_info("OGHarn 第三步：代码覆盖率筛选 (Oracle 引导机制)")
         
         # 加载执行成功的harness
         execution_successful_harnesses = self.load_execution_successful_harnesses()
@@ -407,7 +407,7 @@ class CoverageFilter:
             log_error("没有找到执行成功的harness")
             return []
         
-        log_coverage(f"开始分析 {len(execution_successful_harnesses)} 个执行成功的harness的代码覆盖率")
+        log_info(f"开始分析 {len(execution_successful_harnesses)} 个执行成功的harness的代码覆盖率")
         
         # 分析每个harness的覆盖率
         coverage_analyses = []
@@ -449,13 +449,13 @@ class CoverageFilter:
         # 保存分析结果
         self.save_coverage_results(coverage_analyses, best_harnesses)
         
-        log_subsection("模糊测试质量筛选完成:")
+        log_info("模糊测试质量筛选完成:")
         log_info(f"  总数: {self.coverage_stats['total_harnesses']}")
         log_success(f"  高质量: {self.coverage_stats['coverage_success']}")
         log_warning(f"  无新覆盖率: {self.coverage_stats['no_new_coverage']}")
         log_error(f"  质量问题: {self.coverage_stats['coverage_failed']}")
         log_success(f"  最终选择: {len(best_harnesses)}")
-        log_coverage(f"  全局覆盖率大小: {len(self.global_bitmap)}")
+        log_info(f"  全局覆盖率大小: {len(self.global_bitmap)}")
         
         return best_harnesses
     
@@ -494,11 +494,11 @@ def coverage_filter(log_dir, seeds_valid_dir, final_dir=None, max_harnesses=3):
     # 执行筛选
     best_harnesses = filter.filter_harnesses(final_dir, max_harnesses)
     
-    log_section("模糊测试质量评估完成")
+    log_info("模糊测试质量评估完成")
     log_success(f"最终选择的最佳harness数量: {len(best_harnesses)}")
     
     if best_harnesses:
-        log_subsection("最佳harness列表:")
+        log_info("最佳harness列表:")
         for i, harness in enumerate(best_harnesses, 1):
             quality_score = harness.get('quality_score', 0)
             log_success(f"  {i}. {harness['harness']} (质量分数: {quality_score:.2f}, 覆盖率增益: {harness['coverage_gain']})")

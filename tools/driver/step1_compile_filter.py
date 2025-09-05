@@ -24,7 +24,7 @@ class CompileFilter:
         
         # 在初始化时检查AFL++可用性，如果不可用直接报错
         if not self._check_afl_available():
-            log_afl_error("AFL++不可用，请确保已安装AFL++并在PATH中")
+            log_error("AFL++不可用，请确保已安装AFL++并在PATH中")
             raise RuntimeError("AFL++不可用，请确保已安装AFL++并在PATH中")
     
     def _check_afl_available(self) -> bool:
@@ -62,11 +62,11 @@ class CompileFilter:
             )
             
             if result.returncode == 0:
-                log_compile_success(harness_file.name)
+                log_success(f"编译成功: {harness_file.name}")
                 self.compile_stats['compile_success'] += 1
                 return True, output_binary, result.stdout
             else:
-                log_compile_error(harness_file.name, result.stderr)
+                log_error(f"编译失败 [{harness_file.name}]: {result.stderr}")
                 self.compile_stats['compile_failed'] += 1
                 self.compile_stats['failed_harnesses'].append({
                     'file': harness_file.name,
@@ -75,7 +75,7 @@ class CompileFilter:
                 return False, None, result.stderr
                 
         except subprocess.TimeoutExpired:
-            log_compile_error(harness_file.name, "编译超时")
+            log_error(f"编译失败 [{harness_file.name}]: 编译超时")
             self.compile_stats['compile_failed'] += 1
             self.compile_stats['failed_harnesses'].append({
                 'file': harness_file.name,
@@ -83,7 +83,7 @@ class CompileFilter:
             })
             return False, None, "Compilation timeout"
         except Exception as e:
-            log_compile_error(harness_file.name, f"编译异常 - {str(e)}")
+            log_error(f"编译失败 [{harness_file.name}]: 编译异常 - {str(e)}")
             self.compile_stats['compile_failed'] += 1
             self.compile_stats['failed_harnesses'].append({
                 'file': harness_file.name,
@@ -93,7 +93,7 @@ class CompileFilter:
     
     def filter_harnesses(self, next_stage_dir=None):
         """筛选所有harness文件"""
-        log_section("三步筛选流程 - 第一步：编译筛选")
+        log_info("三步筛选流程 - 第一步：编译筛选")
         log_info(f"扫描目录: {self.harness_dir}")
         
         # 获取所有C/C++文件
@@ -127,13 +127,17 @@ class CompileFilter:
                 if next_stage_dir:
                     dest_file = next_stage_path / harness_file.name
                     shutil.copy2(harness_file, dest_file)
-                    log_debug(f"已复制到下一阶段: {dest_file}")
+                    log_info(f"已复制到下一阶段: {dest_file}")
         
         # 保存编译统计信息
         self.save_compile_stats()
         
-        log_subsection("编译筛选完成")
-        log_result(self.compile_stats['compile_success'], self.compile_stats['total'], "编译")
+        log_info("编译筛选完成")
+        failed_count = self.compile_stats['total'] - self.compile_stats['compile_success']
+        if failed_count == 0:
+            log_success(f"编译完成: 总数{self.compile_stats['total']}, 全部成功")
+        else:
+            log_warning(f"编译完成: 总数{self.compile_stats['total']}, 成功{self.compile_stats['compile_success']}, 失败{failed_count}")
         
         return successful_harnesses
     
@@ -142,7 +146,7 @@ class CompileFilter:
         stats_file = self.log_dir / "step1_compile_stats.json"
         with open(stats_file, 'w', encoding='utf-8') as f:
             json.dump(self.compile_stats, f, indent=2, ensure_ascii=False)
-        log_debug(f"编译统计信息已保存到: {stats_file}")
+        log_info(f"编译统计信息已保存到: {stats_file}")
 
 def compile_filter(harness_dir, output_dir, log_dir, next_stage_dir=None):
     """编译筛选API接口"""
@@ -166,7 +170,7 @@ def compile_filter(harness_dir, output_dir, log_dir, next_stage_dir=None):
     with open(success_file, 'w', encoding='utf-8') as f:
         json.dump(success_data, f, indent=2, ensure_ascii=False)
     
-    log_debug(f"成功编译的harness列表已保存到: {success_file}")
+    log_info(f"成功编译的harness列表已保存到: {success_file}")
     log_success(f"通过编译筛选的harness数量: {len(successful_harnesses)}")
     
     return successful_harnesses

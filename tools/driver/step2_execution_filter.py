@@ -27,7 +27,7 @@ class ExecutionFilter:
         
         # 在初始化时检查AFL++可用性，如果不可用直接报错
         if not self._check_afl_available():
-            log_afl_error("AFL++不可用，请确保已安装AFL++并在PATH中")
+            log_error("AFL++不可用，请确保已安装AFL++并在PATH中")
             raise RuntimeError("AFL++不可用，请确保已安装AFL++并在PATH中")
     
     def _check_afl_available(self) -> bool:
@@ -123,7 +123,7 @@ class ExecutionFilter:
         
         # 测试有效种子
         valid_seeds = self.get_seed_files(self.seeds_valid_dir)
-        log_debug(f"测试 {len(valid_seeds)} 个有效种子")
+        log_info(f"测试 {len(valid_seeds)} 个有效种子")
         
         for seed_file in valid_seeds:
             success, output, return_code = self.execute_harness_with_seed(binary_path, seed_file)
@@ -162,7 +162,7 @@ class ExecutionFilter:
     
     def filter_harnesses(self, next_stage_dir=None) -> List[Dict]:
         """执行筛选所有harness"""
-        log_section("OGHarn 第二步：执行筛选")
+        log_info("OGHarn 第二步：执行筛选")
         
         # 加载编译成功的harness
         compiled_harnesses = self.load_compiled_harnesses()
@@ -195,15 +195,19 @@ class ExecutionFilter:
                     source_file = Path(harness_info['source'])
                     dest_file = next_stage_path / source_file.name
                     shutil.copy2(source_file, dest_file)
-                    log_debug(f"已复制到下一阶段: {dest_file}")
+                    log_info(f"已复制到下一阶段: {dest_file}")
             else:
                 self.execution_stats['execution_failed'] += 1
         
         # 保存详细测试结果
         self.save_execution_results(all_test_results)
         
-        log_subsection("执行筛选完成")
-        log_result(self.execution_stats['execution_success'], self.execution_stats['total_harnesses'], "执行")
+        log_info("执行筛选完成")
+        failed_count = self.execution_stats['total_harnesses'] - self.execution_stats['execution_success']
+        if failed_count == 0:
+            log_success(f"执行完成: 总数{self.execution_stats['total_harnesses']}, 全部成功")
+        else:
+            log_warning(f"执行完成: 总数{self.execution_stats['total_harnesses']}, 成功{self.execution_stats['execution_success']}, 失败{failed_count}")
         if self.execution_stats['crashed_harnesses']:
             log_warning(f"崩溃: {len(self.execution_stats['crashed_harnesses'])}个")
         if self.execution_stats['timeout_harnesses']:
@@ -223,8 +227,8 @@ class ExecutionFilter:
         with open(results_file, 'w', encoding='utf-8') as f:
             json.dump(test_results, f, indent=2, ensure_ascii=False)
         
-        log_debug(f"执行统计信息已保存到: {stats_file}")
-        log_debug(f"详细执行结果已保存到: {results_file}")
+        log_info(f"执行统计信息已保存到: {stats_file}")
+        log_info(f"详细执行结果已保存到: {results_file}")
 
 def execution_filter(log_dir, seeds_valid_dir, next_stage_dir=None):
     """执行筛选API接口"""
@@ -239,7 +243,7 @@ def execution_filter(log_dir, seeds_valid_dir, next_stage_dir=None):
     with open(success_file, 'w', encoding='utf-8') as f:
         json.dump(successful_harnesses, f, indent=2, ensure_ascii=False)
     
-    log_debug(f"通过执行筛选的harness列表已保存到: {success_file}")
+    log_info(f"通过执行筛选的harness列表已保存到: {success_file}")
     log_success(f"通过执行筛选的harness数量: {len(successful_harnesses)}")
     
     return successful_harnesses
