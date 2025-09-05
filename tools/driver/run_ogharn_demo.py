@@ -6,8 +6,8 @@ OGHarn 三步筛选流程演示主程序
 
 import sys
 from pathlib import Path
+from utils import *
 
-# 导入三个筛选步骤的模块
 from step1_compile_filter import compile_filter
 from step2_execution_filter import execution_filter
 from step3_coverage_filter import coverage_filter
@@ -28,16 +28,14 @@ def run_ogharn_demo(harness_dir, seeds_valid_dir, output_dir="output", log_dir="
         dict: 包含各步骤结果的字典
     """
     
-    print("="*60)
-    print("OGHarn 三步筛选流程演示")
-    print("="*60)
-    print(f"Harness目录: {harness_dir}")
-    print(f"种子文件目录: {seeds_valid_dir}")
-    print(f"输出目录: {output_dir}")
-    print(f"日志目录: {log_dir}")
-    print(f"最终目录: {final_dir}")
-    print(f"最大选择数量: {max_harnesses}")
-    print()
+    log_section("OGHarn 三步筛选流程演示")
+    log_info(f"Harness目录: {harness_dir}")
+    log_info(f"种子文件目录: {seeds_valid_dir}")
+    log_info(f"输出目录: {output_dir}")
+    log_info(f"日志目录: {log_dir}")
+    log_info(f"最终目录: {final_dir}")
+    log_info(f"最大选择数量: {max_harnesses}")
+    log_info("")
     
     results = {
         'step1_compile': None,
@@ -48,8 +46,7 @@ def run_ogharn_demo(harness_dir, seeds_valid_dir, output_dir="output", log_dir="
     
     try:
         # 第一步：编译筛选
-        print("\n🔧 开始第一步：编译筛选")
-        print("-" * 40)
+        log_step("编译筛选", 1)
         
         # 创建中间目录
         stage1_dir = Path(log_dir) / "stage1_passed"
@@ -64,14 +61,13 @@ def run_ogharn_demo(harness_dir, seeds_valid_dir, output_dir="output", log_dir="
         results['step1_compile'] = step1_result
         
         if not step1_result:
-            print("❌ 第一步编译筛选失败，没有harness通过编译")
+            log_error("第一步编译筛选失败，没有harness通过编译")
             return results
         
-        print(f"✅ 第一步完成，{len(step1_result)}个harness通过编译筛选")
+        log_success(f"第一步完成，{len(step1_result)}个harness通过编译筛选")
         
         # 第二步：执行筛选
-        print("\n🚀 开始第二步：执行筛选")
-        print("-" * 40)
+        log_step("执行筛选", 2)
         
         # 创建中间目录
         stage2_dir = Path(log_dir) / "stage2_passed"
@@ -85,14 +81,13 @@ def run_ogharn_demo(harness_dir, seeds_valid_dir, output_dir="output", log_dir="
         results['step2_execution'] = step2_result
         
         if not step2_result:
-            print("❌ 第二步执行筛选失败，没有harness通过执行测试")
+            log_error("第二步执行筛选失败，没有harness通过执行测试")
             return results
         
-        print(f"✅ 第二步完成，{len(step2_result)}个harness通过执行筛选")
+        log_success(f"第二步完成，{len(step2_result)}个harness通过执行筛选")
         
         # 第三步：覆盖率筛选
-        print("\n📊 开始第三步：覆盖率筛选")
-        print("-" * 40)
+        log_step("覆盖率筛选", 3)
         
         step3_result = coverage_filter(
             log_dir=log_dir,
@@ -105,34 +100,32 @@ def run_ogharn_demo(harness_dir, seeds_valid_dir, output_dir="output", log_dir="
         results['final_harnesses'] = step3_result
         
         if not step3_result:
-            print("❌ 第三步覆盖率筛选失败，没有harness通过质量评估")
+            log_error("第三步覆盖率筛选失败，没有harness通过质量评估")
             return results
         
-        print(f"✅ 第三步完成，{len(step3_result)}个harness通过覆盖率筛选")
+        log_success(f"第三步完成，{len(step3_result)}个harness通过覆盖率筛选")
         
         # 总结
-        print("\n" + "="*60)
-        print("🎉 OGHarn 三步筛选流程完成")
-        print("="*60)
-        print(f"📁 原始harness目录: {harness_dir}")
-        print(f"📊 编译通过: {len(step1_result)}个")
-        print(f"🚀 执行通过: {len(step2_result)}个")
-        print(f"🏆 最终选择: {len(step3_result)}个")
-        print(f"📂 最佳harness保存在: {final_dir}")
-        print(f"📋 详细日志保存在: {log_dir}")
+        log_section("🎉 OGHarn 三步筛选流程完成")
+        log_info(f"📁 原始harness目录: {harness_dir}")
+        log_info(f"📊 编译通过: {len(step1_result)}个")
+        log_info(f"🚀 执行通过: {len(step2_result)}个")
+        log_info(f"🏆 最终选择: {len(step3_result)}个")
+        log_info(f"📂 最佳harness保存在: {final_dir}")
+        log_info(f"📋 详细日志保存在: {log_dir}")
         
         if step3_result:
-            print("\n🏆 最终选择的最佳harness:")
+            log_subsection("🏆 最终选择的最佳harness")
             for i, harness in enumerate(step3_result, 1):
                 harness_name = harness.get('harness', 'unknown')
                 quality_score = harness.get('quality_score', 0)
                 coverage_gain = harness.get('coverage_gain', 0)
-                print(f"  {i}. {harness_name} (质量分数: {quality_score:.2f}, 覆盖率增益: {coverage_gain})")
+                log_info(f"  {i}. {harness_name} (质量分数: {quality_score:.2f}, 覆盖率增益: {coverage_gain})")
         
-        print("\n✨ 演示完成！")
+        log_success("✨ 演示完成！")
         
     except Exception as e:
-        print(f"\n❌ 演示过程中发生错误: {str(e)}")
+        log_error(f"演示过程中发生错误: {str(e)}")
         import traceback
         traceback.print_exc()
     
@@ -153,11 +146,11 @@ def main():
     seeds_path = Path(seeds_valid_dir)
     
     if not harness_path.exists():
-        print(f"错误: harness目录不存在: {harness_path}")
+        log_error(f"harness目录不存在: {harness_path}")
         sys.exit(1)
     
     if not seeds_path.exists():
-        print(f"错误: 种子文件目录不存在: {seeds_path}")
+        log_error(f"种子文件目录不存在: {seeds_path}")
         sys.exit(1)
     
     # 运行演示

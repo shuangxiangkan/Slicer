@@ -12,6 +12,7 @@ import time
 import sys
 from pathlib import Path
 from typing import List, Dict, Set
+from utils import *
 
 class CoverageFilter:
     def __init__(self, log_dir, seeds_valid_dir):
@@ -36,7 +37,7 @@ class CoverageFilter:
         """加载第二步执行成功的harness列表"""
         success_file = self.log_dir / "step2_successful_harnesses.json"
         if not success_file.exists():
-            print(f"错误: 未找到执行成功的harness列表文件: {success_file}")
+            log_error(f"错误: 未找到执行成功的harness列表文件: {success_file}")
             return []
         
         with open(success_file, 'r', encoding='utf-8') as f:
@@ -67,16 +68,16 @@ class CoverageFilter:
         try:
             # 检查queue目录是否存在
             if not queue_dir.exists():
-                print(f"      Queue目录不存在: {queue_dir}")
+                log_warning(f"      Queue目录不存在: {queue_dir}")
                 return set()
             
             # 获取queue目录中的所有文件
             queue_files = [f for f in queue_dir.iterdir() if f.is_file()]
             if not queue_files:
-                print(f"      Queue目录为空: {queue_dir}")
+                log_warning(f"      Queue目录为空: {queue_dir}")
                 return set()
             
-            print(f"      批量处理 {len(queue_files)} 个queue文件获取覆盖率...")
+            log_afl(f"      批量处理 {len(queue_files)} 个queue文件获取覆盖率...")
             
             # 创建临时文件保存覆盖率结果
             coverage_file = Path(f"/tmp/afl_batch_coverage_{binary_path.stem}_{os.getpid()}.txt")
@@ -113,29 +114,29 @@ class CoverageFilter:
                             edge_id = line.split(':')[0]
                             bitmap.add(edge_id)
                 
-                print(f"      批量覆盖率获取成功: {len(bitmap)} 个覆盖点")
+                log_coverage(f"      批量覆盖率获取成功: {len(bitmap)} 个覆盖点")
                 return bitmap
             else:
-                print(f"      批量覆盖率获取失败 (返回码: {result.returncode})")
+                log_error(f"      批量覆盖率获取失败 (返回码: {result.returncode})")
                 if result.stderr:
-                    print(f"      错误信息: {result.stderr}")
+                    log_error(f"      错误信息: {result.stderr}")
                 return set()
             
         except Exception as e:
-            print(f"    批量AFL++覆盖率获取失败: {str(e)}")
+            log_error(f"    批量AFL++覆盖率获取失败: {str(e)}")
             return set()
         finally:
             # 确保临时文件在所有情况下都被删除
             if coverage_file and coverage_file.exists():
                 try:
                     coverage_file.unlink()
-                    print(f"      已清理临时文件: {coverage_file}")
+                    log_info(f"      已清理临时文件: {coverage_file}")
                 except Exception as cleanup_error:
-                    print(f"      警告: 清理临时文件失败: {cleanup_error}")
+                    log_warning(f"      警告: 清理临时文件失败: {cleanup_error}")
       
     def fuzz_harness_with_timeout(self, binary_path: Path, fuzz_duration=10) -> Dict:
         """对harness进行限时模糊测试，评估其真实的模糊测试质量"""
-        print(f"    开始对 {binary_path.name} 进行 {fuzz_duration} 秒模糊测试...")
+        log_afl(f"    开始对 {binary_path.name} 进行 {fuzz_duration} 秒模糊测试...")
         
         fuzz_result = {
             'total_executions': 0,
@@ -150,17 +151,17 @@ class CoverageFilter:
             # 获取所有种子文件
             seed_files = self.get_seed_files(self.seeds_valid_dir)
             if not seed_files:
-                print(f"      警告: 没有找到种子文件，种子目录: {self.seeds_valid_dir}")
+                log_warning(f"      警告: 没有找到种子文件，种子目录: {self.seeds_valid_dir}")
                 return fuzz_result
             
             # 使用所有种子文件进行模糊测试
-            print(f"      使用 {len(seed_files)} 个种子文件进行模糊测试")
+            log_afl(f"      使用 {len(seed_files)} 个种子文件进行模糊测试")
             
             # AFL++已在初始化时检查，此处直接进行模糊测试
             return self.run_afl_fuzz(binary_path, seed_files, fuzz_duration)
                 
         except Exception as e:
-            print(f"      模糊测试失败: {str(e)}")
+            log_error(f"      模糊测试失败: {str(e)}")
             return fuzz_result
     
     def run_afl_fuzz(self, binary_path: Path, seed_files: List[Path], duration: int) -> Dict:
@@ -188,7 +189,7 @@ class CoverageFilter:
                 for i, seed_file in enumerate(seed_files):
                     seed_copy = input_dir / f"seed_{i}_{seed_file.name}"
                     shutil.copy2(seed_file, seed_copy)
-                    print(f"        已添加种子文件: {seed_file.name}")
+                    log_info(f"        已添加种子文件: {seed_file.name}")
                 
                 # 运行AFL++模糊测试
                 cmd = [
@@ -201,7 +202,7 @@ class CoverageFilter:
                     str(binary_path)
                 ]
                 
-                print(f"      启动AFL++模糊测试: {' '.join(cmd)}")
+                log_afl(f"      启动AFL++模糊测试: {' '.join(cmd)}")
                 
                 # 设置AFL++环境变量
                 env = os.environ.copy()
@@ -253,14 +254,14 @@ class CoverageFilter:
                     fuzz_result['coverage_bitmap'].update(batch_bitmap)
                     fuzz_result['coverage_growth'].append(len(fuzz_result['coverage_bitmap']))
                 
-                print(f"      AFL++测试完成: 执行{fuzz_result['total_executions']}次, 覆盖率{len(fuzz_result['coverage_bitmap'])}")
+                log_afl(f"      AFL++测试完成: 执行{fuzz_result['total_executions']}次, 覆盖率{len(fuzz_result['coverage_bitmap'])}")
                 
                 # 如果AFL++没有执行任何测试用例，可能是因为程序没有用AFL++编译
                 if fuzz_result['total_executions'] == 0:
                     raise RuntimeError(f"AFL++未能执行任何测试用例，可能程序未用AFL++编译: {binary_path}")
                 
         except Exception as e:
-            print(f"      AFL++模糊测试失败: {str(e)}")
+            log_error(f"      AFL++模糊测试失败: {str(e)}")
             
         return fuzz_result
     
@@ -269,7 +270,7 @@ class CoverageFilter:
         binary_path = Path(harness_info['binary'])
         harness_name = binary_path.name
         
-        print(f"  分析harness质量: {harness_name}")
+        log_coverage(f"  分析harness质量: {harness_name}")
         
         analysis_result = {
             'harness': harness_name,
@@ -322,7 +323,7 @@ class CoverageFilter:
         else:
             analysis_result['coverage_quality'] = 'good'
         
-        print(f"    质量评估: {analysis_result['coverage_quality']} (执行{analysis_result['total_executions']}次, 稳定性{analysis_result['stability']:.2f}, 新覆盖率{analysis_result['coverage_gain']})")
+        log_coverage(f"    质量评估: {analysis_result['coverage_quality']} (执行{analysis_result['total_executions']}次, 稳定性{analysis_result['stability']:.2f}, 新覆盖率{analysis_result['coverage_gain']})")
         
         # 转换set为list以便JSON序列化
         analysis_result['total_bitmap'] = list(analysis_result['total_bitmap'])
@@ -332,7 +333,7 @@ class CoverageFilter:
     
     def select_best_harnesses(self, coverage_analyses: List[Dict], max_harnesses=3) -> List[Dict]:
         """基于模糊测试质量选择最佳harness"""
-        print(f"\n=== 选择最佳 Harness (基于模糊测试质量) - 最多选择{max_harnesses}个 ===")
+        log_subsection(f"选择最佳 Harness (基于模糊测试质量) - 最多选择{max_harnesses}个")
         
         # 过滤掉质量不好的harness
         good_harnesses = []
@@ -340,7 +341,7 @@ class CoverageFilter:
             if analysis['coverage_quality'] == 'good':
                 good_harnesses.append(analysis)
         
-        print(f"质量良好的harness数量: {len(good_harnesses)}")
+        log_info(f"质量良好的harness数量: {len(good_harnesses)}")
         
         # 计算综合质量分数
         for analysis in good_harnesses:
@@ -352,7 +353,7 @@ class CoverageFilter:
             
             analysis['quality_score'] = coverage_score + speed_score + stability_score + growth_score
             
-            print(f"  {analysis['harness']}: 质量分数={analysis['quality_score']:.2f} "
+            log_info(f"  {analysis['harness']}: 质量分数={analysis['quality_score']:.2f} "
                   f"(覆盖率={analysis['coverage_gain']}, 速度={analysis['execution_speed']:.1f}/s, "
                   f"稳定性={analysis['stability']:.2f}, 增长率={analysis['coverage_growth_rate']:.2f})")
         
@@ -371,7 +372,7 @@ class CoverageFilter:
                 selected_harnesses.append(analysis)
                 temp_global_bitmap.update(analysis['total_bitmap'])
                 
-                print(f"  ✓ 选择harness: {analysis['harness']} "
+                log_success(f"  ✓ 选择harness: {analysis['harness']} "
                       f"(质量分数: {analysis['quality_score']:.2f}, 新增覆盖率: {len(current_new_coverage)})")
                 
                 # 限制选择的harness数量为指定的最大值
@@ -387,7 +388,7 @@ class CoverageFilter:
                 best_analysis = all_analyses[0]
                 selected_harnesses.append(best_analysis)
                 temp_global_bitmap.update(best_analysis['total_bitmap'])
-                print(f"  ⚠ 备选: {best_analysis['harness']} (质量: {best_analysis['coverage_quality']})")
+                log_warning(f"  ⚠ 备选: {best_analysis['harness']} (质量: {best_analysis['coverage_quality']})")
         
         # 更新全局覆盖率
         self.global_bitmap = temp_global_bitmap
@@ -396,17 +397,17 @@ class CoverageFilter:
     
     def filter_harnesses(self, final_dir=None, max_harnesses=3) -> List[Dict]:
         """执行代码覆盖率筛选"""
-        print("=== OGHarn 第三步：代码覆盖率筛选 (Oracle 引导机制) ===")
+        log_section("OGHarn 第三步：代码覆盖率筛选 (Oracle 引导机制)")
         
         # 加载执行成功的harness
         execution_successful_harnesses = self.load_execution_successful_harnesses()
         self.coverage_stats['total_harnesses'] = len(execution_successful_harnesses)
         
         if not execution_successful_harnesses:
-            print("没有找到执行成功的harness")
+            log_error("没有找到执行成功的harness")
             return []
         
-        print(f"开始分析 {len(execution_successful_harnesses)} 个执行成功的harness的代码覆盖率")
+        log_coverage(f"开始分析 {len(execution_successful_harnesses)} 个执行成功的harness的代码覆盖率")
         
         # 分析每个harness的覆盖率
         coverage_analyses = []
@@ -434,7 +435,7 @@ class CoverageFilter:
             final_path = Path(final_dir)
             final_path.mkdir(parents=True, exist_ok=True)
             
-            print(f"\n复制最佳harness到最终目录: {final_path}")
+            log_info(f"\n复制最佳harness到最终目录: {final_path}")
             for harness in best_harnesses:
                 # 从执行成功的harness中找到对应的源文件
                 for exec_harness in execution_successful_harnesses:
@@ -442,19 +443,19 @@ class CoverageFilter:
                         source_file = Path(exec_harness['source'])
                         dest_file = final_path / source_file.name
                         shutil.copy2(source_file, dest_file)
-                        print(f"  已复制最佳harness: {dest_file}")
+                        log_success(f"  已复制最佳harness: {dest_file}")
                         break
         
         # 保存分析结果
         self.save_coverage_results(coverage_analyses, best_harnesses)
         
-        print(f"\n模糊测试质量筛选完成:")
-        print(f"  总数: {self.coverage_stats['total_harnesses']}")
-        print(f"  高质量: {self.coverage_stats['coverage_success']}")
-        print(f"  无新覆盖率: {self.coverage_stats['no_new_coverage']}")
-        print(f"  质量问题: {self.coverage_stats['coverage_failed']}")
-        print(f"  最终选择: {len(best_harnesses)}")
-        print(f"  全局覆盖率大小: {len(self.global_bitmap)}")
+        log_subsection("模糊测试质量筛选完成:")
+        log_info(f"  总数: {self.coverage_stats['total_harnesses']}")
+        log_success(f"  高质量: {self.coverage_stats['coverage_success']}")
+        log_warning(f"  无新覆盖率: {self.coverage_stats['no_new_coverage']}")
+        log_error(f"  质量问题: {self.coverage_stats['coverage_failed']}")
+        log_success(f"  最终选择: {len(best_harnesses)}")
+        log_coverage(f"  全局覆盖率大小: {len(self.global_bitmap)}")
         
         return best_harnesses
     
@@ -480,10 +481,10 @@ class CoverageFilter:
         with open(bitmap_file, 'w', encoding='utf-8') as f:
             json.dump(list(self.global_bitmap), f, indent=2, ensure_ascii=False)
         
-        print(f"覆盖率统计信息已保存到: {stats_file}")
-        print(f"详细分析结果已保存到: {analysis_file}")
-        print(f"最佳harness已保存到: {best_file}")
-        print(f"全局覆盖率位图已保存到: {bitmap_file}")
+        log_success(f"覆盖率统计信息已保存到: {stats_file}")
+        log_success(f"详细分析结果已保存到: {analysis_file}")
+        log_success(f"最佳harness已保存到: {best_file}")
+        log_success(f"全局覆盖率位图已保存到: {bitmap_file}")
 
 def coverage_filter(log_dir, seeds_valid_dir, final_dir=None, max_harnesses=3):
     """基于模糊测试质量的harness筛选API接口"""
@@ -493,21 +494,21 @@ def coverage_filter(log_dir, seeds_valid_dir, final_dir=None, max_harnesses=3):
     # 执行筛选
     best_harnesses = filter.filter_harnesses(final_dir, max_harnesses)
     
-    print(f"\n=== 模糊测试质量评估完成 ===")
-    print(f"最终选择的最佳harness数量: {len(best_harnesses)}")
+    log_section("模糊测试质量评估完成")
+    log_success(f"最终选择的最佳harness数量: {len(best_harnesses)}")
     
     if best_harnesses:
-        print("\n最佳harness列表:")
+        log_subsection("最佳harness列表:")
         for i, harness in enumerate(best_harnesses, 1):
             quality_score = harness.get('quality_score', 0)
-            print(f"  {i}. {harness['harness']} (质量分数: {quality_score:.2f}, 覆盖率增益: {harness['coverage_gain']})")
+            log_success(f"  {i}. {harness['harness']} (质量分数: {quality_score:.2f}, 覆盖率增益: {harness['coverage_gain']})")
     
     return best_harnesses
 
 def main():
     """命令行入口（保持兼容性）"""
     if len(sys.argv) != 3:
-        print("用法: python step3_coverage_filter.py <log_dir> <seeds_valid_dir>")
+        log_error("用法: python step3_coverage_filter.py <log_dir> <seeds_valid_dir>")
         sys.exit(1)
     
     log_dir = sys.argv[1]

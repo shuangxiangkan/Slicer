@@ -9,6 +9,7 @@ import json
 import shutil
 from pathlib import Path
 from typing import List, Dict, Tuple
+from utils import *
 
 class ExecutionFilter:
     
@@ -26,6 +27,7 @@ class ExecutionFilter:
         
         # 在初始化时检查AFL++可用性，如果不可用直接报错
         if not self._check_afl_available():
+            log_afl_error("AFL++不可用，请确保已安装AFL++并在PATH中")
             raise RuntimeError("AFL++不可用，请确保已安装AFL++并在PATH中")
     
     def _check_afl_available(self) -> bool:
@@ -41,7 +43,7 @@ class ExecutionFilter:
         """加载第一步编译成功的harness列表"""
         success_file = self.log_dir / "step1_successful_harnesses.json"
         if not success_file.exists():
-            print(f"错误: 未找到编译成功的harness列表文件: {success_file}")
+            log_error(f"未找到编译成功的harness列表文件: {success_file}")
             return []
         
         with open(success_file, 'r', encoding='utf-8') as f:
@@ -108,7 +110,7 @@ class ExecutionFilter:
         binary_path = Path(harness_info['binary'])
         harness_name = binary_path.name
         
-        print(f"  测试harness: {harness_name}")
+        log_info(f"测试harness: {harness_name}")
         
         test_result = {
             'harness': harness_name,
@@ -121,7 +123,7 @@ class ExecutionFilter:
         
         # 测试有效种子
         valid_seeds = self.get_seed_files(self.seeds_valid_dir)
-        print(f"    测试 {len(valid_seeds)} 个有效种子")
+        log_debug(f"测试 {len(valid_seeds)} 个有效种子")
         
         for seed_file in valid_seeds:
             success, output, return_code = self.execute_harness_with_seed(binary_path, seed_file)
@@ -160,17 +162,17 @@ class ExecutionFilter:
     
     def filter_harnesses(self, next_stage_dir=None) -> List[Dict]:
         """执行筛选所有harness"""
-        print("=== OGHarn 第二步：执行筛选 ===")
+        log_section("OGHarn 第二步：执行筛选")
         
         # 加载编译成功的harness
         compiled_harnesses = self.load_compiled_harnesses()
         self.execution_stats['total_harnesses'] = len(compiled_harnesses)
         
         if not compiled_harnesses:
-            print("没有找到编译成功的harness")
+            log_warning("没有找到编译成功的harness")
             return []
         
-        print(f"开始测试 {len(compiled_harnesses)} 个编译成功的harness")
+        log_info(f"开始测试 {len(compiled_harnesses)} 个编译成功的harness")
         
         # 创建下一阶段目录
         if next_stage_dir:
@@ -193,19 +195,19 @@ class ExecutionFilter:
                     source_file = Path(harness_info['source'])
                     dest_file = next_stage_path / source_file.name
                     shutil.copy2(source_file, dest_file)
-                    print(f"  已复制到下一阶段: {dest_file}")
+                    log_debug(f"已复制到下一阶段: {dest_file}")
             else:
                 self.execution_stats['execution_failed'] += 1
         
         # 保存详细测试结果
         self.save_execution_results(all_test_results)
         
-        print(f"\n执行筛选完成:")
-        print(f"  总数: {self.execution_stats['total_harnesses']}")
-        print(f"  执行成功: {self.execution_stats['execution_success']}")
-        print(f"  执行失败: {self.execution_stats['execution_failed']}")
-        print(f"  崩溃: {len(self.execution_stats['crashed_harnesses'])}")
-        print(f"  超时: {len(self.execution_stats['timeout_harnesses'])}")
+        log_subsection("执行筛选完成")
+        log_result(self.execution_stats['execution_success'], self.execution_stats['total_harnesses'], "执行")
+        if self.execution_stats['crashed_harnesses']:
+            log_warning(f"崩溃: {len(self.execution_stats['crashed_harnesses'])}个")
+        if self.execution_stats['timeout_harnesses']:
+            log_warning(f"超时: {len(self.execution_stats['timeout_harnesses'])}个")
         
         return successful_harnesses
     
@@ -221,8 +223,8 @@ class ExecutionFilter:
         with open(results_file, 'w', encoding='utf-8') as f:
             json.dump(test_results, f, indent=2, ensure_ascii=False)
         
-        print(f"执行统计信息已保存到: {stats_file}")
-        print(f"详细执行结果已保存到: {results_file}")
+        log_debug(f"执行统计信息已保存到: {stats_file}")
+        log_debug(f"详细执行结果已保存到: {results_file}")
 
 def execution_filter(log_dir, seeds_valid_dir, next_stage_dir=None):
     """执行筛选API接口"""
@@ -237,8 +239,8 @@ def execution_filter(log_dir, seeds_valid_dir, next_stage_dir=None):
     with open(success_file, 'w', encoding='utf-8') as f:
         json.dump(successful_harnesses, f, indent=2, ensure_ascii=False)
     
-    print(f"\n通过执行筛选的harness列表已保存到: {success_file}")
-    print(f"通过执行筛选的harness数量: {len(successful_harnesses)}")
+    log_debug(f"通过执行筛选的harness列表已保存到: {success_file}")
+    log_success(f"通过执行筛选的harness数量: {len(successful_harnesses)}")
     
     return successful_harnesses
 
@@ -246,7 +248,7 @@ def main():
     """命令行入口（保持兼容性）"""
     import sys
     if len(sys.argv) != 3:
-        print("用法: python step2_execution_filter.py <log_dir> <seeds_valid_dir>")
+        log_error("用法: python step2_execution_filter.py <log_dir> <seeds_valid_dir>")
         sys.exit(1)
     
     log_dir = sys.argv[1]
