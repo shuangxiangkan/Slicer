@@ -12,18 +12,18 @@ from utils import check_afl_instrumentation
 class LibraryHandler:
     """Handles library operations like compilation."""
 
-    def __init__(self, config_parser: ConfigParser):
+    def __init__(self, config_parser: ConfigParser, libraries_dir: str):
         """
-        Initializes the LibraryHandler with a configuration parser.
+        Initializes the LibraryHandler with a configuration parser and libraries directory.
 
         Args:
             config_parser: ConfigParser object with loaded configuration.
+            libraries_dir: Directory path where libraries will be stored.
         """
         self.config_parser = config_parser
         self.library_name = self.config_parser.get_library_info()['name']
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.libs_dir = os.path.join(self.base_dir, "libraries")
-        os.makedirs(self.libs_dir, exist_ok=True)
+        self.libs_dir = libraries_dir
 
     def compile_library(self, library_type: str = "static") -> bool:
         """
@@ -97,7 +97,13 @@ if __name__ == '__main__':
     
     try:
         config_parser = ConfigParser(cjson_config_path)
-        handler = LibraryHandler(config_parser)
+        
+        # 创建库目录
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        libraries_dir = os.path.join(base_dir, "libraries")
+        os.makedirs(libraries_dir, exist_ok=True)
+        
+        handler = LibraryHandler(config_parser, libraries_dir)
         if handler.compile_library("shared"):
         # if handler.compile_library("static"):
             logger.info("Library compilation process completed successfully.")

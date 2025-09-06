@@ -3,18 +3,20 @@
 Library compilation utility
 """
 
+import os
 import sys
 from library_handler import LibraryHandler
 from config_parser import ConfigParser
 from logging import logger
 
-def compile_library_with_config(config_parser: ConfigParser, library_type: str = "static") -> bool:
+def compile_library_with_config(config_parser: ConfigParser, library_type: str = "static", libraries_dir: str = None) -> bool:
     """
     编译库文件的通用函数
     
     Args:
         config_parser: 配置解析器对象
         library_type: 库类型 ("static", "shared")
+        libraries_dir: 库输出目录路径，如果为None则使用默认路径
     
     Returns:
         True if compilation is successful, False otherwise.
@@ -26,7 +28,7 @@ def compile_library_with_config(config_parser: ConfigParser, library_type: str =
         return False
     
     try:
-        handler = LibraryHandler(config_parser)
+        handler = LibraryHandler(config_parser, libraries_dir)
         
         if library_type == "static":
             logger.info("Starting static library compilation...")
@@ -69,12 +71,19 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
     logger.info(f"Starting harness generation with config: {config_path}")
     
     try:
+        # 库输出目录
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        libraries_dir = os.path.join(base_dir, "Libraries")
+        
+        # 创建库目录
+        os.makedirs(libraries_dir, exist_ok=True)
+        
         # 全局配置解析
         config_parser = ConfigParser(config_path)
         logger.info("Configuration parsed successfully.")
         
         # 调用库编译函数
-        success = compile_library_with_config(config_parser, library_type)
+        success = compile_library_with_config(config_parser, library_type, libraries_dir)
         
         if success:
             logger.success("Harness generation completed successfully.")
