@@ -22,17 +22,19 @@ exclude_dirs:      # optional
   - ""
 
 static_build:      # required
-  output: "cJSON/build/libcjson.a"
+  static_lib_name: "libcjson.a"
+  output: "cJSON/build/{static_lib_name}"
   command: |
     rm -rf cJSON && \
     git clone {repo_url} cJSON && \
     cd cJSON && \
     mkdir -p build && cd build && \
-    CC={CC_FUZZ} cmake .. -DENABLE_CJSON_TEST=OFF -DENABLE_CJSON_UTILS=OFF && \
+    CC={CC_FUZZ} cmake .. -DBUILD_SHARED_LIBS=OFF -DENABLE_CJSON_TEST=OFF -DENABLE_CJSON_UTILS=OFF && \
     make -j$(nproc)
 
 shared_build:     # optional
-  output: "cJSON/build/libcjson.so"
+  shared_lib_name: "libcjson.so"
+  output: "cJSON/build/{shared_lib_name}"
   command: |
     rm -rf cJSON && \
     git clone {repo_url} cJSON && \
@@ -42,10 +44,10 @@ shared_build:     # optional
     make -j$(nproc)
 
 static_driver_build: |    # required
-  {CC_FUZZ} -I. -o {output} {driver} cJSON/build/libcjson.a {CFLAGS_ASAN}
+  {CC_FUZZ} -I. -o {output} {driver} cJSON/build/{static_lib_name} {CFLAGS_ASAN}
 
 shared_driver_build: |    # optional
-  {CC_FUZZ} -I. -o {output} {driver} cJSON/build/libcjson.so {CFLAGS_ASAN}
+  {CC_FUZZ} -I. -o {output} {driver} cJSON/build/{shared_lib_name} {CFLAGS_ASAN}
 
 api_selection:
   include_prefix:      # required

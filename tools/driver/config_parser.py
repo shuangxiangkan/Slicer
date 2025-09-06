@@ -94,7 +94,8 @@ class ConfigParser:
         build_data = self._config_data['static_build']
         return {
             'output': build_data['output'],
-            'command': build_data['command']
+            'command': build_data['command'],
+            'static_lib_name': build_data.get('static_lib_name', '')
         }
     
     def get_shared_build_config(self) -> Optional[Dict[str, str]]:
@@ -105,7 +106,8 @@ class ConfigParser:
         build_data = self._config_data['shared_build']
         return {
             'output': build_data['output'],
-            'command': build_data['command']
+            'command': build_data['command'],
+            'shared_lib_name': build_data.get('shared_lib_name', '')
         }
     
     def get_static_driver_build_command(self) -> str:
@@ -139,6 +141,8 @@ class ConfigParser:
         # Get basic configuration information
         lib_info = self.get_library_info()
         compiler_config = self.get_compiler_config()
+        static_build = self.get_static_build_config()
+        shared_build = self.get_shared_build_config()
         
         # Build replacement dictionary
         format_dict = {
@@ -147,6 +151,8 @@ class ConfigParser:
             'CXX_FUZZ': compiler_config['cxx_fuzz'],
             'CFLAGS_ASAN': compiler_config['cflags_asan'],
             'CXXFLAGS_ASAN': compiler_config['cxxflags_asan'],
+            'static_lib_name': static_build['static_lib_name'],
+            'shared_lib_name': shared_build['shared_lib_name'] if shared_build else '',
         }
         
         # Add additional parameters
@@ -241,12 +247,14 @@ if __name__ == "__main__":
         # Display build configuration
         static_build = parser.get_static_build_config()
         print(f"\n=== Static Library Build ===")
+        print(f"Static Library Name: {static_build['static_lib_name']}")
         print(f"Output: {static_build['output']}")
         print(f"Command: {parser.get_formatted_static_build_command()}")
         
         shared_build = parser.get_shared_build_config()
         if shared_build:
             print(f"\n=== Shared Library Build ===")
+            print(f"Shared Library Name: {shared_build['shared_lib_name']}")
             print(f"Output: {shared_build['output']}")
             print(f"Command: {parser.get_formatted_shared_build_command()}")
         
