@@ -1,55 +1,97 @@
 #!/usr/bin/env python3
 """
-Main entry point for the fuzzing driver generation
+Library compilation utility
 """
 
-import argparse
 import sys
 from library_handler import LibraryHandler
+from config_parser import ConfigParser
 from logging import logger
 
-def main():
-    """Main function"""
-    parser = argparse.ArgumentParser(description="Fuzzing driver generation tool.")
-    parser.add_argument("--config", type=str, required=True, help="Path to the library configuration file.")
-    parser.add_argument("--type", type=str, choices=["static", "shared", "both"], default="static", 
-                       help="Library type to compile: static, shared, or both (default: static)")
+def compile_library_with_config(config_parser: ConfigParser, library_type: str = "static") -> bool:
+    """
+    编译库文件的通用函数
     
-    args = parser.parse_args()
+    Args:
+        config_parser: 配置解析器对象
+        library_type: 库类型 ("static", "shared")
     
-    logger.info(f"Using configuration file: {args.config}")
-    logger.info(f"Compilation type: {args.type}")
+    Returns:
+        True if compilation is successful, False otherwise.
+    """
+    logger.info(f"Compilation type: {library_type}")
+    
+    if library_type not in ["static", "shared"]:
+        logger.error(f"Invalid library type: {library_type}. Must be 'static' or 'shared'.")
+        return False
     
     try:
-        handler = LibraryHandler(args.config)
+        handler = LibraryHandler(config_parser)
         
-        success = True
-        
-        if args.type in ["static", "both"]:
+        if library_type == "static":
             logger.info("Starting static library compilation...")
-            if not handler.compile_static_library():
-                logger.error("Failed to compile static library.")
-                success = False
-            else:
+            success = handler.compile_library("static")
+            if success:
                 logger.info("Static library compiled successfully.")
-        
-        if args.type in ["shared", "both"]:
-            logger.info("Starting shared library compilation...")
-            if not handler.compile_shared_library():
-                logger.error("Failed to compile shared library.")
-                success = False
             else:
-                logger.info("Shared library compiled successfully.")
+                logger.error("Failed to compile static library.")
         
-        if not success:
-            logger.error("Library compilation failed. Exiting.")
-            sys.exit(1)
+        elif library_type == "shared":
+            logger.info("Starting shared library compilation...")
+            success = handler.compile_library("shared")
+            if success:
+                logger.info("Shared library compiled successfully.")
+            else:
+                logger.error("Failed to compile shared library.")
+        
+        if success:
+            logger.info("Library compilation completed successfully.")
+        else:
+            logger.error("Library compilation failed.")
             
-        logger.info("All requested library compilations completed successfully.")
+        return success
         
     except Exception as e:
         logger.error(f"Error during library compilation: {e}")
-        sys.exit(1)
+        return False
+
+def harness_generation(config_path: str, library_type: str = "static") -> bool:
+    """
+    Harness生成的主函数，负责配置解析和库编译
+    
+    Args:
+        config_path: 配置文件路径
+        library_type: 库类型 ("static", "shared")
+    
+    Returns:
+        True if successful, False otherwise.
+    """
+    logger.info(f"Starting harness generation with config: {config_path}")
+    
+    try:
+        # 全局配置解析
+        config_parser = ConfigParser(config_path)
+        logger.info("Configuration parsed successfully.")
+        
+        # 调用库编译函数
+        success = compile_library_with_config(config_parser, library_type)
+        
+        if success:
+            logger.success("Harness generation completed successfully.")
+        else:
+            logger.error("Harness generation failed.")
+            
+        return success
+        
+    except Exception as e:
+        logger.error(f"Error during harness generation: {e}")
+        return False
 
 if __name__ == "__main__":
-    main()
+    # 手动修改这些参数
+    config_path = "configs/cJSON.yaml"
+    library_type = "static"  # "static", "shared"
+    
+    success = harness_generation(config_path, library_type)
+    if not success:
+        sys.exit(1)
