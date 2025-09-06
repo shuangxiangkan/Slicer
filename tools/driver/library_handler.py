@@ -107,6 +107,192 @@ class LibraryHandler:
         """
         return self.extract_all_apis(output_dir, analyzer)
 
+    def compute_api_usage(self, api_functions, analyzer, output_dir: str):
+        """
+        计算API函数的usage统计信息并保存结果到文件
+        
+        Args:
+            api_functions: API函数列表，由extract_all_apis返回
+            analyzer: RepoAnalyzer实例，用于查找函数调用
+            output_dir: usage结果文件的输出目录
+            
+        Returns:
+            dict: usage统计结果，格式为 {function_name: usage_details}
+        """
+        try:
+            if not api_functions:
+                log_warning("没有API函数可用于usage分析")
+                return {}
+            
+            log_info(f"开始统计 {len(api_functions)} 个API函数的usage...")
+            
+            # 存储所有usage结果
+            usage_results = {}
+            api_with_usage = 0
+            api_with_test_usage = 0
+            
+            # 为每个API函数统计usage
+            for i, func in enumerate(api_functions, 1):
+                log_info(f"分析函数usage {i}/{len(api_functions)}: {func.name}")
+                
+                # 查找所有文件中的usage
+                all_usage = analyzer.find_usage_in_all_files(function_name=func.name)
+                
+                # 查找测试文件中的usage
+                test_usage = analyzer.find_usage_in_test_files(function_name=func.name)
+                
+                # 统计详细信息
+                usage_details = {
+                    'function_name': func.name,
+                    'function_signature': func.get_signature(),
+                    'has_usage': bool(all_usage),
+                    'has_test_usage': bool(test_usage),
+                    'total_files': len(all_usage) if all_usage else 0,
+                    'test_files': len(test_usage) if test_usage else 0,
+                    'all_usage': {},
+                    'test_usage': {}
+                }
+                
+                # 处理全局usage详情
+                if all_usage:
+                    api_with_usage += 1
+                    for file_path, callers in all_usage.items():
+                        usage_line_numbers = self._get_usage_line_numbers(file_path, func.name)
+                        caller_info = []
+                        for caller in callers:
+                            if isinstance(caller, dict):
+                                caller_info.append({
+                                    'name': caller.get('name', 'unknown'),
+                                    'start_line': caller.get('start_line', 0),
+                                    'end_line': caller.get('end_line', 0)
+                                })
+                            else:
+                                caller_info.append({
+                                    'name': str(caller),
+                                    'start_line': 0,
+                                    'end_line': 0
+                                })
+                        
+                        usage_details['all_usage'][file_path] = {
+                            'callers': caller_info,
+                            'usage_count': len(usage_line_numbers),
+                            'usage_locations': usage_line_numbers
+                        }
+                
+                # 处理测试usage详情
+                if test_usage:
+                    api_with_test_usage += 1
+                    for file_path, callers in test_usage.items():
+                        usage_line_numbers = self._get_usage_line_numbers(file_path, func.name)
+                        caller_info = []
+                        for caller in callers:
+                            if isinstance(caller, dict):
+                                caller_info.append({
+                                    'name': caller.get('name', 'unknown'),
+                                    'start_line': caller.get('start_line', 0),
+                                    'end_line': caller.get('end_line', 0)
+                                })
+                            else:
+                                caller_info.append({
+                                    'name': str(caller),
+                                    'start_line': 0,
+                                    'end_line': 0
+                                })
+                        
+                        usage_details['test_usage'][file_path] = {
+                            'callers': caller_info,
+                            'usage_count': len(usage_line_numbers),
+                            'usage_locations': usage_line_numbers
+                        }
+                
+                usage_results[func.name] = usage_details
+            
+            # 计算统计信息
+            total_apis = len(api_functions)
+            usage_rate = (api_with_usage / total_apis) * 100 if total_apis else 0
+            test_usage_rate = (api_with_test_usage / total_apis) * 100 if total_apis else 0
+            
+            # 保存usage结果到文件
+            usage_file_path = os.path.join(output_dir, f"{self.library_name}_api_usage.txt")
+            with open(usage_file_path, 'w', encoding='utf-8') as f:
+                f.write(f"# {self.library_name} Library API Usage Analysis\n")
+                f.write(f"# Total API Functions: {total_apis}\n")
+                f.write(f"# APIs with Usage: {api_with_usage} ({usage_rate:.1f}%)\n")
+                f.write(f"# APIs with Test Usage: {api_with_test_usage} ({test_usage_rate:.1f}%)\n\n")
+                
+                for func_name, details in usage_results.items():
+                    f.write(f"Function: {func_name}\n")
+                    f.write(f"  Signature: {details['function_signature']}\n")
+                    f.write(f"  Has Usage: {details['has_usage']}\n")
+                    f.write(f"  Has Test Usage: {details['has_test_usage']}\n")
+                    
+                    if details['all_usage']:
+                        f.write(f"  All Usage ({details['total_files']} files):\n")
+                        for file_path, file_info in details['all_usage'].items():
+                            f.write(f"    - {file_path}: {file_info['usage_count']} usages\n")
+                            f.write(f"      Lines: {file_info['usage_locations']}\n")
+                            if file_info['callers']:
+                                f.write(f"      Callers: {[c['name'] for c in file_info['callers']]}\n")
+                    
+                    if details['test_usage']:
+                        f.write(f"  Test Usage ({details['test_files']} files):\n")
+                        for file_path, file_info in details['test_usage'].items():
+                            f.write(f"    - {file_path}: {file_info['usage_count']} usages\n")
+                            f.write(f"      Lines: {file_info['usage_locations']}\n")
+                            if file_info['callers']:
+                                f.write(f"      Callers: {[c['name'] for c in file_info['callers']]}\n")
+                    
+                    f.write("\n")
+            
+            log_info(f"API usage分析结果已保存到: {usage_file_path}")
+            log_success(f"API usage分析完成，共分析 {total_apis} 个函数，{api_with_usage} 个有usage，{api_with_test_usage} 个有test usage")
+            
+            return usage_results
+            
+        except Exception as e:
+            log_error(f"计算API usage时发生错误: {e}")
+            import traceback
+            traceback.print_exc()
+            return {}
+    
+    def _get_usage_line_numbers(self, file_path, function_name):
+        """
+        获取函数在文件中的详细usage行号信息
+        
+        Args:
+            file_path: 文件路径
+            function_name: 函数名
+            
+        Returns:
+            list: 包含函数名的行号列表
+        """
+        try:
+            # 尝试多种编码方式
+            encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+            lines = None
+            
+            for encoding in encodings:
+                try:
+                    with open(file_path, 'r', encoding=encoding) as f:
+                        lines = f.readlines()
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if lines is None:
+                log_warning(f"无法读取文件 {file_path}: 所有编码都失败")
+                return []
+            
+            usages = []
+            for i, line in enumerate(lines, 1):
+                if function_name in line:
+                    usages.append(i)
+            
+            return usages
+        except Exception as e:
+            log_warning(f"读取文件失败 {file_path}: {e}")
+            return []
+
     def compute_api_similarity(self, api_functions, output_dir: str, similarity_threshold: float = 0.2):
         """
         计算API函数之间的相似性并保存结果到文件

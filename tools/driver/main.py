@@ -97,10 +97,10 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
         library_name = config_parser.get_library_info()['name']
         log_success("Configuration parsed successfully.")
         
-        # 创建Libraries目录和库子目录
+        # 创建Libraries目录（不创建库子目录，让构建命令通过git clone创建）
         libraries_base_dir = os.path.join(base_dir, "Libraries")
-        library_dir = os.path.join(libraries_base_dir, library_name)
-        os.makedirs(library_dir, exist_ok=True)
+        os.makedirs(libraries_base_dir, exist_ok=True)
+        library_dir = libraries_base_dir  # 构建命令将在此目录下执行
         
         # 创建Output目录和库子目录
         output_dir = os.path.join(base_dir, "Output")
@@ -111,23 +111,26 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
         handler = LibraryHandler(config_parser, library_dir)
         analyzer = create_repo_analyzer(config_parser)
         
-        # 步骤1: 提取API并保存到文件
+        # 步骤1: 编译库文件
+        success = compile_library_static_or_dynamic(handler, library_type)
+        
+        # 步骤2: 提取API并保存到文件
         api_functions = handler.extract_and_save_apis(library_output_dir, analyzer)
         
-        # 步骤2: 计算API相似性并保存结果
+        # 步骤3: 计算API相似性并保存结果
         similarity_results = {}
         if api_functions:
             similarity_results = handler.compute_api_similarity(api_functions, library_output_dir)
         
-        # 步骤3: 编译库文件
-        success = compile_library_static_or_dynamic(handler, library_type)
+        # 步骤4: 计算API usage统计并保存结果
+        usage_results = {}
+        if api_functions:
+            usage_results = handler.compute_api_usage(api_functions, analyzer, library_output_dir)
         
-        if success:
-            log_success("Harness generation completed successfully.")
-        else:
-            log_error("Harness generation failed.")
+        
+        log_success("Harness generation completed successfully.")
             
-        return success
+        return 1
         
     except Exception as e:
         log_error(f"Error during harness generation: {e}")
