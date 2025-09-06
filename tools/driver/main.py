@@ -5,95 +5,127 @@ Library compilation utility
 
 import os
 import sys
+from pathlib import Path
 from library_handler import LibraryHandler
 from config_parser import ConfigParser
-from logging import logger
+from log import *
 
-def compile_library_with_config(config_parser: ConfigParser, library_type: str = "static", libraries_dir: str = None) -> bool:
+# 添加项目根目录到路径
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+from parser.repo_analyzer import RepoAnalyzer
+
+def create_repo_analyzer(config_parser: ConfigParser) -> RepoAnalyzer:
+    """
+    创建并配置RepoAnalyzer实例，并执行基础分析
+    
+    Args:
+        config_parser: 配置解析器对象
+        
+    Returns:
+        已完成基础分析的RepoAnalyzer实例
+    """
+    library_name = config_parser.get_library_info()['name']
+    source_dirs = config_parser.get_source_dirs()
+    
+    config_dict = {
+        "library_path": f"benchmarks/{library_name}",  # 相对于项目根目录的路径
+        "header_files": config_parser.get_headers(),
+        "include_files": source_dirs,  # 使用处理后的source_dirs作为include_files
+        "exclude_files": config_parser.get_exclude_dirs(),
+        "api_selection": config_parser.get_api_selection()
+    }
+    
+    log_info(f"使用配置字典进行分析: {config_dict['library_path']}")
+    
+    # 初始化分析器（字典配置模式）
+    analyzer = RepoAnalyzer(config_dict=config_dict)
+    
+    # 执行基础分析
+    result = analyzer.analyze()
+    log_info(f"基础分析完成，总共找到 {result['total_functions']} 个函数")
+    
+    return analyzer
+
+def compile_library_with_config(handler: LibraryHandler, library_type: str = "static") -> bool:
     """
     编译库文件的通用函数
     
     Args:
-        config_parser: 配置解析器对象
+        handler: LibraryHandler实例
         library_type: 库类型 ("static", "shared")
-        libraries_dir: 库输出目录路径，如果为None则使用默认路径
     
     Returns:
         True if compilation is successful, False otherwise.
     """
-    logger.info(f"Compilation type: {library_type}")
+    log_info(f"Compilation type: {library_type}")
     
     if library_type not in ["static", "shared"]:
-        logger.error(f"Invalid library type: {library_type}. Must be 'static' or 'shared'.")
+        log_error(f"Invalid library type: {library_type}. Must be 'static' or 'shared'.")
         return False
     
     try:
-        handler = LibraryHandler(config_parser, libraries_dir)
-        
         if library_type == "static":
-            logger.info("Starting static library compilation...")
             success = handler.compile_library("static")
-            if success:
-                logger.info("Static library compiled successfully.")
-            else:
-                logger.error("Failed to compile static library.")
-        
         elif library_type == "shared":
-            logger.info("Starting shared library compilation...")
             success = handler.compile_library("shared")
-            if success:
-                logger.info("Shared library compiled successfully.")
-            else:
-                logger.error("Failed to compile shared library.")
         
-        if success:
-            logger.info("Library compilation completed successfully.")
-        else:
-            logger.error("Library compilation failed.")
-            
         return success
         
     except Exception as e:
-        logger.error(f"Error during library compilation: {e}")
+        log_error(f"Error during library compilation: {e}")
         return False
 
 def harness_generation(config_path: str, library_type: str = "static") -> bool:
     """
-    Harness生成的主函数，负责配置解析和库编译
+    生成harness的主函数
     
     Args:
         config_path: 配置文件路径
         library_type: 库类型 ("static", "shared")
-    
+        
     Returns:
-        True if successful, False otherwise.
+        True if harness generation is successful, False otherwise.
     """
-    logger.info(f"Starting harness generation with config: {config_path}")
-    
     try:
-        # 库输出目录
+        # 获取当前脚本所在目录
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        libraries_dir = os.path.join(base_dir, "Libraries")
         
-        # 创建库目录
-        os.makedirs(libraries_dir, exist_ok=True)
-        
-        # 全局配置解析
+        # 解析配置获取库名
         config_parser = ConfigParser(config_path)
-        logger.info("Configuration parsed successfully.")
+        library_name = config_parser.get_library_info()['name']
+        log_success("Configuration parsed successfully.")
         
-        # 调用库编译函数
-        success = compile_library_with_config(config_parser, library_type, libraries_dir)
+        # 创建Libraries目录和库子目录
+        libraries_base_dir = os.path.join(base_dir, "Libraries")
+        library_dir = os.path.join(libraries_base_dir, library_name)
+        os.makedirs(library_dir, exist_ok=True)
+        
+        # 创建Output目录和库子目录
+        output_dir = os.path.join(base_dir, "Output")
+        library_output_dir = os.path.join(output_dir, library_name)
+        os.makedirs(library_output_dir, exist_ok=True)
+        
+        # 创建LibraryHandler和RepoAnalyzer实例
+        handler = LibraryHandler(config_parser, library_dir)
+        analyzer = create_repo_analyzer(config_parser)
+        
+        # 步骤1: 提取API并保存到文件
+        handler.extract_and_save_apis(library_output_dir, analyzer)
+        
+        # 步骤2: 编译库文件
+        success = compile_library_with_config(handler, library_type)
         
         if success:
-            logger.success("Harness generation completed successfully.")
+            log_success("Harness generation completed successfully.")
         else:
-            logger.error("Harness generation failed.")
+            log_error("Harness generation failed.")
             
         return success
         
     except Exception as e:
-        logger.error(f"Error during harness generation: {e}")
+        log_error(f"Error during harness generation: {e}")
         return False
 
 if __name__ == "__main__":

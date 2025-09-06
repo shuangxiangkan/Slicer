@@ -121,13 +121,30 @@ class FunctionExtractor:
             
             # 遍历function_definition的直接子节点
             function_declarator = None
+            return_type_parts = []
+            
             for child in node.children:
                 if child.type == 'function_declarator':
                     function_declarator = child
-                    break
-                elif child.type in ['primitive_type', 'type_identifier', 'sized_type_specifier']:
-                    # 这是返回类型，直接使用node.text
-                    return_type = child.text.decode('utf-8').strip()
+                elif child.type == 'compound_statement':
+                    # 跳过函数体
+                    continue
+                else:
+                    # 收集返回类型相关的节点
+                    if child.type in [
+                        'primitive_type', 'type_identifier', 'sized_type_specifier',
+                        'struct_specifier', 'union_specifier', 'enum_specifier',
+                        'storage_class_specifier', 'type_qualifier',
+                        'macro_type_specifier', 'call_expression'
+                    ]:
+                        part_text = child.text.decode('utf-8').strip()
+                        if part_text:
+                            return_type_parts.append(part_text)
+            
+            # 组合返回类型
+            if return_type_parts:
+                return_type = ' '.join(return_type_parts)
+                return_type = ' '.join(return_type.split())  # 清理空格
             
             if not function_declarator:
                 logger.debug(f"在function_definition中找不到function_declarator (行 {node.start_point[0] + 1})")
@@ -183,11 +200,27 @@ class FunctionExtractor:
             function_declarator = None
             return_type = "unknown"
             
+            return_type_parts = []
+            
             for child in node.children:
                 if child.type == 'function_declarator':
                     function_declarator = child
-                elif child.type in ['primitive_type', 'type_identifier', 'sized_type_specifier']:
-                    return_type = child.text.decode('utf-8').strip()
+                else:
+                    # 收集返回类型相关的节点
+                    if child.type in [
+                        'primitive_type', 'type_identifier', 'sized_type_specifier',
+                        'struct_specifier', 'union_specifier', 'enum_specifier',
+                        'storage_class_specifier', 'type_qualifier',
+                        'macro_type_specifier', 'call_expression'
+                    ]:
+                        part_text = child.text.decode('utf-8').strip()
+                        if part_text:
+                            return_type_parts.append(part_text)
+            
+            # 组合返回类型
+            if return_type_parts:
+                return_type = ' '.join(return_type_parts)
+                return_type = ' '.join(return_type.split())  # 清理空格
             
             if not function_declarator:
                 return None
@@ -242,12 +275,34 @@ class FunctionExtractor:
     def _parse_return_type(self, function_node: Node) -> str:
         """解析函数返回类型"""
         try:
-            # 在function_definition的子节点中查找返回类型
-            for child in function_node.children:
-                if child.type in ['primitive_type', 'type_identifier', 'sized_type_specifier']:
-                    return_type_text = child.text.decode('utf-8').strip()
-                    return return_type_text if return_type_text else "void"
+            # 收集所有可能的返回类型节点
+            return_type_parts = []
             
+            # 在function_definition或declaration的子节点中查找返回类型
+            for child in function_node.children:
+                # 跳过function_declarator和compound_statement
+                if child.type in ['function_declarator', 'compound_statement']:
+                    continue
+                    
+                # 收集返回类型相关的节点
+                if child.type in [
+                    'primitive_type', 'type_identifier', 'sized_type_specifier',
+                    'struct_specifier', 'union_specifier', 'enum_specifier',
+                    'storage_class_specifier', 'type_qualifier',
+                    'macro_type_specifier', 'call_expression'
+                ]:
+                    part_text = child.text.decode('utf-8').strip()
+                    if part_text:
+                        return_type_parts.append(part_text)
+            
+            # 如果找到了返回类型部分，组合它们
+            if return_type_parts:
+                return_type = ' '.join(return_type_parts)
+                # 清理多余的空格
+                return_type = ' '.join(return_type.split())
+                return return_type if return_type else "void"
+            
+            # 如果没有找到明确的返回类型，可能是隐式的int或void
             return "void"
             
         except Exception as e:

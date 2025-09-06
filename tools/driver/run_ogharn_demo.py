@@ -6,7 +6,7 @@ OGHarn 三步筛选流程演示主程序
 
 import sys
 from pathlib import Path
-from logging import *
+from log import *
 
 from step1_compile_filter import compile_filter
 from step2_execution_filter import execution_filter

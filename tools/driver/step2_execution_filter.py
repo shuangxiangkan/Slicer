@@ -9,7 +9,7 @@ import json
 import shutil
 from pathlib import Path
 from typing import List, Dict, Tuple
-from logging import *
+from log import *
 
 class ExecutionFilter:
     

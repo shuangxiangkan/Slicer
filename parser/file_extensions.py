@@ -55,8 +55,11 @@ def is_source_file(file_path: str) -> bool:
     return any(file_path.endswith(ext) for ext in SOURCE_EXTENSIONS)
 
 
-def is_supported_file(file_path: str) -> bool:
+def is_supported_file(file_path) -> bool:
     """判断是否为支持的C/C++文件"""
+    # 处理Path对象，转换为字符串
+    if hasattr(file_path, '__fspath__') or hasattr(file_path, 'as_posix'):
+        file_path = str(file_path)
     return any(file_path.endswith(ext) for ext in ALL_C_CPP_EXTENSIONS)
 
 

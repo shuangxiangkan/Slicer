@@ -4,12 +4,9 @@
 """
 
 import os
-import re
 import logging
 from typing import List, Dict, Optional
-from pathlib import Path
-from .config_parser import ConfigParser
-from .file_extensions import HEADER_EXTENSIONS, is_header_file
+from .file_extensions import is_header_file
 
 logger = logging.getLogger(__name__)
 

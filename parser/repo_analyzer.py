@@ -25,13 +25,19 @@ logger = logging.getLogger(__name__)
 class RepoAnalyzer:
     """代码仓库分析器（核心分析功能）"""
     
-    def __init__(self, config_or_file_path: str):
+    def __init__(self, config_or_file_path=None, config_dict=None):
         """
         初始化分析器
         
         Args:
-            config_or_file_path: 配置文件路径或C/C++文件路径
+            config_or_file_path: 配置文件路径或C/C++文件路径（与config_dict二选一）
+            config_dict: 配置字典，包含所需的配置信息（与config_or_file_path二选一）
         """
+        if config_or_file_path is None and config_dict is None:
+            raise ValueError("必须提供config_or_file_path或config_dict中的一个")
+        if config_or_file_path is not None and config_dict is not None:
+            raise ValueError("config_or_file_path和config_dict不能同时提供")
+            
         self.file_finder = FileFinder()
         
         # 初始化类型注册表和相关组件
@@ -49,19 +55,45 @@ class RepoAnalyzer:
         self.analysis_stats = {}
         self.processed_files = []
         
-        # 智能识别输入类型
-        self.is_single_file_mode = is_supported_file(config_or_file_path)
-        self.input_file_path = config_or_file_path
-        
-        if self.is_single_file_mode:
-            # 单文件模式：直接设置文件信息
-            self.single_file_path = os.path.abspath(config_or_file_path)
-            self.analysis_target_path = self.single_file_path  # 记录被分析的目标路径
-            self.config_parser = None
+        # 根据输入类型进行初始化
+        if config_dict is not None:
+            # 字典配置模式
+            self._init_from_dict(config_dict)
+        elif is_supported_file(config_or_file_path):
+            # 单文件模式
+            self._init_single_file(config_or_file_path)
         else:
-            # 配置文件模式：解析配置文件
-            self.config_parser = ConfigParser(config_or_file_path)
-            self.analysis_target_path = self.config_parser.get_library_path()  # 记录被分析的目标路径
+            # 配置文件模式
+            self._init_from_config_file(config_or_file_path)
+    
+    def _init_from_dict(self, config_dict: dict):
+        """从字典配置初始化"""
+        self.is_single_file_mode = False
+        self.is_dict_config_mode = True
+        self.config_dict = config_dict
+        # 使用ConfigParser来处理字典配置
+        self.config_parser = ConfigParser(config_dict)
+        self.analysis_target_path = self.config_parser.get_library_path()
+        self.input_file_path = None
+    
+    def _init_single_file(self, file_path: str):
+        """单文件模式初始化"""
+        self.is_single_file_mode = True
+        self.is_dict_config_mode = False
+        self.single_file_path = os.path.abspath(file_path)
+        self.analysis_target_path = self.single_file_path
+        self.config_parser = None
+        self.config_dict = None
+        self.input_file_path = file_path
+    
+    def _init_from_config_file(self, config_file_path: str):
+        """配置文件模式初始化"""
+        self.is_single_file_mode = False
+        self.is_dict_config_mode = False
+        self.config_parser = ConfigParser(config_file_path)
+        self.analysis_target_path = self.config_parser.get_library_path()
+        self.config_dict = None
+        self.input_file_path = config_file_path
     
     def analyze(self) -> dict:
         """
@@ -119,8 +151,9 @@ class RepoAnalyzer:
         if self.is_single_file_mode:
             return [self.single_file_path], ""
         
-        # Collect files from config
         all_files = []
+        
+        # 配置文件模式（包括字典配置，因为字典配置也通过ConfigParser处理）
         analysis_targets = self.config_parser.get_analysis_targets()
         
         for target_path in analysis_targets:
@@ -142,6 +175,7 @@ class RepoAnalyzer:
         
         return filtered_files, ""
     
+
     def _extract_functions(self, files: List[str]) -> List[FunctionInfo]:
         """Extract function definitions"""
         all_functions = []
@@ -339,27 +373,32 @@ class RepoAnalyzer:
         
         return matches
     
-    def get_api_functions(self, api_keyword: str, include_declarations: bool = True, 
+    def get_api_functions(self, api_keyword, include_declarations: bool = True, 
                          include_definitions: bool = True, header_files: List[str] = None,
-                         api_prefix: str = None) -> List[FunctionInfo]:
+                         api_prefix = None) -> List[FunctionInfo]:
         """
-        Extract functions that contain the specified API keyword
+        Extract functions that contain the specified API keyword(s)
         
         Args:
-            api_keyword: API keyword (e.g., "CJSON_PUBLIC", "API", "EXPORT" etc.)
+            api_keyword: API keyword (str) or list of keywords (e.g., "CJSON_PUBLIC", ["API", "EXPORT"] etc.)
             include_declarations: Whether to include function declarations
             include_definitions: Whether to include function definitions
             header_files: List of header files (absolute paths), if None then no header file check
-            api_prefix: API function name prefix (e.g., "TIFF", "cJSON"), if None then no prefix check
+            api_prefix: API function name prefix (str) or list of prefixes (e.g., "TIFF", ["cJSON", "json"]), if None then no prefix check
             
         Returns:
-            A list of FunctionInfo objects that contain the API keyword
+            A list of FunctionInfo objects that contain the API keyword(s)
         """
         if not self.all_functions:
             logger.warning("No function analysis has been performed yet. Please call the analyze() method first.")
             return []
         
+        # Convert single keyword/prefix to list for uniform processing
+        keywords = [api_keyword] if isinstance(api_keyword, str) else api_keyword
+        prefixes = [api_prefix] if isinstance(api_prefix, str) else (api_prefix if api_prefix else None)
+        
         api_functions = []
+        seen_functions = set()  # To avoid duplicates
         
         for func in self.all_functions:
             # Filter function types based on user selection
@@ -368,9 +407,14 @@ class RepoAnalyzer:
             if not func.is_declaration and not include_definitions:
                 continue
             
-            # Use FunctionInfo method to check if it contains the API keyword and is in specified header files
-            if func.is_api_function(api_keyword, header_files, api_prefix):
-                api_functions.append(func)
+            # Check each keyword
+            for keyword in keywords:
+                # Use FunctionInfo method to check if it contains the API keyword and is in specified header files
+                if func.is_api_function(keyword, header_files, prefixes):
+                    if func.name not in seen_functions:
+                        api_functions.append(func)
+                        seen_functions.add(func.name)
+                    break  # Found match, no need to check other keywords for this function
         
         return api_functions
     

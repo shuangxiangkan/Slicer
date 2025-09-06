@@ -12,9 +12,15 @@ from .file_finder import FileFinder
 class ConfigParser:
     """用户配置文件解析器"""
     
-    def __init__(self, config_path: str):
-        self.config_path = config_path
-        self.config = self._load_config()
+    def __init__(self, config_path_or_dict):
+        if isinstance(config_path_or_dict, dict):
+            # 字典配置模式
+            self.config_path = None
+            self.config = self._validate_and_process_config(config_path_or_dict)
+        else:
+            # 文件配置模式
+            self.config_path = config_path_or_dict
+            self.config = self._load_config()
     
     def _load_config(self) -> Dict[str, Any]:
         """加载配置文件"""
@@ -44,17 +50,53 @@ class ConfigParser:
         except Exception as e:
             raise ValueError(f"加载配置文件失败: {e}")
     
+    def _validate_and_process_config(self, config_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """验证和处理字典配置"""
+        try:
+            # 复制配置字典以避免修改原始数据
+            config = config_dict.copy()
+            
+            # 验证必要的配置项
+            if 'library_path' not in config:
+                raise ValueError("配置字典缺少必要的 'library_path' 字段")
+            
+            # 设置默认值
+            config.setdefault('include_files', [])
+            config.setdefault('exclude_files', [])
+            config.setdefault('header_files', [])
+            
+            # 验证互斥性
+            if config['include_files'] and config['exclude_files']:
+                raise ValueError("include_files 和 exclude_files 不能同时指定，请选择其中一种模式")
+            
+            return config
+            
+        except Exception as e:
+            raise ValueError(f"处理配置字典失败: {e}")
+    
     def get_library_path(self) -> str:
         """获取库路径"""
         library_path = self.config['library_path']
         
         # 如果是相对路径，转换为绝对路径
         if not os.path.isabs(library_path):
-            # 获取项目根目录（configs目录的上上级目录）
-            config_dir = os.path.dirname(os.path.abspath(self.config_path))
-            benchmarks_dir = os.path.dirname(config_dir)  # benchmarks目录
-            project_root = os.path.dirname(benchmarks_dir)  # 项目根目录
-            library_path = os.path.join(project_root, library_path)
+            if self.config_path is not None:
+                # 文件配置模式：获取项目根目录（configs目录的上上级目录）
+                config_dir = os.path.dirname(os.path.abspath(self.config_path))
+                benchmarks_dir = os.path.dirname(config_dir)  # benchmarks目录
+                project_root = os.path.dirname(benchmarks_dir)  # 项目根目录
+                library_path = os.path.join(project_root, library_path)
+            else:
+                # 字典配置模式：假设相对于当前工作目录的项目根目录
+                # 通过查找包含'benchmarks'目录的父目录来确定项目根目录
+                current_dir = os.getcwd()
+                project_root = current_dir
+                while project_root != os.path.dirname(project_root):  # 避免无限循环
+                    if os.path.exists(os.path.join(project_root, 'benchmarks')):
+                        break
+                    project_root = os.path.dirname(project_root)
+                library_path = os.path.join(project_root, library_path)
+            
             library_path = os.path.abspath(library_path)
         
         return library_path

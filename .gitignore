@@ -222,3 +222,6 @@ tools/driver/idea.md
 llm/.env
 .pytest_cache/
 tools/driver/OGHarn/
+tools/driver/Libraries/
+tools/driver/libraries
+tools/driver/Output
