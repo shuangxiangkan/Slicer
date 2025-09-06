@@ -48,7 +48,7 @@ def create_repo_analyzer(config_parser: ConfigParser) -> RepoAnalyzer:
     
     return analyzer
 
-def compile_library_with_config(handler: LibraryHandler, library_type: str = "static") -> bool:
+def compile_library_static_or_dynamic(handler: LibraryHandler, library_type: str = "static") -> bool:
     """
     编译库文件的通用函数
     
@@ -112,10 +112,15 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
         analyzer = create_repo_analyzer(config_parser)
         
         # 步骤1: 提取API并保存到文件
-        handler.extract_and_save_apis(library_output_dir, analyzer)
+        api_functions = handler.extract_and_save_apis(library_output_dir, analyzer)
         
-        # 步骤2: 编译库文件
-        success = compile_library_with_config(handler, library_type)
+        # 步骤2: 计算API相似性并保存结果
+        similarity_results = {}
+        if api_functions:
+            similarity_results = handler.compute_api_similarity(api_functions, library_output_dir)
+        
+        # 步骤3: 编译库文件
+        success = compile_library_static_or_dynamic(handler, library_type)
         
         if success:
             log_success("Harness generation completed successfully.")

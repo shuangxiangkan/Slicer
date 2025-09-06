@@ -8,6 +8,7 @@ import os
 from config_parser import ConfigParser
 from log import *
 from utils import check_afl_instrumentation
+from similarity_analyzer import APISimilarityAnalyzer
 
 class LibraryHandler:
     """Handles library operations like compilation."""
@@ -24,13 +25,16 @@ class LibraryHandler:
         self.library_name = self.config_parser.get_library_info()['name']
         self.library_dir = library_dir
 
-    def extract_and_save_apis(self, output_dir: str, analyzer=None):
+    def extract_all_apis(self, output_dir: str, analyzer=None):
         """
         提取API函数并保存到文件
         
         Args:
             output_dir: API文件的输出目录
             analyzer: RepoAnalyzer实例，如果为None则需要从外部传入
+            
+        Returns:
+            list: API函数列表，每个元素为FunctionInfo对象
         """
         try:
             log_info(f"开始提取 {self.library_name} 库的API函数...")
@@ -64,7 +68,7 @@ class LibraryHandler:
             
             if not unique_api_functions:
                 log_warning("未找到API函数")
-                return
+                return []
             
             log_info(f"找到 {len(unique_api_functions)} 个API函数")
             
@@ -81,10 +85,95 @@ class LibraryHandler:
             
             log_info(f"API函数已保存到: {api_file_path}")
             
+            # 返回API函数列表
+            return list(unique_api_functions.values())
+            
         except Exception as e:
             log_error(f"提取API函数时发生错误: {e}")
             import traceback
             traceback.print_exc()
+            return []
+
+    def extract_and_save_apis(self, output_dir: str, analyzer=None):
+        """
+        提取API函数并保存到文件，同时返回API函数列表
+        
+        Args:
+            output_dir: API文件的输出目录
+            analyzer: RepoAnalyzer实例，如果为None则需要从外部传入
+            
+        Returns:
+            list: API函数列表，每个元素为FunctionInfo对象
+        """
+        return self.extract_all_apis(output_dir, analyzer)
+
+    def compute_api_similarity(self, api_functions, output_dir: str, similarity_threshold: float = 0.2):
+        """
+        计算API函数之间的相似性并保存结果到文件
+        
+        Args:
+            api_functions: API函数列表，由extract_all_apis返回
+            output_dir: 相似性结果文件的输出目录
+            similarity_threshold: 相似度阈值，默认0.2
+            
+        Returns:
+            dict: 相似性分析结果，格式为 {function_name: [(similar_func, similarity_score), ...]}
+        """
+        try:
+            if not api_functions:
+                log_warning("没有API函数可用于相似性分析")
+                return {}
+            
+            log_info(f"开始计算 {len(api_functions)} 个API函数的相似性...")
+            
+            # 初始化相似性分析器
+            analyzer = APISimilarityAnalyzer(similarity_threshold=similarity_threshold)
+            
+            # 存储所有相似性结果
+            similarity_results = {}
+            
+            # 为每个API函数找到最相似的其他函数
+            for i, target_func in enumerate(api_functions):
+                log_info(f"分析函数相似性 {i+1}/{len(api_functions)}: {target_func.name}")
+                
+                # 获取与当前函数最相似的其他函数
+                similar_funcs = analyzer.find_most_similar_apis(
+                    target_function=target_func,
+                    all_functions=api_functions,
+                    similarity_threshold=similarity_threshold,
+                    max_results=3
+                )
+                
+                similarity_results[target_func.name] = similar_funcs
+            
+            # 保存相似性结果到文件
+            similarity_file_path = os.path.join(output_dir, f"{self.library_name}_api_similarity.txt")
+            with open(similarity_file_path, 'w', encoding='utf-8') as f:
+                f.write(f"# {self.library_name} Library API Similarity Analysis\n")
+                f.write(f"# Total API Functions: {len(api_functions)}\n")
+                f.write(f"# Similarity Threshold: {similarity_threshold}\n\n")
+                
+                for func_name, similar_funcs in similarity_results.items():
+                    f.write(f"Function: {func_name}\n")
+                    if similar_funcs:
+                        f.write(f"  Similar functions ({len(similar_funcs)} found):\n")
+                        for similar_func, score in similar_funcs:
+                            f.write(f"    - {similar_func.name} (similarity: {score:.3f})\n")
+                            f.write(f"      Signature: {similar_func.get_signature()}\n")
+                    else:
+                        f.write("  No similar functions found above threshold\n")
+                    f.write("\n")
+            
+            log_info(f"相似性分析结果已保存到: {similarity_file_path}")
+            log_success(f"API相似性分析完成，共分析 {len(api_functions)} 个函数")
+            
+            return similarity_results
+            
+        except Exception as e:
+            log_error(f"计算API相似性时发生错误: {e}")
+            import traceback
+            traceback.print_exc()
+            return {}
 
 
     def compile_library(self, library_type: str = "static") -> bool:
