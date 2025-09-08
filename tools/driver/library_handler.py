@@ -72,16 +72,36 @@ class LibraryHandler:
             
             log_info(f"找到 {len(unique_api_functions)} 个API函数")
             
-            # 保存API到文件
-            api_file_path = os.path.join(output_dir, f"{self.library_name}_apis.txt")
+            # 保存API到JSON文件
+            api_file_path = os.path.join(output_dir, f"{self.library_name}_apis.json")
+            
+            # 构建JSON数据结构
+            json_data = {
+                "library_name": self.library_name,
+                "analysis_summary": {
+                    "total_api_functions": len(unique_api_functions)
+                },
+                "api_functions": []
+            }
+            
+            # 转换API函数信息为JSON格式
+            for _, func_info in unique_api_functions.items():
+                json_data["api_functions"].append({
+                    "function_name": func_info.name,
+                    "function_signature": func_info.get_signature(),
+                    "file_path": func_info.file_path,
+                    "start_line": func_info.start_line,
+                    "end_line": func_info.end_line,
+                    "return_type": func_info.return_type,
+                    "parameters": [{
+                         "name": param.name,
+                         "type": param.param_type
+                     } for param in func_info.parameter_details] if func_info.parameter_details else []
+                })
+            
+            import json
             with open(api_file_path, 'w', encoding='utf-8') as f:
-                f.write(f"# {self.library_name} Library API Functions\n")
-                f.write(f"# Total: {len(unique_api_functions)} functions\n\n")
-                
-                for _, func_info in unique_api_functions.items():
-                    # 写入完整的函数签名
-                    f.write(f"{func_info.get_signature()}\n")
-                    f.write(f"  // File: {func_info.file_path}:{func_info.start_line}\n\n")
+                json.dump(json_data, f, ensure_ascii=False, indent=2)
             
             log_info(f"API函数已保存到: {api_file_path}")
             
@@ -129,7 +149,6 @@ class LibraryHandler:
             # 存储所有usage结果
             usage_results = {}
             api_with_usage = 0
-            api_with_test_usage = 0
             
             # 为每个API函数统计usage
             for i, func in enumerate(api_functions, 1):
@@ -138,19 +157,13 @@ class LibraryHandler:
                 # 查找所有文件中的usage
                 all_usage = analyzer.find_usage_in_all_files(function_name=func.name)
                 
-                # 查找测试文件中的usage
-                test_usage = analyzer.find_usage_in_test_files(function_name=func.name)
-                
                 # 统计详细信息
                 usage_details = {
                     'function_name': func.name,
                     'function_signature': func.get_signature(),
                     'has_usage': bool(all_usage),
-                    'has_test_usage': bool(test_usage),
                     'total_files': len(all_usage) if all_usage else 0,
-                    'test_files': len(test_usage) if test_usage else 0,
-                    'all_usage': {},
-                    'test_usage': {}
+                    'all_usage': {}
                 }
                 
                 # 处理全局usage详情
@@ -161,48 +174,30 @@ class LibraryHandler:
                         caller_info = []
                         for caller in callers:
                             if isinstance(caller, dict):
+                                # 提取调用者函数的完整代码
+                                caller_code = self._extract_function_code(file_path, caller.get('start_line', 0), caller.get('end_line', 0))
                                 caller_info.append({
                                     'name': caller.get('name', 'unknown'),
                                     'start_line': caller.get('start_line', 0),
-                                    'end_line': caller.get('end_line', 0)
+                                    'end_line': caller.get('end_line', 0),
+                                    'code': caller_code
                                 })
                             else:
                                 caller_info.append({
                                     'name': str(caller),
                                     'start_line': 0,
-                                    'end_line': 0
+                                    'end_line': 0,
+                                    'code': ''
                                 })
+                        
+                        # 提取usage位置的代码片段
+                        usage_code_snippets = self._extract_usage_code_snippets(file_path, usage_line_numbers, func.name)
                         
                         usage_details['all_usage'][file_path] = {
                             'callers': caller_info,
                             'usage_count': len(usage_line_numbers),
-                            'usage_locations': usage_line_numbers
-                        }
-                
-                # 处理测试usage详情
-                if test_usage:
-                    api_with_test_usage += 1
-                    for file_path, callers in test_usage.items():
-                        usage_line_numbers = self._get_usage_line_numbers(file_path, func.name)
-                        caller_info = []
-                        for caller in callers:
-                            if isinstance(caller, dict):
-                                caller_info.append({
-                                    'name': caller.get('name', 'unknown'),
-                                    'start_line': caller.get('start_line', 0),
-                                    'end_line': caller.get('end_line', 0)
-                                })
-                            else:
-                                caller_info.append({
-                                    'name': str(caller),
-                                    'start_line': 0,
-                                    'end_line': 0
-                                })
-                        
-                        usage_details['test_usage'][file_path] = {
-                            'callers': caller_info,
-                            'usage_count': len(usage_line_numbers),
-                            'usage_locations': usage_line_numbers
+                            'usage_locations': usage_line_numbers,
+                            'usage_code_snippets': usage_code_snippets
                         }
                 
                 usage_results[func.name] = usage_details
@@ -210,42 +205,27 @@ class LibraryHandler:
             # 计算统计信息
             total_apis = len(api_functions)
             usage_rate = (api_with_usage / total_apis) * 100 if total_apis else 0
-            test_usage_rate = (api_with_test_usage / total_apis) * 100 if total_apis else 0
             
-            # 保存usage结果到文件
-            usage_file_path = os.path.join(output_dir, f"{self.library_name}_api_usage.txt")
+            # 保存usage结果到JSON文件
+            usage_file_path = os.path.join(output_dir, f"{self.library_name}_api_usage.json")
+            
+            # 构建JSON数据结构
+            json_data = {
+                "library_name": self.library_name,
+                "analysis_summary": {
+                    "total_api_functions": total_apis,
+                    "apis_with_usage": api_with_usage,
+                    "usage_rate_percentage": round(usage_rate, 1)
+                },
+                "api_functions": usage_results
+            }
+            
+            import json
             with open(usage_file_path, 'w', encoding='utf-8') as f:
-                f.write(f"# {self.library_name} Library API Usage Analysis\n")
-                f.write(f"# Total API Functions: {total_apis}\n")
-                f.write(f"# APIs with Usage: {api_with_usage} ({usage_rate:.1f}%)\n")
-                f.write(f"# APIs with Test Usage: {api_with_test_usage} ({test_usage_rate:.1f}%)\n\n")
-                
-                for func_name, details in usage_results.items():
-                    f.write(f"Function: {func_name}\n")
-                    f.write(f"  Signature: {details['function_signature']}\n")
-                    f.write(f"  Has Usage: {details['has_usage']}\n")
-                    f.write(f"  Has Test Usage: {details['has_test_usage']}\n")
-                    
-                    if details['all_usage']:
-                        f.write(f"  All Usage ({details['total_files']} files):\n")
-                        for file_path, file_info in details['all_usage'].items():
-                            f.write(f"    - {file_path}: {file_info['usage_count']} usages\n")
-                            f.write(f"      Lines: {file_info['usage_locations']}\n")
-                            if file_info['callers']:
-                                f.write(f"      Callers: {[c['name'] for c in file_info['callers']]}\n")
-                    
-                    if details['test_usage']:
-                        f.write(f"  Test Usage ({details['test_files']} files):\n")
-                        for file_path, file_info in details['test_usage'].items():
-                            f.write(f"    - {file_path}: {file_info['usage_count']} usages\n")
-                            f.write(f"      Lines: {file_info['usage_locations']}\n")
-                            if file_info['callers']:
-                                f.write(f"      Callers: {[c['name'] for c in file_info['callers']]}\n")
-                    
-                    f.write("\n")
+                json.dump(json_data, f, ensure_ascii=False, indent=2)
             
             log_info(f"API usage分析结果已保存到: {usage_file_path}")
-            log_success(f"API usage分析完成，共分析 {total_apis} 个函数，{api_with_usage} 个有usage，{api_with_test_usage} 个有test usage")
+            log_success(f"API usage分析完成，共分析 {total_apis} 个函数，{api_with_usage} 个有usage")
             
             return usage_results
             
@@ -293,6 +273,75 @@ class LibraryHandler:
             log_warning(f"读取文件失败 {file_path}: {e}")
             return []
 
+    def _extract_function_code(self, file_path, start_line, end_line):
+        """
+        提取函数的完整代码
+        
+        Args:
+            file_path: 文件路径
+            start_line: 函数开始行号
+            end_line: 函数结束行号
+        
+        Returns:
+            str: 函数代码
+        """
+        if start_line <= 0 or end_line <= 0:
+            return ''
+        
+        try:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                lines = f.readlines()
+                if start_line <= len(lines) and end_line <= len(lines):
+                    function_lines = lines[start_line-1:end_line]
+                    return ''.join(function_lines)
+        except Exception as e:
+            self.logger.warning(f"提取函数代码时出错 {file_path}:{start_line}-{end_line}: {e}")
+        
+        return ''
+    
+    def _extract_usage_code_snippets(self, file_path, usage_line_numbers, function_name):
+        """
+        提取usage位置的代码片段
+        
+        Args:
+            file_path: 文件路径
+            usage_line_numbers: usage行号列表
+            function_name: 函数名
+        
+        Returns:
+            list: 代码片段列表，格式: [{'line_number': int, 'code_line': str, 'context': str}]
+        """
+        code_snippets = []
+        
+        try:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                lines = f.readlines()
+                
+                for line_num in usage_line_numbers:
+                    if 1 <= line_num <= len(lines):
+                        # 获取当前行
+                        current_line = lines[line_num - 1].strip()
+                        
+                        # 获取上下文（前后各2行）
+                        context_start = max(1, line_num - 2)
+                        context_end = min(len(lines), line_num + 2)
+                        context_lines = []
+                        
+                        for i in range(context_start, context_end + 1):
+                            prefix = '>>> ' if i == line_num else '    '
+                            context_lines.append(f"{prefix}{i:4d}: {lines[i-1].rstrip()}")
+                        
+                        code_snippets.append({
+                            'line_number': line_num,
+                            'code_line': current_line,
+                            'context': '\n'.join(context_lines)
+                        })
+        
+        except Exception as e:
+            self.logger.warning(f"提取代码片段时出错 {file_path}: {e}")
+        
+        return code_snippets
+
     def compute_api_similarity(self, api_functions, output_dir: str, similarity_threshold: float = 0.2):
         """
         计算API函数之间的相似性并保存结果到文件
@@ -332,23 +381,36 @@ class LibraryHandler:
                 
                 similarity_results[target_func.name] = similar_funcs
             
-            # 保存相似性结果到文件
-            similarity_file_path = os.path.join(output_dir, f"{self.library_name}_api_similarity.txt")
-            with open(similarity_file_path, 'w', encoding='utf-8') as f:
-                f.write(f"# {self.library_name} Library API Similarity Analysis\n")
-                f.write(f"# Total API Functions: {len(api_functions)}\n")
-                f.write(f"# Similarity Threshold: {similarity_threshold}\n\n")
+            # 保存相似性结果到JSON文件
+            similarity_file_path = os.path.join(output_dir, f"{self.library_name}_api_similarity.json")
+            
+            # 构建JSON数据结构
+            json_data = {
+                "library_name": self.library_name,
+                "analysis_summary": {
+                    "total_api_functions": len(api_functions),
+                    "similarity_threshold": similarity_threshold
+                },
+                "similarity_results": {}
+            }
+            
+            # 转换相似性结果为JSON格式
+            for func_name, similar_funcs in similarity_results.items():
+                json_data["similarity_results"][func_name] = {
+                    "similar_functions_count": len(similar_funcs),
+                    "similar_functions": []
+                }
                 
-                for func_name, similar_funcs in similarity_results.items():
-                    f.write(f"Function: {func_name}\n")
-                    if similar_funcs:
-                        f.write(f"  Similar functions ({len(similar_funcs)} found):\n")
-                        for similar_func, score in similar_funcs:
-                            f.write(f"    - {similar_func.name} (similarity: {score:.3f})\n")
-                            f.write(f"      Signature: {similar_func.get_signature()}\n")
-                    else:
-                        f.write("  No similar functions found above threshold\n")
-                    f.write("\n")
+                for similar_func, score in similar_funcs:
+                    json_data["similarity_results"][func_name]["similar_functions"].append({
+                        "function_name": similar_func.name,
+                        "similarity_score": round(score, 3),
+                        "function_signature": similar_func.get_signature()
+                    })
+            
+            import json
+            with open(similarity_file_path, 'w', encoding='utf-8') as f:
+                json.dump(json_data, f, ensure_ascii=False, indent=2)
             
             log_info(f"相似性分析结果已保存到: {similarity_file_path}")
             log_success(f"API相似性分析完成，共分析 {len(api_functions)} 个函数")
