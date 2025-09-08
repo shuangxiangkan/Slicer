@@ -25,7 +25,7 @@ class LibraryHandler:
         self.library_name = self.config_parser.get_library_info()['name']
         self.library_dir = library_dir
 
-    def extract_all_apis(self, output_dir: str, analyzer=None):
+    def get_all_apis(self, output_dir: str, analyzer=None):
         """
         提取API函数并保存到文件
         
@@ -114,25 +114,12 @@ class LibraryHandler:
             traceback.print_exc()
             return []
 
-    def extract_and_save_apis(self, output_dir: str, analyzer=None):
-        """
-        提取API函数并保存到文件，同时返回API函数列表
-        
-        Args:
-            output_dir: API文件的输出目录
-            analyzer: RepoAnalyzer实例，如果为None则需要从外部传入
-            
-        Returns:
-            list: API函数列表，每个元素为FunctionInfo对象
-        """
-        return self.extract_all_apis(output_dir, analyzer)
-
-    def compute_api_usage(self, api_functions, analyzer, output_dir: str):
+    def get_api_usage(self, api_functions, analyzer, output_dir: str):
         """
         计算API函数的usage统计信息并保存结果到文件
         
         Args:
-            api_functions: API函数列表，由extract_all_apis返回
+            api_functions: API函数列表，由get_all_apis返回
             analyzer: RepoAnalyzer实例，用于查找函数调用
             output_dir: usage结果文件的输出目录
             
@@ -233,7 +220,7 @@ class LibraryHandler:
         计算API函数之间的相似性并保存结果到文件
         
         Args:
-            api_functions: API函数列表，由extract_all_apis返回
+            api_functions: API函数列表，由get_all_apis返回
             output_dir: 相似性结果文件的输出目录
             similarity_threshold: 相似度阈值，默认0.2
             

@@ -115,7 +115,7 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
         success = compile_library_static_or_dynamic(handler, library_type)
         
         # 步骤2: 提取API并保存到文件
-        api_functions = handler.extract_and_save_apis(library_output_dir, analyzer)
+        api_functions = handler.get_all_apis(library_output_dir, analyzer)
         
         # 步骤3: 计算API相似性并保存结果
         similarity_results = {}
@@ -125,7 +125,7 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
         # 步骤4: 计算API usage统计并保存结果
         usage_results = {}
         if api_functions:
-            usage_results = handler.compute_api_usage(api_functions, analyzer, library_output_dir)
+            usage_results = handler.get_api_usage(api_functions, analyzer, library_output_dir)
         
         
         log_success("Harness generation completed successfully.")
