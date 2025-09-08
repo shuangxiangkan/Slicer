@@ -132,6 +132,11 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
         if api_functions:
             comments_results = handler.get_api_comments(api_functions, analyzer, library_output_dir)
         
+        # 步骤6: 搜索API文档说明并保存结果
+        documentation_results = {}
+        if api_functions:
+            documentation_results = handler.get_api_documentation(api_functions, analyzer, library_output_dir)
+        
         log_success("Harness generation completed successfully.")
             
         return 1

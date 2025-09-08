@@ -379,6 +379,95 @@ class LibraryHandler:
             traceback.print_exc()
             return {}
 
+    def get_api_documentation(self, api_functions, analyzer, output_dir: str):
+        """
+        获取API函数在文档中的说明并保存到文件
+        
+        Args:
+            api_functions: API函数列表，由get_all_apis返回
+            analyzer: RepoAnalyzer实例，用于搜索API文档
+            output_dir: 文档结果文件的输出目录
+            
+        Returns:
+            dict: 文档信息结果，格式为 {function_name: doc_details}
+        """
+        try:
+            if not api_functions:
+                log_warning("没有API函数可用于文档搜索")
+                return {}
+            
+            log_info(f"开始搜索 {len(api_functions)} 个API函数的文档说明...")
+            
+            # 存储所有文档结果
+            documentation_results = {}
+            apis_with_docs = 0
+            
+            # 为每个API函数搜索文档
+            for i, func in enumerate(api_functions, 1):
+                log_info(f"搜索函数文档 {i}/{len(api_functions)}: {func.name}")
+                
+                # 使用RepoAnalyzer的search_api_in_documents方法搜索文档
+                doc_results = analyzer.search_api_in_documents(func.name)
+                
+                # 统计详细信息
+                doc_details = {
+                    'function_name': func.name,
+                    'function_signature': func.get_signature(),
+                    'has_documentation': bool(doc_results),
+                    'documentation_count': len(doc_results),
+                    'documentation_sources': []
+                }
+                
+                # 处理找到的文档
+                for doc_result in doc_results:
+                    doc_source = {
+                        'file_path': doc_result['file_path'],
+                        'file_name': doc_result['file_name'],
+                        'line_number': doc_result['line_number'],
+                        'match_type': doc_result['match_type'],
+                        'file_type': doc_result['file_type'],
+                        'context': doc_result['context']
+                    }
+                    doc_details['documentation_sources'].append(doc_source)
+                
+                if doc_results:
+                    apis_with_docs += 1
+                
+                documentation_results[func.name] = doc_details
+            
+            # 计算统计信息
+            total_apis = len(api_functions)
+            doc_rate = (apis_with_docs / total_apis) * 100 if total_apis else 0
+            
+            # 保存文档结果到JSON文件
+            docs_file_path = os.path.join(output_dir, f"{self.library_name}_api_documentation.json")
+            
+            # 构建JSON数据结构
+            json_data = {
+                "library_name": self.library_name,
+                "analysis_summary": {
+                    "total_api_functions": total_apis,
+                    "apis_with_documentation": apis_with_docs,
+                    "documentation_rate_percentage": round(doc_rate, 1)
+                },
+                "api_functions": documentation_results
+            }
+            
+            import json
+            with open(docs_file_path, 'w', encoding='utf-8') as f:
+                json.dump(json_data, f, ensure_ascii=False, indent=2)
+            
+            log_info(f"API文档分析结果已保存到: {docs_file_path}")
+            log_success(f"API文档分析完成，共分析 {total_apis} 个函数，{apis_with_docs} 个有文档说明")
+            
+            return documentation_results
+            
+        except Exception as e:
+            log_error(f"搜索API文档时发生错误: {e}")
+            import traceback
+            traceback.print_exc()
+            return {}
+
     def compute_api_similarity(self, api_functions, output_dir: str, similarity_threshold: float = 0.2):
         """
         计算API函数之间的相似性并保存结果到文件
