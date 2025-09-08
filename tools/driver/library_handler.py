@@ -156,7 +156,12 @@ class LibraryHandler:
                 # 处理全局usage详情
                 if all_usage:
                     api_with_usage += 1
-                    for file_path, callers in all_usage.items():
+                    
+                    # 先对文件按优先级排序，同一优先级内按caller代码量排序
+                    sorted_files = self._sort_files_by_priority(all_usage)
+                    
+                    for file_path in sorted_files:
+                        callers = all_usage[file_path]
                         # 直接使用find_usage_in_repo返回的caller信息，无需重复提取
                         caller_info = []
                         for caller in callers:
@@ -174,6 +179,9 @@ class LibraryHandler:
                                     'end_line': 0,
                                     'code': ''
                                 })
+                        
+                        # 对同一文件内的caller按代码长度排序
+                        caller_info = sorted(caller_info, key=lambda x: len(x.get('code', '')))
                         
                         usage_details['all_usage'][file_path] = {
                             'callers': caller_info,
@@ -214,6 +222,85 @@ class LibraryHandler:
             import traceback
             traceback.print_exc()
             return {}
+    
+    def _sort_files_by_priority(self, all_usage):
+        """
+        按优先级对文件路径进行排序，同一优先级内按caller代码量排序
+        
+        Args:
+            all_usage: 包含文件路径和对应caller信息的字典
+            
+        Returns:
+            list: 排序后的文件路径列表
+        """
+        try:
+            def get_file_priority_and_code_size(file_path):
+                relative_path = self._get_relative_path(file_path)
+                path_lower = relative_path.lower()
+                
+                # 确定优先级
+                if 'fuzz' in path_lower:
+                    priority = 1  # 最高优先级
+                elif any(keyword in path_lower for keyword in ['test', 'demo']):
+                    priority = 2  # 第二优先级
+                else:
+                    priority = 3  # 第三优先级
+                
+                # 计算该文件中所有caller的总代码量
+                callers = all_usage.get(file_path, [])
+                total_code_size = 0
+                for caller in callers:
+                    if isinstance(caller, dict):
+                        code = caller.get('code', '')
+                        total_code_size += len(code)
+                
+                # 返回(优先级, 代码量)用于排序
+                return (priority, total_code_size)
+            
+            # 对文件按优先级排序，同一优先级内按代码量排序
+            return sorted(all_usage.keys(), key=get_file_priority_and_code_size)
+            
+        except Exception as e:
+            log_warning(f"排序文件时发生错误: {e}")
+            return list(all_usage.keys())
+    
+    def _get_relative_path(self, file_path):
+        """
+        获取文件相对于库根目录的相对路径
+        
+        Args:
+            file_path: 绝对文件路径
+            
+        Returns:
+            str: 相对于库根目录的相对路径
+        """
+        try:
+            # 从config_parser获取库名
+            library_info = self.config_parser.get_library_info()
+            library_name = library_info.get('name', '')
+            
+            if library_name:
+                # 查找文件路径中包含库名的部分
+                path_parts = file_path.split(os.sep)
+                
+                # 找到库名在路径中的位置
+                library_index = -1
+                for i, part in enumerate(path_parts):
+                    if part == library_name:
+                        library_index = i
+                        break
+                
+                if library_index != -1 and library_index + 1 < len(path_parts):
+                    # 返回库根目录之后的相对路径
+                    relative_parts = path_parts[library_index + 1:]
+                    return os.path.join(*relative_parts)
+            
+            # 如果无法找到库根目录，返回文件名
+            return os.path.basename(file_path)
+                
+        except Exception as e:
+            log_warning(f"获取相对路径时发生错误: {e}")
+            return os.path.basename(file_path)
 
     def compute_api_similarity(self, api_functions, output_dir: str, similarity_threshold: float = 0.2):
         """
