@@ -4,7 +4,7 @@
 
 This directory is dedicated to generating driver programs for C/C++ library APIs.
 
-## IDEA
+## idea
 
 library API fuzz driver生成的一个我觉得很好的idea：
 1. 先找到library中所有有usage的API， 比如在test文件中实际使用的API
@@ -13,3 +13,6 @@ library API fuzz driver生成的一个我觉得很好的idea：
 4. 采用bottom-up的方式，逐个生成所有没有usage的API的fuzz driver
    
 我觉得这个idea的实现起来应该不是很难， 但是实现起来的效果应该会很好，最好情况可能会生成所有API的fuzz driver
+
+
+而且还可以考虑hierarchical的关系，即一个API是基于其他API的，那么在生成这个API的fuzz driver时，就可以考虑基于那个API的fuzz driver来生成
