@@ -16,30 +16,7 @@ import logging
 # Configure logging
 logging.basicConfig(level=logging.WARNING)  # 减少日志输出
 
-def get_usage_details(file_path, function_name):
-    """
-    获取函数在文件中的详细usage信息
-    返回: [(line_number, context_lines), ...]
-    """
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-        
-        usages = []
-        for i, line in enumerate(lines, 1):
-            if function_name in line:
-                # 获取前三行代码作为上下文
-                start_idx = max(0, i - 3)
-                context_lines = []
-                for j in range(start_idx, min(len(lines), i)):
-                    context_lines.append(f"{j+1:4d}: {lines[j].rstrip()}")
-                
-                usages.append((i, context_lines))
-        
-        return usages
-    except Exception as e:
-        print(f"   ❌ 读取文件失败 {file_path}: {e}")
-        return []
+
 
 def test_cjson_api_usage():
     """
@@ -74,11 +51,11 @@ def test_cjson_api_usage():
         print(f"\n🔍 测试函数: {test_function}")
         print(f"📁 仓库路径: {repo_root}")
         
-        # 1. find_usage_in_all_files
-        print(f"\n1️⃣ find_usage_in_all_files 结果:")
+        # 1. find_usage_in_repo
+        print(f"\n1️⃣ find_usage_in_repo 结果:")
         print("=" * 50)
         
-        all_usage = repo_analyzer.find_usage_in_all_files(
+        all_usage = repo_analyzer.find_usage_in_repo(
             function_name=test_function
         )
         
@@ -87,48 +64,59 @@ def test_cjson_api_usage():
         for file_path, callers in all_usage.items():
             rel_path = os.path.relpath(file_path, repo_root)
             print(f"\n📁 文件: {rel_path}")
-            print(f"   调用者函数: {', '.join(callers) if callers else '全局调用'}")
+            caller_names = [caller['name'] for caller in callers] if callers else []
+            print(f"   调用者函数: {', '.join(caller_names) if caller_names else '全局调用'}")
             
-            # 获取详细的usage信息
-            usages = get_usage_details(file_path, test_function)
+            # 显示调用者函数的完整代码
+            if callers:
+                for caller in callers:
+                    print(f"\n   🔍 调用者函数 '{caller['name']}' 完整代码 (第{caller['start_line']}-{caller['end_line']}行):")
+                    print("   " + "-" * 60)
+                    code_lines = caller['code'].split('\n')
+                    for i, line in enumerate(code_lines, start=caller['start_line']):
+                        if line.strip():  # 只显示非空行
+                            print(f"   {i:3d}: {line}")
+                    print("   " + "-" * 60)
             
-            for line_num, context_lines in usages:
-                print(f"\n   📍 第 {line_num} 行:")
-                for context_line in context_lines:
-                    if str(line_num) in context_line and test_function in context_line:
-                        print(f"   ➤ {context_line}")  # 高亮当前行
-                    else:
-                        print(f"     {context_line}")
+
         
-        # 2. find_usage_in_test_files
-        print(f"\n\n2️⃣ find_usage_in_test_files 结果:")
+        # 2. 过滤测试文件的usage
+        print(f"\n\n2️⃣ 测试文件中的usage 结果:")
         print("=" * 50)
         
-        test_usage = repo_analyzer.find_usage_in_test_files(
-            function_name=test_function
-        )
+        # 过滤出路径中包含测试关键词的文件
+        test_keywords = ['test', 'example', 'demo', 'sample', 'tutorial']
+        test_usage = {}
+        
+        for file_path, callers in all_usage.items():
+            file_path_lower = file_path.lower()
+            if any(keyword in file_path_lower for keyword in test_keywords):
+                test_usage[file_path] = callers
         
         print(f"📊 在 {len(test_usage)} 个测试文件中找到usage")
         
         for file_path, callers in test_usage.items():
             rel_path = os.path.relpath(file_path, repo_root)
             print(f"\n📁 测试文件: {rel_path}")
-            print(f"   调用者函数: {', '.join(callers) if callers else '全局调用'}")
+            caller_names = [caller['name'] for caller in callers] if callers else []
+            print(f"   调用者函数: {', '.join(caller_names) if caller_names else '全局调用'}")
             
-            # 获取详细的usage信息
-            usages = get_usage_details(file_path, test_function)
+            # 显示调用者函数的完整代码
+            if callers:
+                for caller in callers:
+                    print(f"\n   🔍 调用者函数 '{caller['name']}' 完整代码 (第{caller['start_line']}-{caller['end_line']}行):")
+                    print("   " + "-" * 60)
+                    code_lines = caller['code'].split('\n')
+                    for i, line in enumerate(code_lines, start=caller['start_line']):
+                        if line.strip():  # 只显示非空行
+                            print(f"   {i:3d}: {line}")
+                    print("   " + "-" * 60)
             
-            for line_num, context_lines in usages:
-                print(f"\n   📍 第 {line_num} 行:")
-                for context_line in context_lines:
-                    if str(line_num) in context_line and test_function in context_line:
-                        print(f"   ➤ {context_line}")  # 高亮当前行
-                    else:
-                        print(f"     {context_line}")
+
         
         # 总结
         print(f"\n\n📊 总结:")
-        print(f"   所有文件中的usage: {len(all_usage)} 个文件")
+        print(f"   仓库中的usage: {len(all_usage)} 个文件")
         print(f"   测试文件中的usage: {len(test_usage)} 个文件")
         
     except Exception as e:
@@ -152,9 +140,9 @@ def main():
     
     print("\n💡 说明:")
     print("   - 可以修改 test_function 变量来测试不同的cJSON API")
-    print("   - 输出包含文件路径、行号和前三行代码上下文")
-    print("   - find_usage_in_all_files: 在所有文件中查找")
-    print("   - find_usage_in_test_files: 仅在测试文件中查找")
+    print("   - 输出包含调用者函数的完整代码和位置信息")
+    print("   - find_usage_in_repo: 在仓库的所有文件中查找")
+    print("   - 测试文件过滤: 从所有结果中过滤出测试文件")
 
 if __name__ == "__main__":
     main()

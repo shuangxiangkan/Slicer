@@ -750,17 +750,17 @@ class RepoAnalyzer:
         """
         return "single_file" if self.is_single_file_mode else "config_file"
     
-    def _get_usage_finder_and_repo_root(self, repo_root: str = None) -> tuple:
+    def find_usage_in_repo(self, function_name: str, repo_root: str = None) -> Dict[str, List[str]]:
         """
-        获取FunctionUsageFinder实例和repo_root路径的辅助方法
+        在仓库中查找函数使用
         
         Args:
+            function_name: 要查找的函数名
             repo_root: 仓库根目录，如果为None则使用分析目标路径
         
         Returns:
-            tuple: (usage_finder, repo_root)
+            Dict[str, List[str]]: 文件路径 -> 调用者函数名列表的映射
         """
-        
         # 处理repo_root
         if repo_root is None:
             if self.is_single_file_mode:
@@ -768,86 +768,14 @@ class RepoAnalyzer:
             else:
                 repo_root = self.analysis_target_path
         
-        # 创建FunctionUsageFinder实例（支持config_parser为None的情况）
+        # 创建FunctionUsageFinder实例
         usage_finder = FunctionUsageFinder(self.config_parser)
         
-        return usage_finder, repo_root
-    
-    def find_usage_in_include_files(self, function_name: str) -> Dict[str, List[str]]:
-        """
-        在include_files中查找函数使用
-        
-        Args:
-            function_name: 要查找的函数名
-        
-        Returns:
-            Dict[str, List[str]]: 文件路径 -> 调用者函数名列表的映射
-        """
-        # 单文件模式下没有config_parser，返回空结果
-        if self.config_parser is None:
-            return {}
-        
-        usage_finder, _ = self._get_usage_finder_and_repo_root()
-        return usage_finder.find_usage_in_include_files(
-            function_name=function_name,
-            analyzed_functions=self.all_functions
-        )
-    
-    def find_usage_in_non_include_files(self, function_name: str) -> Dict[str, List[str]]:
-        """
-        在非include_files中查找函数使用
-        
-        Args:
-            function_name: 要查找的函数名
-        
-        Returns:
-            Dict[str, List[str]]: 文件路径 -> 调用者函数名列表的映射
-        """
-        usage_finder, repo_root = self._get_usage_finder_and_repo_root()
-        return usage_finder.find_usage_in_non_include_files(
-            function_name=function_name,
-            repo_root=repo_root
-        )
-    
-    def find_usage_in_all_files(self, function_name: str) -> Dict[str, List[str]]:
-        """
-        在所有文件中查找函数使用
-        
-        Args:
-            function_name: 要查找的函数名
-        
-        Returns:
-            Dict[str, List[str]]: 文件路径 -> 调用者函数名列表的映射
-        """
-        usage_finder, repo_root = self._get_usage_finder_and_repo_root()
-        return usage_finder.find_usage_in_all_files(
+        return usage_finder.find_usage_in_repo(
             function_name=function_name,
             repo_root=repo_root,
             analyzed_functions=self.all_functions
         )
-    
-    def find_usage_in_test_files(self, function_name: str, all_usage: Dict[str, List[Dict]] = None) -> Dict[str, List[str]]:
-        """
-        在test文件中查找函数使用
-        
-        Args:
-            function_name: 要查找的函数名
-            all_usage: 可选的所有文件usage数据，如果提供则直接过滤，否则重新搜索
-        
-        Returns:
-            Dict[str, List[str]]: 文件路径 -> 调用者函数名列表的映射
-        """
-        usage_finder, repo_root = self._get_usage_finder_and_repo_root()
-        
-        # 调用重构后的find_usage_in_test_files方法
-        test_usage = usage_finder.find_usage_in_test_files(
-            function_name=function_name,
-            repo_root=repo_root,
-            all_usage=all_usage
-        )
-        
-        # 直接返回字典格式，保持调用者的详细信息
-        return test_usage
     
     def search_api_in_documents(self, api_name: str, search_path: str = None, 
                                use_paragraph_extraction: bool = True) -> List[Dict]:

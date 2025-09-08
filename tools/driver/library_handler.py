@@ -155,7 +155,7 @@ class LibraryHandler:
                 log_info(f"分析函数usage {i}/{len(api_functions)}: {func.name}")
                 
                 # 查找所有文件中的usage
-                all_usage = analyzer.find_usage_in_all_files(function_name=func.name)
+                all_usage = analyzer.find_usage_in_repo(function_name=func.name)
                 
                 # 统计详细信息
                 usage_details = {
@@ -170,17 +170,15 @@ class LibraryHandler:
                 if all_usage:
                     api_with_usage += 1
                     for file_path, callers in all_usage.items():
-                        usage_line_numbers = self._get_usage_line_numbers(file_path, func.name)
+                        # 直接使用find_usage_in_repo返回的caller信息，无需重复提取
                         caller_info = []
                         for caller in callers:
                             if isinstance(caller, dict):
-                                # 提取调用者函数的完整代码
-                                caller_code = self._extract_function_code(file_path, caller.get('start_line', 0), caller.get('end_line', 0))
                                 caller_info.append({
                                     'name': caller.get('name', 'unknown'),
                                     'start_line': caller.get('start_line', 0),
                                     'end_line': caller.get('end_line', 0),
-                                    'code': caller_code
+                                    'code': caller.get('code', '')  # 直接使用返回的代码
                                 })
                             else:
                                 caller_info.append({
@@ -190,14 +188,9 @@ class LibraryHandler:
                                     'code': ''
                                 })
                         
-                        # 提取usage位置的代码片段
-                        usage_code_snippets = self._extract_usage_code_snippets(file_path, usage_line_numbers, func.name)
-                        
                         usage_details['all_usage'][file_path] = {
                             'callers': caller_info,
-                            'usage_count': len(usage_line_numbers),
-                            'usage_locations': usage_line_numbers,
-                            'usage_code_snippets': usage_code_snippets
+                            'usage_count': len(callers)
                         }
                 
                 usage_results[func.name] = usage_details
@@ -234,113 +227,6 @@ class LibraryHandler:
             import traceback
             traceback.print_exc()
             return {}
-    
-    def _get_usage_line_numbers(self, file_path, function_name):
-        """
-        获取函数在文件中的详细usage行号信息
-        
-        Args:
-            file_path: 文件路径
-            function_name: 函数名
-            
-        Returns:
-            list: 包含函数名的行号列表
-        """
-        try:
-            # 尝试多种编码方式
-            encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
-            lines = None
-            
-            for encoding in encodings:
-                try:
-                    with open(file_path, 'r', encoding=encoding) as f:
-                        lines = f.readlines()
-                    break
-                except UnicodeDecodeError:
-                    continue
-            
-            if lines is None:
-                log_warning(f"无法读取文件 {file_path}: 所有编码都失败")
-                return []
-            
-            usages = []
-            for i, line in enumerate(lines, 1):
-                if function_name in line:
-                    usages.append(i)
-            
-            return usages
-        except Exception as e:
-            log_warning(f"读取文件失败 {file_path}: {e}")
-            return []
-
-    def _extract_function_code(self, file_path, start_line, end_line):
-        """
-        提取函数的完整代码
-        
-        Args:
-            file_path: 文件路径
-            start_line: 函数开始行号
-            end_line: 函数结束行号
-        
-        Returns:
-            str: 函数代码
-        """
-        if start_line <= 0 or end_line <= 0:
-            return ''
-        
-        try:
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                lines = f.readlines()
-                if start_line <= len(lines) and end_line <= len(lines):
-                    function_lines = lines[start_line-1:end_line]
-                    return ''.join(function_lines)
-        except Exception as e:
-            self.logger.warning(f"提取函数代码时出错 {file_path}:{start_line}-{end_line}: {e}")
-        
-        return ''
-    
-    def _extract_usage_code_snippets(self, file_path, usage_line_numbers, function_name):
-        """
-        提取usage位置的代码片段
-        
-        Args:
-            file_path: 文件路径
-            usage_line_numbers: usage行号列表
-            function_name: 函数名
-        
-        Returns:
-            list: 代码片段列表，格式: [{'line_number': int, 'code_line': str, 'context': str}]
-        """
-        code_snippets = []
-        
-        try:
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                lines = f.readlines()
-                
-                for line_num in usage_line_numbers:
-                    if 1 <= line_num <= len(lines):
-                        # 获取当前行
-                        current_line = lines[line_num - 1].strip()
-                        
-                        # 获取上下文（前后各2行）
-                        context_start = max(1, line_num - 2)
-                        context_end = min(len(lines), line_num + 2)
-                        context_lines = []
-                        
-                        for i in range(context_start, context_end + 1):
-                            prefix = '>>> ' if i == line_num else '    '
-                            context_lines.append(f"{prefix}{i:4d}: {lines[i-1].rstrip()}")
-                        
-                        code_snippets.append({
-                            'line_number': line_num,
-                            'code_line': current_line,
-                            'context': '\n'.join(context_lines)
-                        })
-        
-        except Exception as e:
-            self.logger.warning(f"提取代码片段时出错 {file_path}: {e}")
-        
-        return code_snippets
 
     def compute_api_similarity(self, api_functions, output_dir: str, similarity_threshold: float = 0.2):
         """

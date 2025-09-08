@@ -3,7 +3,6 @@
 函数使用查找器 - 在代码仓库中查找函数的使用情况
 """
 
-import os
 import logging
 from typing import Dict, List, Optional
 from .file_finder import FileFinder
@@ -14,7 +13,7 @@ class FunctionUsageFinder:
     """
     函数使用查找器
     
-    提供4种函数使用查找功能
+    提供函数使用查找功能
     """
     
     def __init__(self, config_parser: ConfigParser = None):
@@ -31,52 +30,18 @@ class FunctionUsageFinder:
         # 使用统一的tree-sitter管理器
         self.tree_sitter_manager = get_tree_sitter_manager()
     
-    def find_usage_in_include_files(self, function_name: str, analyzed_functions: List = None) -> Dict[str, List[Dict]]:
+    def find_usage_in_repo(self, function_name: str, repo_root: str, analyzed_functions: List = None) -> Dict[str, List[Dict]]:
         """
-        在include_files中查找函数使用
-        
-        Args:
-            function_name: 要查找的函数名
-            analyzed_functions: 已分析的函数信息列表
-        
-        Returns:
-            Dict[str, List[Dict]]: 文件路径 -> 调用者信息列表的映射
-            调用者信息格式: {'name': str, 'start_line': int, 'end_line': int}
-        """
-        if not analyzed_functions:
-            return {}
-        
-        callers_by_file = {}
-        for function_info in analyzed_functions:
-            if hasattr(function_info, 'callees') and function_name in function_info.callees:
-                file_path = function_info.file_path
-                caller_info = {
-                    'name': function_info.name,
-                    'start_line': getattr(function_info, 'start_line', 0),
-                    'end_line': getattr(function_info, 'end_line', 0)
-                }
-                
-                if file_path not in callers_by_file:
-                    callers_by_file[file_path] = []
-                
-                # 检查是否已存在相同的调用者
-                existing_names = [caller['name'] for caller in callers_by_file[file_path]]
-                if caller_info['name'] not in existing_names:
-                    callers_by_file[file_path].append(caller_info)
-        
-        return callers_by_file
-    
-    def find_usage_in_non_include_files(self, function_name: str, repo_root: str) -> Dict[str, List[Dict]]:
-        """
-        在非include_files中查找函数使用
+        在仓库中查找函数使用
         
         Args:
             function_name: 要查找的函数名
             repo_root: 仓库根目录
+            analyzed_functions: 已分析的函数信息列表
         
         Returns:
             Dict[str, List[Dict]]: 文件路径 -> 调用者信息列表的映射
-            调用者信息格式: {'name': str, 'start_line': int, 'end_line': int}
+            调用者信息格式: {'name': str, 'start_line': int, 'end_line': int, 'code': str}
         """
         if not self.tree_sitter_manager.parser_available:
             self.logger.warning("tree-sitter解析器未初始化，无法解析文件")
@@ -85,102 +50,8 @@ class FunctionUsageFinder:
         # 获取所有C/C++文件
         all_files = self.file_finder.find_files(repo_root, recursive=True)
         
-        # 获取include_files列表
-        include_files = self._get_include_files()
-        
-        # 过滤出非include_files
-        non_include_files = []
-        for file_path in all_files:
-            abs_file_path = os.path.abspath(file_path)
-            is_include_file = any(
-                os.path.abspath(inc_file) == abs_file_path 
-                for inc_file in include_files
-            )
-            if not is_include_file:
-                non_include_files.append(file_path)
-        
-        return self._find_usage_in_files(function_name, non_include_files)
-    
-    def find_usage_in_all_files(self, function_name: str, repo_root: str, analyzed_functions: List = None) -> Dict[str, List[Dict]]:
-        """
-        在include_files和非include_files中查找函数使用
-        
-        Args:
-            function_name: 要查找的函数名
-            repo_root: 仓库根目录
-            analyzed_functions: 已分析的函数信息列表
-        
-        Returns:
-            Dict[str, List[Dict]]: 文件路径 -> 调用者信息列表的映射
-            调用者信息格式: {'name': str, 'start_line': int, 'end_line': int}
-        """
-        # 合并include_files和非include_files的结果
-        include_usage = self.find_usage_in_include_files(function_name, analyzed_functions)
-        non_include_usage = self.find_usage_in_non_include_files(function_name, repo_root)
-        
-        # 合并结果
-        all_usage = include_usage.copy()
-        for file_path, callers in non_include_usage.items():
-            if file_path in all_usage:
-                # 合并调用者列表，避免重复
-                existing_names = [caller['name'] for caller in all_usage[file_path]]
-                for caller in callers:
-                    if caller['name'] not in existing_names:
-                        all_usage[file_path].append(caller)
-            else:
-                all_usage[file_path] = callers
-        
-        return all_usage
-    
-    def find_usage_in_test_files(self, function_name: str, repo_root: str = None, all_usage: Dict[str, List[Dict]] = None) -> Dict[str, List[Dict]]:
-        """
-        在测试和示例文件中查找函数使用
-        包括路径中包含test、example、demo、sample等关键词的文件
-        
-        Args:
-            function_name: 要查找的函数名
-            repo_root: 仓库根目录（当all_usage为None时必需）
-            all_usage: 所有文件的usage结果，如果提供则直接过滤，否则先调用find_usage_in_all_files
-        
-        Returns:
-            Dict[str, List[Dict]]: 文件路径 -> 调用者信息列表的映射
-            调用者信息格式: {'name': str, 'start_line': int, 'end_line': int}
-        """
-        # 如果没有提供all_usage，则先获取所有文件的usage
-        if all_usage is None:
-            if repo_root is None:
-                raise ValueError("当all_usage为None时，repo_root参数是必需的")
-            all_usage = self.find_usage_in_all_files(function_name, repo_root)
-        
-        # 过滤出路径中包含测试和示例关键词的文件
-        test_keywords = ['test', 'example', 'demo', 'sample', 'tutorial']
-        test_usage = {}
-        
-        for file_path, callers in all_usage.items():
-            file_path_lower = file_path.lower()
-            if any(keyword in file_path_lower for keyword in test_keywords):
-                test_usage[file_path] = callers
-        
-        return test_usage
-    
-    def _get_include_files(self) -> List[str]:
-        """
-        获取include_files列表
-        
-        Returns:
-            List[str]: include_files路径列表
-        """
-        include_files = []
-        if self.config_parser:
-            try:
-                library_path = self.config_parser.get_library_path()
-                if self.config_parser.is_include_mode():
-                    include_file_names = self.config_parser.get_target_files()
-                    for file_name in include_file_names:
-                        include_files.append(os.path.join(library_path, file_name))
-            except Exception as e:
-                self.logger.warning(f"获取include_files失败: {e}")
-        return include_files
+        # 在所有文件中查找函数使用
+        return self._find_usage_in_files(function_name, all_files)
     
     def _find_usage_in_files(self, function_name: str, file_paths: List[str]) -> Dict[str, List[Dict]]:
         """
@@ -192,7 +63,7 @@ class FunctionUsageFinder:
         
         Returns:
             Dict[str, List[Dict]]: 文件路径 -> 调用者信息列表的映射
-            调用者信息格式: {'name': str, 'start_line': int, 'end_line': int}
+            调用者信息格式: {'name': str, 'start_line': int, 'end_line': int, 'code': str}
         """
         callers_by_file = {}
         
@@ -216,7 +87,7 @@ class FunctionUsageFinder:
         
         Returns:
             List[Dict]: 调用者信息列表
-            调用者信息格式: {'name': str, 'start_line': int, 'end_line': int}
+            调用者信息格式: {'name': str, 'start_line': int, 'end_line': int, 'code': str}
         """
         callers = []
         
@@ -235,12 +106,18 @@ class FunctionUsageFinder:
             function_calls = self._find_function_calls(tree.root_node, source_code, function_name)
             
             # 确定每个函数调用属于哪个函数定义
+            source_lines = source_code.split('\n')
             for call_line in function_calls:
                 containing_function_info = self._find_containing_function(call_line, function_definitions)
                 if containing_function_info:
                     # 检查是否已存在相同的调用者
                     existing_names = [caller['name'] for caller in callers]
                     if containing_function_info['name'] not in existing_names:
+                        # 添加函数完整代码
+                        start_line = containing_function_info['start_line']
+                        end_line = containing_function_info['end_line']
+                        function_code = '\n'.join(source_lines[start_line-1:end_line])
+                        containing_function_info['code'] = function_code
                         callers.append(containing_function_info)
         
         except Exception as e:

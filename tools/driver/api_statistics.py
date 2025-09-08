@@ -129,7 +129,7 @@ class APIStatistics:
             print(f"   [{i}/{len(api_functions)}] 处理函数: {func.name}")
             
             # 查找所有文件中的usage
-            all_usage = analyzer.find_usage_in_all_files(function_name=func.name)
+            all_usage = analyzer.find_usage_in_repo(function_name=func.name)
             
             if all_usage:
                 api_with_usage += 1
@@ -188,11 +188,22 @@ class APIStatistics:
             # 如果有缓存的all_usage数据，直接使用它来过滤测试文件
             if all_usage_cache and func.name in all_usage_cache:
                 all_usage = all_usage_cache[func.name]
-                # 使用重构后的find_usage_in_test_files，传入all_usage数据
-                test_usage = analyzer.find_usage_in_test_files(function_name=func.name, all_usage=all_usage)
+                # 从all_usage中过滤测试文件
+                test_keywords = ['test', 'example', 'demo', 'sample', 'tutorial']
+                test_usage = {}
+                for file_path, callers in all_usage.items():
+                    file_path_lower = file_path.lower()
+                    if any(keyword in file_path_lower for keyword in test_keywords):
+                        test_usage[file_path] = callers
             else:
-                # 查找测试文件中的usage（原有逻辑）
-                test_usage = analyzer.find_usage_in_test_files(function_name=func.name)
+                # 查找所有文件中的usage，然后过滤测试文件
+                all_usage = analyzer.find_usage_in_repo(function_name=func.name)
+                test_keywords = ['test', 'example', 'demo', 'sample', 'tutorial']
+                test_usage = {}
+                for file_path, callers in all_usage.items():
+                    file_path_lower = file_path.lower()
+                    if any(keyword in file_path_lower for keyword in test_keywords):
+                        test_usage[file_path] = callers
             
             if test_usage:
                 api_with_test_usage += 1
@@ -285,7 +296,7 @@ class APIStatistics:
             # 统计在test中有usage的API（利用已获取的usage数据）
             print("\n\n🧪 ======================= 统计API usage in the test files of the repository... ======================= ")
             
-            # 构建all_usage_cache，将usage_details转换为find_usage_in_all_files的格式
+            # 构建all_usage_cache，将usage_details转换为find_usage_in_repo的格式
             all_usage_cache = {}
             for func_name, details in usage_details.items():
                 all_usage_cache[func_name] = {}
