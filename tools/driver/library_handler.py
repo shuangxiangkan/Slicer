@@ -302,6 +302,83 @@ class LibraryHandler:
             log_warning(f"获取相对路径时发生错误: {e}")
             return os.path.basename(file_path)
 
+    def get_api_comments(self, api_functions, analyzer, output_dir: str):
+        """
+        获取API函数的注释信息并保存到文件
+        
+        Args:
+            api_functions: API函数列表，由get_all_apis返回
+            analyzer: RepoAnalyzer实例，用于获取函数注释
+            output_dir: 注释结果文件的输出目录
+            
+        Returns:
+            dict: 注释信息结果，格式为 {function_name: comment_details}
+        """
+        try:
+            if not api_functions:
+                log_warning("没有API函数可用于注释提取")
+                return {}
+            
+            log_info(f"开始提取 {len(api_functions)} 个API函数的注释...")
+            
+            # 存储所有注释结果
+            comments_results = {}
+            apis_with_comments = 0
+            
+            # 为每个API函数提取注释
+            for i, func in enumerate(api_functions, 1):
+                log_info(f"提取函数注释 {i}/{len(api_functions)}: {func.name}")
+                
+                # 获取完整注释和摘要信息
+                complete_comments = analyzer.get_function_complete_comments(func.name)
+                
+                # 统计详细信息
+                comment_details = {
+                    'function_name': func.name,
+                    'function_signature': func.get_signature(),
+                    'has_comments': bool(complete_comments),
+                    'complete_comments': complete_comments or '',
+                    'comment_length': len(complete_comments) if complete_comments else 0
+                }
+                
+                if complete_comments:
+                    apis_with_comments += 1
+                
+                comments_results[func.name] = comment_details
+            
+            # 计算统计信息
+            total_apis = len(api_functions)
+            comment_rate = (apis_with_comments / total_apis) * 100 if total_apis else 0
+            
+            # 保存注释结果到JSON文件
+            comments_file_path = os.path.join(output_dir, f"{self.library_name}_api_comments.json")
+            
+            # 构建JSON数据结构
+            json_data = {
+                "library_name": self.library_name,
+                "analysis_summary": {
+                    "total_api_functions": total_apis,
+                    "apis_with_comments": apis_with_comments,
+                    "comment_rate_percentage": round(comment_rate, 1)
+                },
+                "api_functions": comments_results
+            }
+            
+            import json
+            with open(comments_file_path, 'w', encoding='utf-8') as f:
+                json.dump(json_data, f, ensure_ascii=False, indent=2)
+            
+            log_info(f"API注释分析结果已保存到: {comments_file_path}")
+            log_success(f"API注释分析完成，共分析 {total_apis} 个函数，{apis_with_comments} 个有注释")
+            
+            return comments_results
+            
+        except Exception as e:
+            log_error(f"提取API注释时发生错误: {e}")
+            import traceback
+            traceback.print_exc()
+            return {}
+
     def compute_api_similarity(self, api_functions, output_dir: str, similarity_threshold: float = 0.2):
         """
         计算API函数之间的相似性并保存结果到文件
