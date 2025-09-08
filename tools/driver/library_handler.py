@@ -398,6 +398,15 @@ class LibraryHandler:
             
             log_info(f"开始搜索 {len(api_functions)} 个API函数的文档说明...")
             
+            # 获取文档配置
+            doc_config = self.config_parser.get_documentation_config()
+            target_files = None
+            if doc_config and doc_config.get('target_files'):
+                target_files = doc_config['target_files']
+                log_info(f"使用配置的目标文档文件: {target_files}")
+            else:
+                log_info("未配置目标文档文件，将搜索所有文档")
+            
             # 存储所有文档结果
             documentation_results = {}
             apis_with_docs = 0
@@ -406,8 +415,8 @@ class LibraryHandler:
             for i, func in enumerate(api_functions, 1):
                 log_info(f"搜索函数文档 {i}/{len(api_functions)}: {func.name}")
                 
-                # 使用RepoAnalyzer的search_api_in_documents方法搜索文档
-                doc_results = analyzer.search_api_in_documents(func.name)
+                # 使用RepoAnalyzer的search_api_in_documents方法搜索文档，传入目标文件配置
+                doc_results = analyzer.search_api_in_documents(func.name, target_files=target_files)
                 
                 # 统计详细信息
                 doc_details = {

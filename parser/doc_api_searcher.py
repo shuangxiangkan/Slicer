@@ -82,7 +82,8 @@ class DocumentApiSearcher:
         
     def search_api_in_documents(self, api_name: str, search_path: str, 
                                recursive: bool = True, 
-                               use_paragraph_extraction: bool = True) -> List[ApiDocumentInfo]:
+                               use_paragraph_extraction: bool = True,
+                               target_files: List[str] = None) -> List[ApiDocumentInfo]:
         """
         在文档文件中搜索API使用说明
         
@@ -91,6 +92,7 @@ class DocumentApiSearcher:
             search_path: 搜索路径
             recursive: 是否递归搜索
             use_paragraph_extraction: 是否使用段落提取，None时使用实例默认值
+            target_files: 指定要搜索的文件列表，如果为None则搜索所有文档文件
             
         Returns:
             包含API信息的列表
@@ -99,8 +101,25 @@ class DocumentApiSearcher:
         
         # 使用指定的提取方式
         
-        # 查找所有文档文件
-        doc_files = self._find_document_files(search_path, recursive)
+        # 查找文档文件
+        if target_files is not None:
+            # 使用指定的文件列表，将相对路径转换为绝对路径并过滤出文档文件
+            doc_files = []
+            for f in target_files:
+                # 如果是相对路径，则相对于search_path解析
+                if not os.path.isabs(f):
+                    full_path = os.path.join(search_path, f)
+                else:
+                    full_path = f
+                
+                # 检查文件是否存在且是文档文件
+                if os.path.exists(full_path) and is_document_file(full_path):
+                    doc_files.append(full_path)
+                else:
+                    logger.warning(f"指定的文档文件不存在或不是文档文件: {full_path}")
+        else:
+            # 查找所有文档文件
+            doc_files = self._find_document_files(search_path, recursive)
         
         logger.info(f"在 {len(doc_files)} 个文档文件中搜索API '{api_name}'")
         

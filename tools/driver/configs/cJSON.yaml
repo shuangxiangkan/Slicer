@@ -55,3 +55,7 @@ api_selection:
   keywords:           # required
     - "CJSON_PUBLIC"
   exclude: []         # optional
+
+documentation:       # optional
+  target_files:      # optional, specific documentation files to analyze
+    - "README.md"

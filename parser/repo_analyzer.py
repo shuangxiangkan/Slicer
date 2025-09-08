@@ -778,7 +778,8 @@ class RepoAnalyzer:
         )
     
     def search_api_in_documents(self, api_name: str, search_path: str = None, 
-                               use_paragraph_extraction: bool = True) -> List[Dict]:
+                               use_paragraph_extraction: bool = True,
+                               target_files: List[str] = None) -> List[Dict]:
         """
         在文档文件中搜索API使用说明
         
@@ -786,6 +787,7 @@ class RepoAnalyzer:
             api_name: 要搜索的API名称
             search_path: 搜索路径，如果为None则使用分析目标路径
             use_paragraph_extraction: 是否使用段落提取，默认为True
+            target_files: 指定要搜索的文件列表，如果为None则搜索所有文档文件
             
         Returns:
             包含API文档信息的列表
@@ -794,6 +796,7 @@ class RepoAnalyzer:
             search_path = self.get_analysis_target_path()
         
         results = self.doc_api_searcher.search_api_in_documents(
-            api_name, search_path, use_paragraph_extraction=use_paragraph_extraction
+            api_name, search_path, use_paragraph_extraction=use_paragraph_extraction,
+            target_files=target_files
         )
         return [result.to_dict() for result in results]

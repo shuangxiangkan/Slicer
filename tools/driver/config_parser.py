@@ -127,6 +127,16 @@ class ConfigParser:
             'exclude': api_data.get('exclude', [])
         }
     
+    def get_documentation_config(self) -> Optional[Dict[str, List[str]]]:
+        """Get documentation configuration (optional)"""
+        if 'documentation' not in self._config_data:
+            return None
+        
+        doc_data = self._config_data['documentation']
+        return {
+            'target_files': doc_data.get('target_files', [])
+        }
+    
     def format_command(self, command_template: str, **kwargs) -> str:
         """
         Format command template, replace placeholders
@@ -264,6 +274,12 @@ if __name__ == "__main__":
         print(f"Include Prefix: {api_selection['include_prefix']}")
         print(f"Keywords: {api_selection['keywords']}")
         print(f"Exclude: {api_selection['exclude']}")
+        
+        # Display documentation configuration
+        doc_config = parser.get_documentation_config()
+        if doc_config:
+            print(f"\n=== Documentation Configuration ===")
+            print(f"Target Files: {doc_config['target_files']}")
         
         # Test driver build commands
         print(f"\n=== Driver Build Commands ===")
