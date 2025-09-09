@@ -531,7 +531,14 @@ class LibraryHandler:
             
             # 转换相似性结果为JSON格式
             for func_name, similar_funcs in similarity_results.items():
+                # 找到目标函数对象以获取其完整签名
+                target_func = next((f for f in api_functions if f.name == func_name), None)
+                
                 json_data["similarity_results"][func_name] = {
+                    "target_function": {
+                        "function_name": func_name,
+                        "function_signature": target_func.get_signature() if target_func else func_name
+                    },
                     "similar_functions_count": len(similar_funcs),
                     "similar_functions": []
                 }
