@@ -85,6 +85,32 @@ def check_afl_instrumentation(library_path: str) -> Tuple[bool, str]:
         return False, f"检查过程中发生错误: {str(e)}"
 
 
+def save_prompt_to_file(prompt: str, library_output_dir: str, api_name: str) -> str:
+    """
+    将生成的prompt保存到指定目录下的文件中。
+    
+    Args:
+        prompt: 要保存的prompt内容
+        library_output_dir: 库输出目录路径
+        api_name: API函数名
+        
+    Returns:
+        保存的文件路径
+    """
+    # 创建API专用目录
+    api_dir = os.path.join(library_output_dir, api_name)
+    os.makedirs(api_dir, exist_ok=True)
+    
+    # 生成prompt文件路径
+    prompt_file = os.path.join(api_dir, f"{api_name}_prompt.txt")
+    
+    # 写入prompt内容
+    with open(prompt_file, 'w', encoding='utf-8') as f:
+        f.write(prompt)
+    
+    return prompt_file
+
+
 if __name__ == "__main__":
     ready, missing = verify_fuzzing_environment()
     if ready:

@@ -76,11 +76,19 @@ class ConfigParser:
         }
     
     def get_headers(self) -> List[str]:
-        """Get header file list"""
+        """Get header files list"""
         return self._config_data.get('headers', [])
     
+    def get_library_name(self) -> str:
+        """Get library name"""
+        return self._config_data['library']['name']
+    
+    def get_include_headers(self) -> List[str]:
+        """Get include headers for fuzz harness"""
+        return self.get_headers()
+    
     def get_source_dirs(self) -> List[str]:
-        """Get source directory/file list"""
+        """Get source directories list"""
         return self._config_data.get('source_dirs', [])
     
     def get_exclude_dirs(self) -> List[str]:

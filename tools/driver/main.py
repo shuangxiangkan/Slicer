@@ -128,14 +128,30 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
         # 步骤4: 计算API相似性并保存结果
         similarity_results = handler.compute_api_similarity(api_functions, library_output_dir)
         
-        # 步骤5: 计算API usage统计并保存结果
-        usage_results, api_usage_categories = handler.get_api_usage(api_functions, analyzer, library_output_dir)
-        
-        # 步骤6: 提取API注释并保存结果
+        # 步骤5: 提取API注释并保存结果
         comments_results = handler.get_api_comments(api_functions, analyzer, library_output_dir)
         
-        # 步骤7: 搜索API文档说明并保存结果
+        # 步骤6: 搜索API文档说明并保存结果
         documentation_results = handler.get_api_documentation(api_functions, analyzer, library_output_dir)
+        
+        # 步骤5: 计算API usage统计并保存结果
+        usage_results, api_categories = handler.get_api_usage(api_functions, analyzer, library_output_dir)
+        
+        # 步骤8: 生成API harness
+        from harness_generator import HarnessGenerator
+        harness_generator = HarnessGenerator(config_parser)
+        harness_success = harness_generator.generate_harnesses_for_all_apis(
+             api_functions,
+             api_categories,
+             usage_results,
+             similarity_results,
+             comments_results,
+             documentation_results,
+             library_output_dir
+         )
+        
+        if not harness_success:
+            log_warning("Harness生成过程中出现问题，但分析结果已保存")
         
         log_success("Harness generation completed successfully.")
             
