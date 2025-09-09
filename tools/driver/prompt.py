@@ -66,7 +66,7 @@ class PromptGenerator:
 
 {language_requirements}
 
-Please use the standard Libfuzzer entry function: `{entry_function}` to generate complete {code_style} code, including all necessary header files, function implementations, and error handling. The code should be directly usable for Libfuzzer fuzzing tests.
+Please use the standard Libfuzzer entry function: `{entry_function}` to generate 3 complete {code_style} fuzz harnesses, including all necessary header files, function implementations, and error handling. The code should be directly usable for Libfuzzer fuzzing tests.
 """
         
         return prompt

@@ -8,9 +8,16 @@ Harness Generator Module
 
 import os
 import json
+import re
 from typing import Dict, List, Any
 from log import log_info, log_success, log_warning, log_error
-from utils import save_prompt_to_file
+from utils import save_prompt_to_file, save_llm_response_to_file
+
+# Import LLM modules
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+from llm.base import create_llm_client
+from llm.config import LLMConfig
 
 
 class HarnessGenerator:
@@ -20,6 +27,15 @@ class HarnessGenerator:
         self.config_parser = config_parser
         from prompt import PromptGenerator
         self.prompt_generator = PromptGenerator(config_parser)
+        
+        # Initialize LLM client
+        try:
+            self.llm_config = LLMConfig.from_env()
+            self.llm_client = create_llm_client(provider=self.llm_config.default_provider, config=self.llm_config)
+            log_info(f"LLM client initialized with provider: {self.llm_config.default_provider}")
+        except Exception as e:
+            log_warning(f"Failed to initialize LLM client: {e}")
+            self.llm_client = None
     
     def generate_harnesses_for_all_apis(self, 
                                        api_functions: List[Any],
@@ -56,14 +72,28 @@ class HarnessGenerator:
             # 按优先级顺序处理：fuzz -> test_demo -> other -> no_usage
             priority_order = ["fuzz", "test_demo", "other", "no_usage"]
             
+            # 注释掉所有API的测试，只测试有fuzz usage的API
+            # for priority in priority_order:
+            #     api_list = prioritized_apis.get(priority, [])
+            #     for api_func in api_list:
+            
+            # 只处理有fuzz usage的API进行测试
             for priority in priority_order:
                 api_list = prioritized_apis.get(priority, [])
-                if not api_list:
+                
+                # 过滤出有fuzz usage的API
+                fuzz_apis = []
+                for api_func in api_list:
+                    api_name = getattr(api_func, 'name', 'unknown')
+                    if api_name in usage_results and usage_results[api_name].get('usage_category') == 'fuzz':
+                        fuzz_apis.append(api_func)
+                
+                if not fuzz_apis:
                     continue
                     
-                log_info(f"处理 {priority} 类型API ({len(api_list)}个)...")
+                log_info(f"处理 {priority} 类型API中有fuzz usage的API ({len(fuzz_apis)}个)...")
                 
-                for api_func in api_list:
+                for api_func in fuzz_apis:
                     api_info = self._collect_api_info(
                         api_func,
                         usage_results,
@@ -74,11 +104,15 @@ class HarnessGenerator:
                     )
                     api_info_list.append(api_info)
                     
-                    # Generate prompt for each API and save to file
-                    prompt = self.generate_fuzz_harness_prompt(api_info)
-                    api_name = api_info.get('api_name', 'unknown_api')
-                    prompt_file = save_prompt_to_file(prompt, library_output_dir, api_name)
-                    log_info(f"Generated prompt for {api_name} saved to {prompt_file}")
+                    # Generate harnesses using LLM (包含prompt生成和保存)
+                    if self.llm_client:
+                        harness_success = self.generate_harnesses_for_api(api_info, library_output_dir)
+                        if harness_success:
+                            log_success(f"Successfully generated harnesses for {api_info.get('api_name', 'unknown_api')}")
+                        else:
+                            log_warning(f"Failed to generate harnesses for {api_info.get('api_name', 'unknown_api')}")
+                    else:
+                        log_warning(f"LLM client not available, skipping harness generation for {api_info.get('api_name', 'unknown_api')}")
             
             # 保存API信息到JSON文件
             api_info_file = os.path.join(library_output_dir, "api_info_prioritized.json")
@@ -210,3 +244,112 @@ class HarnessGenerator:
     def generate_fuzz_harness_prompt(self, api_info: Dict[str, Any]) -> str:
         """为单个API生成fuzz harness的prompt"""
         return self.prompt_generator.generate_fuzz_harness_prompt(api_info)
+    
+    def _extract_code_from_response(self, response: str) -> str:
+        """Extract C/C++ code from LLM response"""
+        # Try to find code blocks marked with ```c, ```cpp, or ```
+        code_patterns = [
+            r'```(?:c|cpp|c\+\+)\s*\n(.*?)```',
+            r'```\s*\n(.*?)```'
+        ]
+        
+        for pattern in code_patterns:
+            matches = re.findall(pattern, response, re.DOTALL | re.IGNORECASE)
+            if matches:
+                # Return the first (usually longest) code block
+                return matches[0].strip()
+        
+        # If no code blocks found, return the entire response
+        return response.strip()
+    
+    def _extract_multiple_harnesses(self, response: str) -> List[str]:
+        """Extract multiple C/C++ harnesses from LLM response"""
+        # Look for code blocks marked with ```c, ```cpp, or ```
+        patterns = [
+            r'```(?:c|cpp)\s*\n(.*?)```',
+            r'```\s*\n(.*?)```'
+        ]
+        
+        harnesses = []
+        for pattern in patterns:
+            matches = re.findall(pattern, response, re.DOTALL | re.IGNORECASE)
+            if matches:
+                harnesses.extend([match.strip() for match in matches])
+                break
+        
+        # If we found harnesses, return up to 3
+        if harnesses:
+            return harnesses[:3]
+        
+        # If no code blocks found, try to split by harness comments
+        harness_pattern = r'//\s*Harness\s*\d+.*?(?=//\s*Harness\s*\d+|$)'
+        harness_matches = re.findall(harness_pattern, response, re.DOTALL | re.IGNORECASE)
+        
+        if harness_matches:
+            return [match.strip() for match in harness_matches[:3]]
+        
+        # If still no matches, return the entire response as single harness
+        return [response.strip()]
+    
+    def _get_file_extension(self) -> str:
+        """Get file extension based on library language"""
+        library_info = self.config_parser.get_library_info()
+        language = library_info.get('language', 'C').upper()
+        return '.cpp' if language == 'C++' else '.c'
+    
+    def generate_harnesses_for_api(self, api_info: Dict[str, Any], library_output_dir: str) -> bool:
+        """Generate multiple harnesses for a single API"""
+        if not self.llm_client:
+            log_error("LLM client not available, cannot generate harnesses")
+            return False
+        
+        api_name = api_info.get('api_name', 'unknown_api')
+        harness_dir = os.path.join(library_output_dir, api_name, 'harness_libfuzzer')
+        
+        # Create harness directory if it doesn't exist
+        os.makedirs(harness_dir, exist_ok=True)
+        
+        # Generate and save prompt
+        prompt = self.generate_fuzz_harness_prompt(api_info)
+        prompt_file = save_prompt_to_file(prompt, library_output_dir, api_name)
+        log_info(f"Generated prompt for {api_name} saved to {prompt_file}")
+        
+        # Get file extension
+        file_ext = self._get_file_extension()
+        
+        # Generate 3 harnesses in one call
+        success_count = 0
+        try:
+            log_info(f"Generating 3 harnesses for {api_name}...")
+            
+            # Call LLM to generate all 3 harnesses
+            response = self.llm_client.generate_response(prompt)
+            
+            # Save LLM response to file
+            response_filepath = save_llm_response_to_file(response, library_output_dir, api_name)
+            log_info(f"LLM response for {api_name} saved to {response_filepath}")
+            
+            # Extract 3 harnesses from response
+            harnesses = self._extract_multiple_harnesses(response)
+            
+            # Save each harness to file
+            for i, harness_code in enumerate(harnesses, 1):
+                if harness_code.strip():
+                    harness_filename = f"{api_name}_harness_{i}{file_ext}"
+                    harness_filepath = os.path.join(harness_dir, harness_filename)
+                    
+                    with open(harness_filepath, 'w', encoding='utf-8') as f:
+                        f.write(harness_code)
+                    
+                    log_info(f"Harness {i} for {api_name} saved to {harness_filepath}")
+                    success_count += 1
+                else:
+                    log_warning(f"Empty harness {i} for {api_name}, skipping")
+            
+            if success_count == 0:
+                log_error(f"No valid harnesses extracted for {api_name}")
+                
+        except Exception as e:
+            log_error(f"Failed to generate harnesses for {api_name}: {e}")
+        
+        return success_count > 0
