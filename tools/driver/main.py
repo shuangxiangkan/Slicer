@@ -113,33 +113,33 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
         
         # 步骤1: 编译库文件
         success = compile_library_static_or_dynamic(handler, library_type)
+        if not success:
+            log_error("库文件编译失败，终止harness生成")
+            return False
         
         # 步骤2: 提取API并保存到文件
         api_functions = handler.get_all_apis(library_output_dir, analyzer)
         
-        # 步骤3: 计算API相似性并保存结果
-        similarity_results = {}
-        if api_functions:
-            similarity_results = handler.compute_api_similarity(api_functions, library_output_dir)
+        # 步骤3: 检查API函数提取结果
+        if not api_functions:
+            log_error("未找到API函数，终止harness生成")
+            return False
         
-        # 步骤4: 计算API usage统计并保存结果
-        usage_results = {}
-        if api_functions:
-            usage_results = handler.get_api_usage(api_functions, analyzer, library_output_dir)
+        # 步骤4: 计算API相似性并保存结果
+        similarity_results = handler.compute_api_similarity(api_functions, library_output_dir)
         
-        # 步骤5: 提取API注释并保存结果
-        comments_results = {}
-        if api_functions:
-            comments_results = handler.get_api_comments(api_functions, analyzer, library_output_dir)
+        # 步骤5: 计算API usage统计并保存结果
+        usage_results, api_usage_categories = handler.get_api_usage(api_functions, analyzer, library_output_dir)
         
-        # 步骤6: 搜索API文档说明并保存结果
-        documentation_results = {}
-        if api_functions:
-            documentation_results = handler.get_api_documentation(api_functions, analyzer, library_output_dir)
+        # 步骤6: 提取API注释并保存结果
+        comments_results = handler.get_api_comments(api_functions, analyzer, library_output_dir)
+        
+        # 步骤7: 搜索API文档说明并保存结果
+        documentation_results = handler.get_api_documentation(api_functions, analyzer, library_output_dir)
         
         log_success("Harness generation completed successfully.")
             
-        return 1
+        return True
         
     except Exception as e:
         log_error(f"Error during harness generation: {e}")

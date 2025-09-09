@@ -137,6 +137,14 @@ class LibraryHandler:
             usage_results = {}
             api_with_usage = 0
             
+            # 存储API分类信息
+            api_categories = {
+                'with_fuzz': [],
+                'with_test_demo': [],
+                'with_other_usage': [],
+                'no_usage': []
+            }
+            
             # 为每个API函数统计usage
             for i, func in enumerate(api_functions, 1):
                 log_info(f"分析函数usage {i}/{len(api_functions)}: {func.name}")
@@ -159,6 +167,18 @@ class LibraryHandler:
                     
                     # 先对文件按优先级排序，同一优先级内按caller代码量排序
                     sorted_files = self._sort_files_by_priority(all_usage)
+                    
+                    # 分析API的usage类型并分类
+                    api_category = self._categorize_api_usage(all_usage)
+                    if api_category == 'fuzz':
+                        api_categories['with_fuzz'].append(func.name)
+                    elif api_category == 'test_demo':
+                        api_categories['with_test_demo'].append(func.name)
+                    else:
+                        api_categories['with_other_usage'].append(func.name)
+                    
+                    # 将分类信息添加到usage详情中
+                    usage_details['usage_category'] = api_category
                     
                     for file_path in sorted_files:
                         callers = all_usage[file_path]
@@ -188,6 +208,11 @@ class LibraryHandler:
                             'usage_count': len(callers)
                         }
                 
+                else:
+                    # 没有usage的API
+                    api_categories['no_usage'].append(func.name)
+                    usage_details['usage_category'] = 'no_usage'
+                
                 usage_results[func.name] = usage_details
             
             # 计算统计信息
@@ -205,6 +230,24 @@ class LibraryHandler:
                     "apis_with_usage": api_with_usage,
                     "usage_rate_percentage": round(usage_rate, 1)
                 },
+                "api_categories": {
+                    "with_fuzz": {
+                        "count": len(api_categories['with_fuzz']),
+                        "apis": api_categories['with_fuzz']
+                    },
+                    "with_test_demo": {
+                        "count": len(api_categories['with_test_demo']),
+                        "apis": api_categories['with_test_demo']
+                    },
+                    "with_other_usage": {
+                        "count": len(api_categories['with_other_usage']),
+                        "apis": api_categories['with_other_usage']
+                    },
+                    "no_usage": {
+                        "count": len(api_categories['no_usage']),
+                        "apis": api_categories['no_usage']
+                    }
+                },
                 "api_functions": usage_results
             }
             
@@ -214,14 +257,53 @@ class LibraryHandler:
             
             log_info(f"API usage分析结果已保存到: {usage_file_path}")
             log_success(f"API usage分析完成，共分析 {total_apis} 个函数，{api_with_usage} 个有usage")
+            log_info(f"API分类统计: Fuzz({len(api_categories['with_fuzz'])}), Test/Demo({len(api_categories['with_test_demo'])}), Other({len(api_categories['with_other_usage'])}), No Usage({len(api_categories['no_usage'])})")
             
-            return usage_results
+            return usage_results, api_categories
             
         except Exception as e:
             log_error(f"计算API usage时发生错误: {e}")
             import traceback
             traceback.print_exc()
-            return {}
+            return {}, {}
+    
+    def _categorize_api_usage(self, all_usage):
+        """
+        根据usage文件路径分析API的使用类型
+        
+        Args:
+            all_usage: 包含文件路径和对应caller信息的字典
+            
+        Returns:
+            str: API分类 ('fuzz', 'test_demo', 'other')
+        """
+        try:
+            has_fuzz = False
+            has_test_demo = False
+            
+            for file_path in all_usage.keys():
+                relative_path = self._get_relative_path(file_path)
+                path_lower = relative_path.lower()
+                
+                # 检查是否有fuzz相关的usage
+                if 'fuzz' in path_lower:
+                    has_fuzz = True
+                
+                # 检查是否有test/demo相关的usage
+                if any(keyword in path_lower for keyword in ['test', 'demo']):
+                    has_test_demo = True
+            
+            # 优先级：fuzz > test_demo > other
+            if has_fuzz:
+                return 'fuzz'
+            elif has_test_demo:
+                return 'test_demo'
+            else:
+                return 'other'
+                
+        except Exception as e:
+            log_warning(f"分类API usage时发生错误: {e}")
+            return 'other'
     
     def _sort_files_by_priority(self, all_usage):
         """
