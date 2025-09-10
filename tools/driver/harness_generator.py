@@ -12,6 +12,7 @@ import re
 from typing import Dict, List, Any
 from log import log_info, log_success, log_warning, log_error
 from utils import save_prompt_to_file, save_llm_response_to_file
+from libfuzzer2afl import convert_harness_file
 
 # Import LLM modules
 import sys
@@ -304,10 +305,12 @@ class HarnessGenerator:
             return False
         
         api_name = api_info.get('api_name', 'unknown_api')
-        harness_dir = os.path.join(library_output_dir, api_name, 'harness_libfuzzer')
+        harness_libfuzzer_dir = os.path.join(library_output_dir, api_name, 'harness_libfuzzer')
+        harness_afl_dir = os.path.join(library_output_dir, api_name, 'harness')
         
-        # Create harness directory if it doesn't exist
-        os.makedirs(harness_dir, exist_ok=True)
+        # Create harness directories if they don't exist
+        os.makedirs(harness_libfuzzer_dir, exist_ok=True)
+        os.makedirs(harness_afl_dir, exist_ok=True)
         
         # Generate and save prompt
         prompt = self.generate_fuzz_harness_prompt(api_info)
@@ -336,13 +339,22 @@ class HarnessGenerator:
             for i, harness_code in enumerate(harnesses, 1):
                 if harness_code.strip():
                     harness_filename = f"{api_name}_harness_{i}{file_ext}"
-                    harness_filepath = os.path.join(harness_dir, harness_filename)
                     
-                    with open(harness_filepath, 'w', encoding='utf-8') as f:
+                    # Save LibFuzzer version
+                    libfuzzer_filepath = os.path.join(harness_libfuzzer_dir, harness_filename)
+                    with open(libfuzzer_filepath, 'w', encoding='utf-8') as f:
                         f.write(harness_code)
+                    log_info(f"Harness {i} for {api_name} saved to {libfuzzer_filepath}")
                     
-                    log_info(f"Harness {i} for {api_name} saved to {harness_filepath}")
-                    success_count += 1
+                    # Convert to AFL++ version
+                    afl_filepath = os.path.join(harness_afl_dir, harness_filename)
+                    if convert_harness_file(libfuzzer_filepath, afl_filepath):
+                        log_info(f"AFL++ harness {i} for {api_name} saved to {afl_filepath}")
+                        success_count += 1
+                    else:
+                        log_warning(f"Failed to convert harness {i} for {api_name} to AFL++ format")
+                        # Still count as success if LibFuzzer version was saved
+                        success_count += 1
                 else:
                     log_warning(f"Empty harness {i} for {api_name}, skipping")
             
