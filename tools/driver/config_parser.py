@@ -5,6 +5,7 @@ For parsing YAML configuration files of fuzzing libraries
 """
 
 import yaml
+import os
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
@@ -243,6 +244,49 @@ class ConfigParser:
         output_dir = self.base_dir / "Output" / library_name
         output_dir.mkdir(parents=True, exist_ok=True)
         return str(output_dir)
+    
+    def get_header_file_paths(self) -> List[str]:
+        """Get absolute paths of header files
+        
+        Returns:
+            List of absolute paths to header files
+        """
+        header_files = self.get_headers()
+        library_dir = self.get_target_library_dir()
+        
+        header_paths = []
+        for header_file in header_files:
+            if os.path.isabs(header_file):
+                header_paths.append(header_file)
+            else:
+                # 直接按照配置文件中的路径，相对于库目录
+                header_path = os.path.join(library_dir, header_file)
+                header_paths.append(os.path.abspath(header_path))
+        
+        return header_paths
+    
+    def get_library_file_path(self, library_type: str = "static") -> str:
+        """Get absolute path of compiled library file
+        
+        Args:
+            library_type: Type of library ("static" or "shared")
+            
+        Returns:
+            Absolute path to the library file
+        """
+        if library_type == "static":
+            build_config = self.get_static_build_config()
+        elif library_type == "shared":
+            build_config = self.get_shared_build_config()
+            if build_config is None:
+                raise ValueError(f"Shared library build configuration not found")
+        else:
+            raise ValueError(f"Invalid library type: {library_type}")
+        
+        formatted_output = self.format_command(build_config['output'])
+        library_dir = self.get_target_library_dir()
+        library_path = os.path.join(library_dir, formatted_output)
+        return os.path.abspath(library_path)
     
     def get_raw_config(self) -> Dict[str, Any]:
         """Get raw configuration data"""

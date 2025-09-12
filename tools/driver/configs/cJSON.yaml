@@ -23,7 +23,7 @@ exclude_dirs:      # optional
 
 static_build:      # required
   static_lib_name: "libcjson.a"
-  output: "cJSON/build/{static_lib_name}"
+  output: "build/{static_lib_name}"
   command: |
     rm -rf cJSON && \
     git clone {repo_url} cJSON && \
@@ -34,7 +34,7 @@ static_build:      # required
 
 shared_build:     # optional
   shared_lib_name: "libcjson.so"
-  output: "cJSON/build/{shared_lib_name}"
+  output: "build/{shared_lib_name}"
   command: |
     rm -rf cJSON && \
     git clone {repo_url} cJSON && \

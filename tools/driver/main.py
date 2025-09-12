@@ -41,35 +41,6 @@ def create_repo_analyzer(config_parser: ConfigParser) -> RepoAnalyzer:
     
     return analyzer
 
-def compile_library_static_or_dynamic(handler: LibraryHandler, library_type: str = "static") -> bool:
-    """
-    编译库文件的通用函数
-    
-    Args:
-        handler: LibraryHandler实例
-        library_type: 库类型 ("static", "shared")
-    
-    Returns:
-        True if compilation is successful, False otherwise.
-    """
-    log_info(f"Compilation type: {library_type}")
-    
-    if library_type not in ["static", "shared"]:
-        log_error(f"Invalid library type: {library_type}. Must be 'static' or 'shared'.")
-        return False
-    
-    try:
-        if library_type == "static":
-            success = handler.compile_library("static")
-        elif library_type == "shared":
-            success = handler.compile_library("shared")
-        
-        return success
-        
-    except Exception as e:
-        log_error(f"Error during library compilation: {e}")
-        return False
-
 def harness_generation(config_path: str, library_type: str = "static") -> bool:
     """
     生成harness的主函数
@@ -93,7 +64,7 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
         handler = LibraryHandler(config_parser)
         
         # 步骤1: 编译库文件
-        success = compile_library_static_or_dynamic(handler, library_type)
+        success = handler.compile_library(library_type)
         if not success:
             log_error("库文件编译失败，终止harness生成")
             return False
