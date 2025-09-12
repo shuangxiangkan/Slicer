@@ -11,16 +11,24 @@ from typing import Dict, List, Optional, Any
 class ConfigParser:
     """Configuration file parser"""
     
-    def __init__(self, config_path: str):
+    def __init__(self, config_path: str, base_dir: Optional[str] = None):
         """
         Initialize configuration parser
         
         Args:
             config_path: Configuration file path
+            base_dir: Base directory path, defaults to config_parser.py file's directory
         """
         self.config_path = Path(config_path)
         if not self.config_path.exists():
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
+        
+        # Set base directory
+        if base_dir is None:
+            # Default to config_parser.py file's directory
+            self.base_dir = Path(__file__).parent
+        else:
+            self.base_dir = Path(base_dir)
         
         self._config_data = self._load_config()
         self._validate_config()
@@ -204,6 +212,37 @@ class ConfigParser:
         if command_template is None:
             return None
         return self.format_command(command_template, driver=driver_path, output=output_path)
+    
+    def get_libraries_dir(self) -> str:
+        """Get Libraries directory path (where all libraries are downloaded)
+            
+        Returns:
+            Libraries directory path
+        """
+        libraries_dir = self.base_dir / "Libraries"
+        libraries_dir.mkdir(exist_ok=True)
+        return str(libraries_dir)
+    
+    def get_target_library_dir(self) -> str:
+        """Get target library directory path (specific library being analyzed)
+            
+        Returns:
+            Target library directory path
+        """
+        libraries_base_dir = self.get_libraries_dir()
+        library_name = self.get_library_info()['name']
+        return str(Path(libraries_base_dir) / library_name)
+    
+    def get_output_dir(self) -> str:
+        """Get Output directory path for the library
+            
+        Returns:
+            Library-specific output directory path
+        """
+        library_name = self.get_library_info()['name']
+        output_dir = self.base_dir / "Output" / library_name
+        output_dir.mkdir(parents=True, exist_ok=True)
+        return str(output_dir)
     
     def get_raw_config(self) -> Dict[str, Any]:
         """Get raw configuration data"""

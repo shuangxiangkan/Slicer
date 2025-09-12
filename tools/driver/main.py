@@ -3,7 +3,6 @@
 Library compilation utility
 """
 
-import os
 import sys
 from pathlib import Path
 from library_handler import LibraryHandler
@@ -18,29 +17,23 @@ from parser.repo_analyzer import RepoAnalyzer
 
 def create_repo_analyzer(config_parser: ConfigParser) -> RepoAnalyzer:
     """
-    创建并配置RepoAnalyzer实例，并执行基础分析
+    创建并初始化RepoAnalyzer实例
     
     Args:
-        config_parser: 配置解析器对象
+        config_parser: 配置解析器实例
         
     Returns:
         已完成基础分析的RepoAnalyzer实例
     """
-    library_name = config_parser.get_library_info()['name']
-    source_dirs = config_parser.get_source_dirs()
+    log_info(f"使用直接参数模式进行分析: {config_parser.get_target_library_dir()}")
     
-    config_dict = {
-        "library_path": f"benchmarks/{library_name}",  # 相对于项目根目录的路径
-        "header_files": config_parser.get_headers(),
-        "include_files": source_dirs,  # 使用处理后的source_dirs作为include_files
-        "exclude_files": config_parser.get_exclude_dirs(),
-        "api_selection": config_parser.get_api_selection()
-    }
-    
-    log_info(f"使用配置字典进行分析: {config_dict['library_path']}")
-    
-    # 初始化分析器（字典配置模式）
-    analyzer = RepoAnalyzer(config_dict=config_dict)
+    # 初始化分析器（直接参数模式）
+    analyzer = RepoAnalyzer(
+        library_path=config_parser.get_target_library_dir(),
+        header_files=config_parser.get_headers(),
+        include_files=config_parser.get_source_dirs(),
+        exclude_files=config_parser.get_exclude_dirs()
+    )
     
     # 执行基础分析
     result = analyzer.analyze()
@@ -89,27 +82,15 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
         True if harness generation is successful, False otherwise.
     """
     try:
-        # 获取当前脚本所在目录
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        # 解析配置获取库名
+        # 解析配置
         config_parser = ConfigParser(config_path)
-        library_name = config_parser.get_library_info()['name']
         log_success("Configuration parsed successfully.")
         
-        # 创建Libraries目录（不创建库子目录，让构建命令通过git clone创建）
-        libraries_base_dir = os.path.join(base_dir, "Libraries")
-        os.makedirs(libraries_base_dir, exist_ok=True)
-        library_dir = libraries_base_dir  # 构建命令将在此目录下执行
+        # 通过config_parser获取目录路径
+        library_output_dir = config_parser.get_output_dir()
         
-        # 创建Output目录和库子目录
-        output_dir = os.path.join(base_dir, "Output")
-        library_output_dir = os.path.join(output_dir, library_name)
-        os.makedirs(library_output_dir, exist_ok=True)
-        
-        # 创建LibraryHandler和RepoAnalyzer实例
-        handler = LibraryHandler(config_parser, library_dir)
-        analyzer = create_repo_analyzer(config_parser)
+        # 创建LibraryHandler实例
+        handler = LibraryHandler(config_parser)
         
         # 步骤1: 编译库文件
         success = compile_library_static_or_dynamic(handler, library_type)
@@ -117,7 +98,10 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
             log_error("库文件编译失败，终止harness生成")
             return False
         
-        # 步骤2: 提取API并保存到文件
+        # 步骤2: 创建RepoAnalyzer实例（在编译完成后）
+        analyzer = create_repo_analyzer(config_parser)
+        
+        # 步骤3: 提取API并保存到文件
         api_functions = handler.get_all_apis(library_output_dir, analyzer)
         
         # 步骤3: 检查API函数提取结果

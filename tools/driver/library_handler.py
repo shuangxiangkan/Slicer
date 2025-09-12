@@ -13,17 +13,16 @@ from similarity_analyzer import APISimilarityAnalyzer
 class LibraryHandler:
     """Handles library operations like compilation."""
 
-    def __init__(self, config_parser: ConfigParser, library_dir: str):
+    def __init__(self, config_parser: ConfigParser):
         """
         Initialize LibraryHandler with configuration.
         
         Args:
             config_parser: ConfigParser object with loaded configuration.
-            library_dir: Specific library directory path.
         """
         self.config_parser = config_parser
         self.library_name = self.config_parser.get_library_info()['name']
-        self.library_dir = library_dir
+        self.library_dir = self.config_parser.get_libraries_dir()
 
     def get_all_apis(self, output_dir: str, analyzer=None):
         """
