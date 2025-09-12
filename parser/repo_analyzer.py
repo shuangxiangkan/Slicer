@@ -25,18 +25,26 @@ logger = logging.getLogger(__name__)
 class RepoAnalyzer:
     """代码仓库分析器（核心分析功能）"""
     
-    def __init__(self, config_or_file_path=None, config_dict=None):
+    def __init__(self, config_or_file_path=None, library_path=None, header_files=None, include_files=None, exclude_files=None):
         """
         初始化分析器
         
         Args:
-            config_or_file_path: 配置文件路径或C/C++文件路径（与config_dict二选一）
-            config_dict: 配置字典，包含所需的配置信息（与config_or_file_path二选一）
+            config_or_file_path: 配置文件路径或C/C++文件路径
+            library_path: 库的绝对路径（当使用直接参数模式时）
+            header_files: 头文件的相对路径列表（相对于library_path）
+            include_files: 包含文件的相对路径或文件夹列表（相对于library_path）
+            exclude_files: 排除文件的相对路径或文件夹列表（相对于library_path）
         """
-        if config_or_file_path is None and config_dict is None:
-            raise ValueError("必须提供config_or_file_path或config_dict中的一个")
-        if config_or_file_path is not None and config_dict is not None:
-            raise ValueError("config_or_file_path和config_dict不能同时提供")
+        # 参数验证
+        direct_params_provided = any([library_path, header_files, include_files, exclude_files])
+        
+        if config_or_file_path is None and not direct_params_provided:
+            raise ValueError("必须提供config_or_file_path或直接参数（library_path等）")
+        if config_or_file_path is not None and direct_params_provided:
+            raise ValueError("config_or_file_path和直接参数不能同时提供")
+        if direct_params_provided and library_path is None:
+            raise ValueError("使用直接参数模式时，library_path是必需的")
             
         self.file_finder = FileFinder()
         
@@ -56,9 +64,9 @@ class RepoAnalyzer:
         self.processed_files = []
         
         # 根据输入类型进行初始化
-        if config_dict is not None:
-            # 字典配置模式
-            self._init_from_dict(config_dict)
+        if direct_params_provided:
+            # 直接参数模式
+            self._init_from_params(library_path, header_files, include_files, exclude_files)
         elif is_supported_file(config_or_file_path):
             # 单文件模式
             self._init_single_file(config_or_file_path)
@@ -66,10 +74,25 @@ class RepoAnalyzer:
             # 配置文件模式
             self._init_from_config_file(config_or_file_path)
     
-    def _init_from_dict(self, config_dict: dict):
-        """从字典配置初始化"""
+    def _init_from_params(self, library_path: str, header_files=None, include_files=None, exclude_files=None):
+        """从直接参数初始化"""
         self.is_single_file_mode = False
-        self.is_dict_config_mode = True
+        self.is_dict_config_mode = True  # 保持兼容性，使用字典配置模式的逻辑
+        
+        # 构建配置字典
+        config_dict = {
+            "library_path": library_path
+        }
+        
+        if header_files is not None:
+            config_dict["header_files"] = header_files if isinstance(header_files, list) else [header_files]
+        
+        if include_files is not None:
+            config_dict["include_files"] = include_files if isinstance(include_files, list) else [include_files]
+        
+        if exclude_files is not None:
+            config_dict["exclude_files"] = exclude_files if isinstance(exclude_files, list) else [exclude_files]
+        
         self.config_dict = config_dict
         # 使用ConfigParser来处理字典配置
         self.config_parser = ConfigParser(config_dict)
