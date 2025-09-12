@@ -650,28 +650,40 @@ class LibraryHandler:
     def compile_library(self, library_type: str = "static") -> bool:
         """
         Compiles the library based on the configuration and type.
+        If the library is already compiled and passes verification, skips compilation.
 
         Args:
             library_type: Type of library to compile ("static" or "shared"). Defaults to "static".
 
         Returns:
-            True if compilation is successful, False otherwise.
+            True if compilation is successful or library already exists and passes verification, False otherwise.
         """
         if library_type not in ["static", "shared"]:
             log_error(f"Invalid library type: {library_type}. Must be 'static' or 'shared'.")
             return False
-            
-        log_info(f"Starting {library_type} library compilation for {self.library_name}...")
         
-        # Get build configuration and command based on type
+        # Get build configuration
         if library_type == "static":
             build_config = self.config_parser.get_static_build_config()
-            build_command = self.config_parser.get_formatted_static_build_command()
         else:  # shared
             build_config = self.config_parser.get_shared_build_config()
             if build_config is None:
                 log_error(f"No shared library build configuration found for {self.library_name}")
                 return False
+        
+        # 首先检查是否已有编译产物且验证通过
+        log_info(f"Checking existing {library_type} library for {self.library_name}...")
+        if self._check_existing_library(library_type, build_config):
+            log_success(f"Existing {library_type} library found and verified for {self.library_name}, skipping compilation.")
+            return True
+        
+        # 如果不存在或验证失败，进行编译
+        log_info(f"Starting {library_type} library compilation for {self.library_name}...")
+        
+        # Get build command
+        if library_type == "static":
+            build_command = self.config_parser.get_formatted_static_build_command()
+        else:  # shared
             build_command = self.config_parser.get_formatted_shared_build_command()
             if build_command is None:
                 log_error(f"No shared library build command found for {self.library_name}")
@@ -686,26 +698,14 @@ class LibraryHandler:
             log_info(f"STDOUT:\n{result.stdout}")
             log_success(f"{library_type.capitalize()} library compilation completed successfully.")
             
-            # 检查AFL++插桩
-            try:
-                library_path = self.config_parser.get_library_file_path(library_type)
-            except Exception as e:
-                log_error(f"Failed to get library file path for AFL++ verification: {e}")
-                return False
-            
-            if os.path.exists(library_path):
-                if check_afl_instrumentation(library_path):
-                    log_success(f"AFL++ instrumentation verified successfully for {library_path}")
-                else:
-                    log_error(f"AFL++ instrumentation verification failed for {library_path}")
-                    return False
-            else:
-                log_error(f"{library_type.capitalize()} library file not found at expected path: {library_path}")
-                return False
-            
             # 验证生成的库文件和头文件路径
             if not self._verify_build_outputs(library_type, build_config):
                 log_error(f"Build output verification failed for {library_type} library")
+                return False
+            
+            # 检查AFL++插桩
+            if not self._verify_afl_instrumentation(library_type):
+                log_error(f"AFL++ instrumentation verification failed for {library_type} library")
                 return False
             
             return True
@@ -719,13 +719,66 @@ class LibraryHandler:
             log_error(f"An unexpected error occurred during {library_type} library compilation: {e}")
             return False
     
-    def _verify_build_outputs(self, library_type: str, build_config: dict) -> bool:
+    def _check_existing_library(self, library_type: str, build_config: dict) -> bool:
+        """
+        检查现有库是否存在且通过所有验证
+        
+        Args:
+            library_type: 库类型 ("static" 或 "shared")
+            build_config: 构建配置字典
+            
+        Returns:
+            True if existing library exists and passes all verifications, False otherwise.
+        """
+        try:
+            # 验证构建输出（预检查模式，使用温和的日志级别）
+            if not self._verify_build_outputs(library_type, build_config, is_precheck=True):
+                return False
+            
+            # 验证AFL++插桩
+            if not self._verify_afl_instrumentation(library_type):
+                return False
+            
+            return True
+        except Exception as e:
+            log_info(f"Existing library check failed: {e}")
+            return False
+    
+    def _verify_afl_instrumentation(self, library_type: str) -> bool:
+        """
+        验证AFL++插桩
+        
+        Args:
+            library_type: 库类型 ("static" 或 "shared")
+            
+        Returns:
+            True if AFL++ instrumentation is verified, False otherwise.
+        """
+        try:
+            library_path = self.config_parser.get_library_file_path(library_type)
+        except Exception as e:
+            log_error(f"Failed to get library file path for AFL++ verification: {e}")
+            return False
+        
+        if not os.path.exists(library_path):
+            log_error(f"{library_type.capitalize()} library file not found at expected path: {library_path}")
+            return False
+        
+        if check_afl_instrumentation(library_path):
+            log_success(f"AFL++ instrumentation verified successfully for {library_path}")
+            return True
+        else:
+            log_error(f"AFL++ instrumentation verification failed for {library_path}")
+            return False
+    
+    def _verify_build_outputs(self, library_type: str, build_config: dict, is_precheck: bool = False) -> bool:
         """
         验证编译后生成的库文件和头文件路径是否正确
         
         Args:
             library_type: 库类型 ("static" 或 "shared")
             build_config: 构建配置字典
+            is_precheck: 是否为预检查模式，预检查时使用更温和的日志级别
             
         Returns:
             True if all required files exist at expected paths, False otherwise.
@@ -736,13 +789,19 @@ class LibraryHandler:
         try:
             library_abs_path = self.config_parser.get_library_file_path(library_type)
         except Exception as e:
-            log_error(f"Failed to get library file path from configuration: {e}")
-            log_error("Please check your configuration file for correct library build settings")
+            if is_precheck:
+                log_info(f"Failed to get library file path from configuration: {e}")
+            else:
+                log_error(f"Failed to get library file path from configuration: {e}")
+                log_error("Please check your configuration file for correct library build settings")
             return False
         
         if not os.path.exists(library_abs_path):
-            log_error(f"Library file not found: {library_abs_path}")
-            log_error("Please check your configuration file - the library output path may be incorrect")
+            if is_precheck:
+                log_info(f"Library file not found (will compile): {library_abs_path}")
+            else:
+                log_error(f"Library file not found: {library_abs_path}")
+                log_error("Please check your configuration file - the library output path may be incorrect")
             return False
         
         log_success(f"Library file verified: {library_abs_path}")
@@ -753,14 +812,20 @@ class LibraryHandler:
             if header_file_paths:
                 for header_abs_path in header_file_paths:
                     if not os.path.exists(header_abs_path):
-                        log_error(f"Header file not found: {header_abs_path}")
-                        log_error("Please check your configuration file - the header file path may be incorrect")
+                        if is_precheck:
+                            log_info(f"Header file not found (will compile): {header_abs_path}")
+                        else:
+                            log_error(f"Header file not found: {header_abs_path}")
+                            log_error("Please check your configuration file - the header file path may be incorrect")
                         return False
                     
                     log_success(f"Header file verified: {header_abs_path}")
         except Exception as e:
-            log_error(f"Failed to get header file paths from configuration: {e}")
-            log_error("Please check your configuration file for correct header file settings")
+            if is_precheck:
+                log_info(f"Failed to get header file paths from configuration: {e}")
+            else:
+                log_error(f"Failed to get header file paths from configuration: {e}")
+                log_error("Please check your configuration file for correct header file settings")
             return False
         
         log_success(f"All build outputs verified successfully for {library_type} library")
