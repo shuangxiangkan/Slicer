@@ -8,6 +8,7 @@ from pathlib import Path
 from library_handler import LibraryHandler
 from config_parser import ConfigParser
 from log import *
+from utils import verify_fuzzing_environment
 
 # 添加项目根目录到路径
 project_root = Path(__file__).parent.parent.parent
@@ -56,6 +57,14 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
         # 解析配置
         config_parser = ConfigParser(config_path)
         log_success("Configuration parsed successfully.")
+        
+        # 验证模糊测试环境
+        env_ready, missing_tools = verify_fuzzing_environment()
+        if not env_ready:
+            log_error(f"模糊测试环境不完整，缺少必要工具: {', '.join(missing_tools)}")
+            log_error("请安装AFL++并确保其在PATH环境变量中")
+            return False
+        log_success("模糊测试环境验证通过")
         
         # 通过config_parser获取目录路径
         library_output_dir = config_parser.get_output_dir()
