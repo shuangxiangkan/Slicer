@@ -11,10 +11,12 @@ from pathlib import Path
 from log import *
 
 class CompileFilter:
-    def __init__(self, harness_dir, output_dir, log_dir):
+    def __init__(self, harness_dir, output_dir, log_dir, next_stage_dir=None, config_parser=None):
         self.harness_dir = Path(harness_dir)
         self.output_dir = Path(output_dir)
         self.log_dir = Path(log_dir)
+        self.next_stage_dir = Path(next_stage_dir) if next_stage_dir else None
+        self.config_parser = config_parser
         self.compile_stats = {
             'total': 0,
             'compile_success': 0,
@@ -22,37 +24,73 @@ class CompileFilter:
             'failed_harnesses': []
         }
         
-        # 在初始化时检查AFL++可用性，如果不可用直接报错
-        if not self._check_afl_available():
-            log_error("AFL++不可用，请确保已安装AFL++并在PATH中")
-            raise RuntimeError("AFL++不可用，请确保已安装AFL++并在PATH中")
+        # 获取编译配置
+        if self.config_parser:
+            self.driver_config = self.config_parser.get_driver_build_config()
+            self.header_paths = self.config_parser.get_header_file_paths()
+            self.library_path = self.config_parser.get_library_file_path("static")
+        else:
+            self.driver_config = None
+            self.header_paths = []
+            self.library_path = None
     
-    def _check_afl_available(self) -> bool:
-        """检查AFL++是否可用（私有方法，仅在初始化时调用）"""
-        try:
-            # 使用which命令检查afl-clang-fast++是否存在
-            result = subprocess.run(['which', 'afl-clang-fast++'], capture_output=True, timeout=5)
-            return result.returncode == 0
-        except:
-            return False
+    def _build_compile_command(self, harness_file, output_binary):
+        """构建编译命令"""
+        # 获取编译器
+        if self.driver_config and self.driver_config['compiler']:
+            compiler = self.driver_config['compiler'][0]
+        else:
+            compiler = 'afl-clang-fast++'
+        
+        # 基础编译命令
+        compile_cmd = [
+            compiler,
+            '-o', str(output_binary),
+            str(harness_file)
+        ]
+        
+        # 添加头文件路径
+        for header_path in self.header_paths:
+            header_dir = str(Path(header_path).parent)
+            if header_dir not in ['-I' + arg for arg in compile_cmd if arg.startswith('-I')]:
+                compile_cmd.extend(['-I', header_dir])
+        
+        # 添加库文件路径
+        if self.library_path:
+            compile_cmd.append(str(self.library_path))
+        
+        # 添加额外的flags
+        if self.driver_config and self.driver_config['extra_flags']:
+            compile_cmd.extend(self.driver_config['extra_flags'])
+        
+        # 添加默认编译选项
+        default_flags = [
+            '-g',  # 调试信息
+            '-O0', # 无优化，便于调试和覆盖率统计
+            '-fsanitize=address',  # AddressSanitizer
+        ]
+        
+        # 如果是AFL++编译器，添加覆盖率插桩
+        if 'afl-clang' in compiler:
+            default_flags.append('-fsanitize-coverage=trace-pc-guard')
+        
+        compile_cmd.extend(default_flags)
+        
+        return compile_cmd
     
     def compile_harness(self, harness_file):
         """编译单个harness文件"""
         log_info(f"正在编译 harness: {harness_file.name}")
         
-        # 使用AFL++编译器进行插桩编译
+        # 使用配置的编译器进行插桩编译
         output_binary = self.output_dir / f"{harness_file.stem}_compiled"
         
         try:
-            # 编译命令 - 使用afl-clang-fast++进行AFL++插桩
-            compile_cmd = [
-                'afl-clang-fast++', 
-                '-o', str(output_binary),
-                str(harness_file),
-                '-g',  # 调试信息
-                '-O0', # 无优化，便于调试和覆盖率统计
-                '-fsanitize-coverage=trace-pc-guard'  # AFL++覆盖率插桩
-            ]
+            # 构建编译命令
+            compile_cmd = self._build_compile_command(harness_file, output_binary)
+            
+            # 打印编译命令，方便调试
+            log_info(f"编译命令: {' '.join(compile_cmd)}")
             
             result = subprocess.run(
                 compile_cmd, 
@@ -91,7 +129,7 @@ class CompileFilter:
             })
             return False, None, str(e)
     
-    def filter_harnesses(self, next_stage_dir=None):
+    def filter_harnesses(self):
         """筛选所有harness文件"""
         log_info("三步筛选流程 - 第一步：编译筛选")
         log_info(f"扫描目录: {self.harness_dir}")
@@ -109,9 +147,8 @@ class CompileFilter:
         successful_harnesses = []
         
         # 创建下一阶段目录
-        if next_stage_dir:
-            next_stage_path = Path(next_stage_dir)
-            next_stage_path.mkdir(parents=True, exist_ok=True)
+        if self.next_stage_dir:
+            self.next_stage_dir.mkdir(parents=True, exist_ok=True)
         
         for harness_file in harness_files:
             success, binary_path, output = self.compile_harness(harness_file)
@@ -124,8 +161,8 @@ class CompileFilter:
                 successful_harnesses.append(harness_info)
                 
                 # 复制成功编译的源文件到下一阶段目录
-                if next_stage_dir:
-                    dest_file = next_stage_path / harness_file.name
+                if self.next_stage_dir:
+                    dest_file = self.next_stage_dir / harness_file.name
                     shutil.copy2(harness_file, dest_file)
                     log_info(f"已复制到下一阶段: {dest_file}")
         
@@ -148,17 +185,17 @@ class CompileFilter:
             json.dump(self.compile_stats, f, indent=2, ensure_ascii=False)
         log_info(f"编译统计信息已保存到: {stats_file}")
 
-def compile_filter(harness_dir, output_dir, log_dir, next_stage_dir=None):
+def compile_filter(harness_dir, output_dir, log_dir, next_stage_dir=None, config_parser=None):
     """编译筛选API接口"""
     # 确保输出目录存在
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     Path(log_dir).mkdir(parents=True, exist_ok=True)
     
     # 创建编译筛选器
-    filter = CompileFilter(harness_dir, output_dir, log_dir)
+    filter = CompileFilter(harness_dir, output_dir, log_dir, next_stage_dir, config_parser)
     
     # 执行筛选
-    successful_harnesses = filter.filter_harnesses(next_stage_dir)
+    successful_harnesses = filter.filter_harnesses()
     
     # 保存成功编译的harness列表
     success_file = Path(log_dir) / "step1_successful_harnesses.json"

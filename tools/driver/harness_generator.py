@@ -13,6 +13,7 @@ from typing import Dict, List, Any
 from log import log_info, log_success, log_warning, log_error
 from utils import save_prompt_to_file, save_llm_response_to_file
 from libfuzzer2afl import convert_harness_file
+from step1_compile_filter import compile_filter
 
 # Import LLM modules
 import sys
@@ -360,6 +361,31 @@ class HarnessGenerator:
             
             if success_count == 0:
                 log_error(f"No valid harnesses extracted for {api_name}")
+            else:
+                # 调用编译过滤器筛选生成的harness
+                log_info(f"Starting compile filtering for {api_name}...")
+                try:
+                    # 设置编译过滤的目录
+                    compile_output_dir = os.path.join(library_output_dir, api_name, 'harness_compiled')
+                    compile_log_dir = os.path.join(library_output_dir, api_name, 'harness_compiled_logs')
+                    filtered_harness_dir = os.path.join(library_output_dir, api_name, 'harness_compiled_filtered')
+                    
+                    # 执行编译过滤
+                    successful_harnesses = compile_filter(
+                        harness_dir=harness_afl_dir,
+                        output_dir=compile_output_dir,
+                        log_dir=compile_log_dir,
+                        next_stage_dir=filtered_harness_dir,
+                        config_parser=self.config_parser
+                    )
+                    
+                    if successful_harnesses:
+                        log_success(f"Compile filtering completed for {api_name}: {len(successful_harnesses)} harnesses passed")
+                    else:
+                        log_warning(f"No harnesses passed compile filtering for {api_name}")
+                        
+                except Exception as e:
+                    log_error(f"Compile filtering failed for {api_name}: {e}")
                 
         except Exception as e:
             log_error(f"Failed to generate harnesses for {api_name}: {e}")

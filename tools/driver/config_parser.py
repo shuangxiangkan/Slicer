@@ -63,6 +63,18 @@ class ConfigParser:
         for field in compiler_required:
             if field not in self._config_data['compiler']:
                 raise ValueError(f"Missing required compiler configuration field: {field}")
+        
+        # Validate driver_build configuration (optional but if present, must have required fields)
+        if 'driver_build' in self._config_data:
+            driver_build = self._config_data['driver_build']
+            driver_required = ['compiler', 'dependencies', 'extra_flags']
+            for field in driver_required:
+                if field not in driver_build:
+                    raise ValueError(f"Missing required driver_build field: {field}")
+            
+            # Validate that compiler field is not empty
+            if not driver_build['compiler'] or not any(c.strip() for c in driver_build['compiler']):
+                raise ValueError("driver_build.compiler must contain at least one non-empty compiler specification")
     
     def get_library_info(self) -> Dict[str, str]:
         """Get library information"""
@@ -127,13 +139,44 @@ class ConfigParser:
             'shared_lib_name': build_data.get('shared_lib_name', '')
         }
     
-    def get_static_driver_build_command(self) -> str:
-        """Get static library driver build command"""
-        return self._config_data.get('static_driver_build', '')
-    
-    def get_shared_driver_build_command(self) -> Optional[str]:
-        """Get shared library driver build command (optional)"""
-        return self._config_data.get('shared_driver_build')
+    def get_driver_build_config(self) -> Optional[Dict[str, List[str]]]:
+        """Get driver build configuration
+        
+        Returns:
+            Dictionary containing compiler, dependencies, and extra_flags lists
+            Returns None if driver_build section is not found
+        """
+        if 'driver_build' not in self._config_data:
+            return None
+        
+        driver_data = self._config_data['driver_build']
+        
+        # Format compiler values to replace placeholders
+        compiler_list = driver_data.get('compiler', [])
+        formatted_compilers = []
+        for compiler in compiler_list:
+            if compiler.strip():  # Skip empty strings
+                formatted_compilers.append(self.format_command(compiler))
+        
+        # Format dependencies to replace placeholders
+        dependencies_list = driver_data.get('dependencies', [])
+        formatted_dependencies = []
+        for dep in dependencies_list:
+            if dep.strip():  # Skip empty strings
+                formatted_dependencies.append(self.format_command(dep))
+        
+        # Format extra_flags to replace placeholders
+        extra_flags_list = driver_data.get('extra_flags', [])
+        formatted_extra_flags = []
+        for flag in extra_flags_list:
+            if flag.strip():  # Skip empty strings
+                formatted_extra_flags.append(self.format_command(flag))
+        
+        return {
+             'compiler': formatted_compilers,
+             'dependencies': formatted_dependencies,
+             'extra_flags': formatted_extra_flags
+         }
     
     def get_api_selection(self) -> Dict[str, List[str]]:
         """Get API selection configuration"""
@@ -202,17 +245,7 @@ class ConfigParser:
             return None
         return self.format_command(build_config['command'])
     
-    def get_formatted_static_driver_command(self, driver_path: str, output_path: str) -> str:
-        """Get formatted static library driver build command"""
-        command_template = self.get_static_driver_build_command()
-        return self.format_command(command_template, driver=driver_path, output=output_path)
-    
-    def get_formatted_shared_driver_command(self, driver_path: str, output_path: str) -> Optional[str]:
-        """Get formatted shared library driver build command"""
-        command_template = self.get_shared_driver_build_command()
-        if command_template is None:
-            return None
-        return self.format_command(command_template, driver=driver_path, output=output_path)
+
     
     def get_libraries_dir(self) -> str:
         """Get Libraries directory path (where all libraries are downloaded)
@@ -372,14 +405,13 @@ if __name__ == "__main__":
             print(f"\n=== Documentation Configuration ===")
             print(f"Target Files: {doc_config['target_files']}")
         
-        # Test driver build commands
-        print(f"\n=== Driver Build Commands ===")
-        static_driver_cmd = parser.get_formatted_static_driver_command("test_driver.c", "test_driver")
-        print(f"Static Library Driver: {static_driver_cmd}")
-        
-        shared_driver_cmd = parser.get_formatted_shared_driver_command("test_driver.c", "test_driver")
-        if shared_driver_cmd:
-            print(f"Shared Library Driver: {shared_driver_cmd}")
+        # Test driver build configuration
+        print(f"\n=== Driver Build Configuration ===")
+        driver_config = parser.get_driver_build_config()
+        if driver_config:
+            print(f"Compiler: {driver_config['compiler']}")
+            print(f"Dependencies: {driver_config['dependencies']}")
+            print(f"Extra Flags: {driver_config['extra_flags']}")
         
     except Exception as e:
         print(f"Error: {e}")

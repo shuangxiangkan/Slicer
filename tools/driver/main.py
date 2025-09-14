@@ -98,7 +98,7 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
         # 步骤6: 搜索API文档说明并保存结果
         documentation_results = handler.get_api_documentation(api_functions, analyzer, library_output_dir)
         
-        # 步骤5: 计算API usage统计并保存结果
+        # 步骤7: 计算API usage统计并保存结果
         usage_results, api_categories = handler.get_api_usage(api_functions, analyzer, library_output_dir)
         
         # 步骤8: 生成API harness
