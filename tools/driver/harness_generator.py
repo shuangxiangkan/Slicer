@@ -15,6 +15,7 @@ from log import log_info, log_success, log_warning, log_error
 from utils import save_prompt_to_file, save_llm_response_to_file
 from libfuzzer2afl import convert_harness_file
 from step1_compile_filter import compile_filter
+from step2_execution_filter import execution_filter
 
 # Import LLM modules
 from llm.base import create_llm_client
@@ -301,6 +302,7 @@ class HarnessGenerator:
         language = library_info.get('language', 'C').upper()
         return '.cpp' if language == 'C++' else '.c'
     
+
     def _generate_single_harness(self, api_info: Dict[str, Any], harness_index: int, 
                                 harness_libfuzzer_dir: str, harness_afl_dir: str, 
                                 library_output_dir: str) -> bool:
@@ -404,7 +406,7 @@ class HarnessGenerator:
                 filtered_harness_dir = os.path.join(library_output_dir, api_name, 'harness_compiled_filtered')
                 
                 # 执行编译过滤
-                successful_harnesses = compile_filter(
+                compile_successful_harnesses = compile_filter(
                     harness_dir=harness_afl_dir,
                     output_dir=compile_output_dir,
                     log_dir=compile_log_dir,
@@ -412,8 +414,39 @@ class HarnessGenerator:
                     config_parser=self.config_parser
                 )
                 
-                if successful_harnesses:
-                    log_success(f"Compile filtering completed for {api_name}: {len(successful_harnesses)} harnesses passed")
+                if compile_successful_harnesses:
+                    log_success(f"Compile filtering completed for {api_name}: {len(compile_successful_harnesses)} harnesses passed")
+                    
+                    # 调用执行筛选器筛选编译成功的harness
+                    log_info(f"Starting execution filtering for {api_name}...")
+                    try:
+                        # 设置执行筛选的目录
+                        execution_log_dir = os.path.join(library_output_dir, api_name, 'harness_execution_logs')
+                        execution_filtered_dir = os.path.join(library_output_dir, api_name, 'harness_execution_filtered')
+                        
+                        # 从配置文件获取seeds目录路径
+                        seeds_valid_dir = self.config_parser.get_seeds_dir()
+                        if not seeds_valid_dir:
+                            raise ValueError(f"Seeds directory not configured in config file for {api_name}")
+                        
+                        if not os.path.exists(seeds_valid_dir):
+                            raise FileNotFoundError(f"Seeds directory does not exist: {seeds_valid_dir}")
+                        
+                        # 执行执行筛选（使用execution_log_dir记录执行情况）
+                        execution_successful_harnesses = execution_filter(
+                            log_dir=execution_log_dir,
+                            seeds_valid_dir=seeds_valid_dir,
+                            next_stage_dir=execution_filtered_dir,
+                            compile_log_dir=compile_log_dir
+                        )
+                        
+                        if execution_successful_harnesses:
+                            log_success(f"Execution filtering completed for {api_name}: {len(execution_successful_harnesses)} harnesses passed")
+                        else:
+                            log_warning(f"No harnesses passed execution filtering for {api_name}")
+                            
+                    except Exception as e:
+                        log_error(f"Execution filtering failed for {api_name}: {e}")
                 else:
                     log_warning(f"No harnesses passed compile filtering for {api_name}")
                     

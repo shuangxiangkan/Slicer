@@ -662,6 +662,10 @@ class LibraryHandler:
             log_error(f"Invalid library type: {library_type}. Must be 'static' or 'shared'.")
             return False
         
+        # Validate fuzzing configuration before compilation
+        if not self._validate_fuzzing_config():
+            return False
+        
         # Get build configuration
         if library_type == "static":
             build_config = self.config_parser.get_static_build_config()
@@ -718,6 +722,49 @@ class LibraryHandler:
         except Exception as e:
             log_error(f"An unexpected error occurred during {library_type} library compilation: {e}")
             return False
+    
+    def _validate_fuzzing_config(self) -> bool:
+        """
+        验证fuzzing配置，包括seeds目录和dictionary文件
+        
+        Returns:
+            True if fuzzing configuration is valid, False otherwise.
+        """
+        log_info("Validating fuzzing configuration...")
+        
+        # Check seeds directory
+        seeds_dir = self.config_parser.get_seeds_dir()
+        if not seeds_dir:
+            log_error("Seeds directory not configured in config file")
+            return False
+        
+        if not os.path.exists(seeds_dir):
+            log_error(f"Seeds directory does not exist: {seeds_dir}")
+            return False
+        
+        if not os.path.isdir(seeds_dir):
+            log_error(f"Seeds path is not a directory: {seeds_dir}")
+            return False
+        
+        # Check if seeds directory has any files
+        seed_files = [f for f in os.listdir(seeds_dir) if os.path.isfile(os.path.join(seeds_dir, f))]
+        if not seed_files:
+            log_error(f"Seeds directory is empty: {seeds_dir}")
+            return False
+        
+        log_success(f"Seeds directory validated: {seeds_dir} (found {len(seed_files)} seed files)")
+        
+        # Check dictionary file (optional)
+        dictionary_file = self.config_parser.get_dictionary_file()
+        if dictionary_file:
+            if os.path.exists(dictionary_file):
+                log_success(f"Dictionary file found: {dictionary_file}")
+            else:
+                log_warning(f"Dictionary file configured but not found: {dictionary_file}")
+        else:
+            log_info("No dictionary file configured")
+        
+        return True
     
     def _check_existing_library(self, library_type: str, build_config: dict) -> bool:
         """
@@ -834,7 +881,7 @@ class LibraryHandler:
 
 if __name__ == '__main__':
     # Example usage:
-    cjson_config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cJSON.yaml"
+    cjson_config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cJSON/cJSON.yaml"
     log_info(f"Attempting to compile library using config: {cjson_config_path}")
     
     try:

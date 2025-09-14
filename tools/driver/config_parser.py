@@ -197,6 +197,31 @@ class ConfigParser:
             'target_files': doc_data.get('target_files', [])
         }
     
+    def get_fuzzing_config(self) -> Optional[Dict[str, str]]:
+        """Get fuzzing configuration (optional)"""
+        if 'fuzzing' not in self._config_data:
+            return None
+        
+        fuzzing_data = self._config_data['fuzzing']
+        return {
+            'seeds_dir': fuzzing_data.get('seeds_dir', ''),
+            'dictionary_file': fuzzing_data.get('dictionary_file', '')
+        }
+    
+    def get_seeds_dir(self) -> Optional[str]:
+        """Get seeds directory path"""
+        fuzzing_config = self.get_fuzzing_config()
+        if fuzzing_config and fuzzing_config['seeds_dir']:
+            return fuzzing_config['seeds_dir']
+        return None
+    
+    def get_dictionary_file(self) -> Optional[str]:
+        """Get dictionary file path"""
+        fuzzing_config = self.get_fuzzing_config()
+        if fuzzing_config and fuzzing_config['dictionary_file']:
+            return fuzzing_config['dictionary_file']
+        return None
+    
     def format_command(self, command_template: str, **kwargs) -> str:
         """
         Format command template, replace placeholders

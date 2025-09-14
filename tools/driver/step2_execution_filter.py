@@ -13,9 +13,10 @@ from log import *
 
 class ExecutionFilter:
     
-    def __init__(self, log_dir, seeds_valid_dir):
+    def __init__(self, log_dir, seeds_valid_dir, compile_log_dir=None):
         self.log_dir = Path(log_dir)
         self.seeds_valid_dir = Path(seeds_valid_dir)
+        self.compile_log_dir = Path(compile_log_dir) if compile_log_dir else self.log_dir
         self.execution_stats = {
             'total_harnesses': 0,
             'execution_success': 0,
@@ -41,7 +42,7 @@ class ExecutionFilter:
     
     def load_compiled_harnesses(self) -> List[Dict]:
         """加载第一步编译成功的harness列表"""
-        success_file = self.log_dir / "step1_successful_harnesses.json"
+        success_file = self.compile_log_dir / "step1_successful_harnesses.json"
         if not success_file.exists():
             log_error(f"未找到编译成功的harness列表文件: {success_file}")
             return []
@@ -217,6 +218,9 @@ class ExecutionFilter:
     
     def save_execution_results(self, test_results: List[Dict]):
         """保存执行结果"""
+        # 确保日志目录存在
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+        
         # 保存统计信息
         stats_file = self.log_dir / "step2_execution_stats.json"
         with open(stats_file, 'w', encoding='utf-8') as f:
@@ -230,16 +234,20 @@ class ExecutionFilter:
         log_info(f"执行统计信息已保存到: {stats_file}")
         log_info(f"详细执行结果已保存到: {results_file}")
 
-def execution_filter(log_dir, seeds_valid_dir, next_stage_dir=None):
+def execution_filter(log_dir, seeds_valid_dir, next_stage_dir=None, compile_log_dir=None):
     """执行筛选API接口"""
     # 创建执行筛选器
-    filter = ExecutionFilter(log_dir, seeds_valid_dir)
+    filter = ExecutionFilter(log_dir, seeds_valid_dir, compile_log_dir)
     
     # 执行筛选
     successful_harnesses = filter.filter_harnesses(next_stage_dir)
     
+    # 确保日志目录存在
+    log_dir_path = Path(log_dir)
+    log_dir_path.mkdir(parents=True, exist_ok=True)
+    
     # 保存通过执行筛选的harness列表
-    success_file = Path(log_dir) / "step2_successful_harnesses.json"
+    success_file = log_dir_path / "step2_successful_harnesses.json"
     with open(success_file, 'w', encoding='utf-8') as f:
         json.dump(successful_harnesses, f, indent=2, ensure_ascii=False)
     
