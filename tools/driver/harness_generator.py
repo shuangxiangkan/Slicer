@@ -16,6 +16,7 @@ from utils import save_prompt_to_file, save_llm_response_to_file
 from libfuzzer2afl import convert_harness_file
 from step1_compile_filter import compile_filter
 from step2_execution_filter import execution_filter
+from step3_coverage_filter import coverage_filter
 
 # Import LLM modules
 from llm.base import create_llm_client
@@ -442,6 +443,53 @@ class HarnessGenerator:
                         
                         if execution_successful_harnesses:
                             log_success(f"Execution filtering completed for {api_name}: {len(execution_successful_harnesses)} harnesses passed")
+                            
+                            # 调用覆盖率筛选器筛选执行成功的harness
+                            log_info(f"Starting coverage filtering for {api_name}...")
+                            try:
+                                # 设置覆盖率筛选的目录
+                                # 注意：step2_successful_harnesses.json文件在execution_logs目录中
+                                execution_log_dir = os.path.join(library_output_dir, api_name, 'harness_execution_logs')
+                                coverage_log_dir = os.path.join(library_output_dir, api_name, 'harness_coverage_logs')
+                                coverage_filtered_dir = os.path.join(library_output_dir, api_name, 'harness_coverage_filtered')
+                                
+                                # 从配置文件获取seeds目录路径
+                                seeds_valid_dir = self.config_parser.get_seeds_dir()
+                                if not seeds_valid_dir:
+                                    raise ValueError(f"Seeds directory not configured in config file for {api_name}")
+                                
+                                if not os.path.exists(seeds_valid_dir):
+                                    raise FileNotFoundError(f"Seeds directory does not exist: {seeds_valid_dir}")
+                                
+                                # 从配置文件获取dict文件路径（如果有的话）
+                                dict_file = self.config_parser.get_dictionary_file()
+                                if dict_file and not os.path.exists(dict_file):
+                                    log_warning(f"Dictionary file does not exist: {dict_file}, proceeding without dict")
+                                    dict_file = None
+                                
+                                # 如果有dict文件，可以在后续的fuzz过程中使用
+                                if dict_file:
+                                    log_info(f"Dictionary file available for fuzzing: {dict_file}")
+                                
+                                # 执行覆盖率筛选
+                                # 使用execution_log_dir来读取step2_successful_harnesses.json
+                                # 使用coverage_log_dir来保存step3结果
+                                coverage_successful_harnesses = coverage_filter(
+                                    log_dir=execution_log_dir,
+                                    seeds_valid_dir=seeds_valid_dir,
+                                    final_dir=coverage_filtered_dir,
+                                    max_harnesses=1,  # 只选择1个最佳harness
+                                    dict_file=dict_file,  # 传递dict文件路径
+                                    coverage_log_dir=coverage_log_dir  # 指定覆盖率日志保存目录
+                                )
+                                
+                                if coverage_successful_harnesses:
+                                    log_success(f"Coverage filtering completed for {api_name}: {len(coverage_successful_harnesses)} harnesses passed")
+                                else:
+                                    log_warning(f"No harnesses passed coverage filtering for {api_name}")
+                                    
+                            except Exception as e:
+                                log_error(f"Coverage filtering failed for {api_name}: {e}")
                         else:
                             log_warning(f"No harnesses passed execution filtering for {api_name}")
                             

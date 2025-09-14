@@ -11,31 +11,27 @@ import tempfile
 import time
 import sys
 from pathlib import Path
-from typing import List, Dict, Set
+from typing import List, Dict
 from log import *
 
 class CoverageFilter:
-    def __init__(self, log_dir, seeds_valid_dir):
-        self.log_dir = Path(log_dir)
+    def __init__(self, log_dir, seeds_valid_dir, dict_file=None):
+        self.log_dir = Path(log_dir)  # 用于保存step3结果
+        self.step2_log_dir = Path(log_dir)  # 用于读取step2结果，初始与log_dir相同
         self.seeds_valid_dir = Path(seeds_valid_dir)
+        self.dict_file = Path(dict_file) if dict_file else None
         self.global_bitmap = set()  # 模拟 OGHarn 的 globalBitmap
         self.coverage_stats = {
             'total_harnesses': 0,
             'coverage_success': 0,
             'coverage_failed': 0,
-            'no_new_coverage': 0,
-            'linear_coverage': 0,
             'best_harnesses': [],
             'coverage_analysis': []
         }
-        
-        # 在初始化时检查AFL++可用性，如果不可用直接报错
-        if not self._check_afl_available():
-            raise RuntimeError("AFL++不可用，请确保已安装AFL++并在PATH中")
     
     def load_execution_successful_harnesses(self) -> List[Dict]:
         """加载第二步执行成功的harness列表"""
-        success_file = self.log_dir / "step2_successful_harnesses.json"
+        success_file = self.step2_log_dir / "step2_successful_harnesses.json"
         if not success_file.exists():
             log_error(f"错误: 未找到执行成功的harness列表文件: {success_file}")
             return []
@@ -52,87 +48,6 @@ class CoverageFilter:
         seed_files = [f for f in seed_dir.iterdir() if f.is_file()]
         
         return seed_files
-    
-    def _check_afl_available(self) -> bool:
-        """检查AFL++是否可用"""
-        try:
-            # 使用which命令检查afl-showmap是否存在
-            result = subprocess.run(['which', 'afl-showmap'], capture_output=True, timeout=5)
-            return result.returncode == 0
-        except:
-            return False
-    
-    def get_afl_coverage(self, binary_path: Path, queue_dir: Path) -> Set[str]:
-        """批量使用 AFL++ showmap 获取queue目录中所有文件的覆盖率位图"""
-        coverage_file = None
-        try:
-            # 检查queue目录是否存在
-            if not queue_dir.exists():
-                log_warning(f"      Queue目录不存在: {queue_dir}")
-                return set()
-            
-            # 获取queue目录中的所有文件
-            queue_files = [f for f in queue_dir.iterdir() if f.is_file()]
-            if not queue_files:
-                log_warning(f"      Queue目录为空: {queue_dir}")
-                return set()
-            
-            log_info(f"      批量处理 {len(queue_files)} 个queue文件获取覆盖率...")
-            
-            # 创建临时文件保存覆盖率结果
-            coverage_file = Path(f"/tmp/afl_batch_coverage_{binary_path.stem}_{os.getpid()}.txt")
-            
-            # 使用afl-showmap批量处理
-            cmd = [
-                'afl-showmap',
-                '-C',  # 收集覆盖率模式
-                '-i', str(queue_dir),  # 输入目录
-                '-o', str(coverage_file),
-                '-m', '50',  # 内存限制
-                '-t', '5000',  # 超时5秒
-                '-q',  # 静默模式
-                '--',
-                str(binary_path),
-                '@@'  # 文件路径占位符
-            ]
-            
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                timeout=30,  # 批量处理需要更长时间
-                text=True
-            )
-            
-            if result.returncode == 0 and coverage_file.exists():
-                # 解析覆盖率文件
-                bitmap = set()
-                with open(coverage_file, 'r') as f:
-                    for line in f:
-                        line = line.strip()
-                        if ':' in line:
-                            # AFL++ 输出格式: edge_id:hit_count
-                            edge_id = line.split(':')[0]
-                            bitmap.add(edge_id)
-                
-                log_info(f"      批量覆盖率获取成功: {len(bitmap)} 个覆盖点")
-                return bitmap
-            else:
-                log_error(f"      批量覆盖率获取失败 (返回码: {result.returncode})")
-                if result.stderr:
-                    log_error(f"      错误信息: {result.stderr}")
-                return set()
-            
-        except Exception as e:
-            log_error(f"    批量AFL++覆盖率获取失败: {str(e)}")
-            return set()
-        finally:
-            # 确保临时文件在所有情况下都被删除
-            if coverage_file and coverage_file.exists():
-                try:
-                    coverage_file.unlink()
-                    log_info(f"      已清理临时文件: {coverage_file}")
-                except Exception as cleanup_error:
-                    log_warning(f"      警告: 清理临时文件失败: {cleanup_error}")
       
     def fuzz_harness_with_timeout(self, binary_path: Path, fuzz_duration=10) -> Dict:
         """对harness进行限时模糊测试，评估其真实的模糊测试质量"""
@@ -157,7 +72,7 @@ class CoverageFilter:
             # 使用所有种子文件进行模糊测试
             log_info(f"      使用 {len(seed_files)} 个种子文件进行模糊测试")
             
-            # AFL++已在初始化时检查，此处直接进行模糊测试
+            # 模糊测试
             return self.run_afl_fuzz(binary_path, seed_files, fuzz_duration)
                 
         except Exception as e:
@@ -189,18 +104,21 @@ class CoverageFilter:
                 for i, seed_file in enumerate(seed_files):
                     seed_copy = input_dir / f"seed_{i}_{seed_file.name}"
                     shutil.copy2(seed_file, seed_copy)
-                    log_info(f"        已添加种子文件: {seed_file.name}")
                 
                 # 运行AFL++模糊测试
                 cmd = [
                     'afl-fuzz',
                     '-i', str(input_dir),
                     '-o', str(output_dir),
-                    '-t', '1000',  # 1秒超时
-                    '-m', '50',    # 50MB内存限制
-                    '--',
-                    str(binary_path)
+                    '-t', '1000',  # 单个输入测试用例1秒超时
                 ]
+                
+                # 如果有dict文件，添加到命令中
+                if self.dict_file and self.dict_file.exists():
+                    cmd.extend(['-x', str(self.dict_file)])
+                    log_info(f"        使用字典文件: {self.dict_file}")
+                
+                cmd.extend(['--', str(binary_path), '@@'])
                 
                 log_info(f"      启动AFL++模糊测试: {' '.join(cmd)}")
                 
@@ -208,6 +126,10 @@ class CoverageFilter:
                 env = os.environ.copy()
                 env['AFL_SKIP_CPUFREQ'] = '1'
                 env['AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES'] = '1'
+                env['AFL_NO_UI'] = '1'  # 禁用UI界面
+                env['AFL_QUIET'] = '1'  # 静默模式
+                env['AFL_FORKSRV_INIT_TMOUT'] = '10000'  # 增加fork server初始化超时
+                env['AFL_HANG_TMOUT'] = '1000'  # 设置挂起超时
                 
                 # 启动AFL++进程
                 process = subprocess.Popen(
@@ -246,12 +168,58 @@ class CoverageFilter:
                             stability_str = line.split(':')[1].strip().rstrip('%')
                             fuzz_result['stability'] = float(stability_str) / 100.0
                 
-                # 收集覆盖率信息
+                # 收集覆盖率信息 - 在临时目录还存在时直接处理
                 queue_dir = output_dir / "default" / "queue"
                 if queue_dir.exists():
-                    # 使用批量处理获取所有queue文件的覆盖率
-                    batch_bitmap = self.get_afl_coverage(binary_path, queue_dir)
-                    fuzz_result['coverage_bitmap'].update(batch_bitmap)
+                    # 直接在这里处理覆盖率，避免临时目录被删除后无法访问
+                    try:
+                        coverage_file = Path(f"/tmp/afl_batch_coverage_{binary_path.stem}_{os.getpid()}.txt")
+                        
+                        # 使用afl-showmap批量处理
+                        cmd = [
+                            'afl-showmap',
+                            '-C',  # 收集覆盖率模式
+                            '-i', str(queue_dir),  # 输入目录
+                            '-o', str(coverage_file),
+                            '-t', '5000',  # 超时5秒
+                            '-q',  # 静默模式
+                            '--',
+                            str(binary_path),
+                            '@@'  # 文件路径占位符
+                        ]
+                        
+                        result = subprocess.run(
+                            cmd,
+                            capture_output=True,
+                            timeout=30,  # 批量处理需要更长时间
+                            text=True
+                        )
+                        
+                        if result.returncode == 0 and coverage_file.exists():
+                            # 解析覆盖率文件
+                            bitmap = set()
+                            try:
+                                with open(coverage_file, 'r') as f:
+                                    for line in f:
+                                        line = line.strip()
+                                        if ':' in line:
+                                            edge_id = line.split(':')[0]
+                                            bitmap.add(edge_id)
+                                fuzz_result['coverage_bitmap'].update(bitmap)
+                                log_info(f"        成功收集覆盖率: {len(bitmap)} 个边")
+                            except Exception as e:
+                                log_warning(f"        解析覆盖率文件失败: {e}")
+                            finally:
+                                # 清理临时文件
+                                if coverage_file.exists():
+                                    coverage_file.unlink()
+                        else:
+                            log_warning(f"        afl-showmap失败 (返回码: {result.returncode})")
+                            if result.stderr:
+                                log_warning(f"        错误信息: {result.stderr}")
+                    except Exception as e:
+                        log_warning(f"        覆盖率收集异常: {e}")
+                    
                     fuzz_result['coverage_growth'].append(len(fuzz_result['coverage_bitmap']))
                 
                 log_info(f"      AFL++测试完成: 执行{fuzz_result['total_executions']}次, 覆盖率{len(fuzz_result['coverage_bitmap'])}")
@@ -283,8 +251,7 @@ class CoverageFilter:
             'execution_speed': 0,
             'stability': 0.0,
             'unique_crashes': 0,
-            'coverage_growth_rate': 0.0,
-            'coverage_quality': 'unknown'
+            'coverage_growth_rate': 0.0
         }
         
         # 进行限时模糊测试
@@ -309,86 +276,88 @@ class CoverageFilter:
         analysis_result['new_coverage'] = analysis_result['total_bitmap'] - self.global_bitmap
         analysis_result['coverage_gain'] = len(analysis_result['new_coverage'])
         
-        # 基于模糊测试结果评估质量
+        # 计算综合质量分数
+        # 基础分数：覆盖率增益是最重要的指标
+        coverage_score = analysis_result['coverage_gain'] * 10  # 覆盖率增益权重最高
+        
+        # 执行速度分数（执行失败的harness得0分）
         if analysis_result['total_executions'] == 0:
-            analysis_result['coverage_quality'] = 'execution_failed'
-        elif analysis_result['stability'] < 0.5:
-            analysis_result['coverage_quality'] = 'unstable'
-        elif analysis_result['coverage_gain'] == 0:
-            analysis_result['coverage_quality'] = 'no_new_coverage'
-        elif analysis_result['execution_speed'] < 10:  # 每秒少于10次执行
-            analysis_result['coverage_quality'] = 'too_slow'
-        elif analysis_result['coverage_growth_rate'] < 0.1:  # 覆盖率增长太慢
-            analysis_result['coverage_quality'] = 'poor_coverage_growth'
+            speed_score = 0
+            stability_score = 0
+            growth_score = 0
         else:
-            analysis_result['coverage_quality'] = 'good'
+            speed_score = min(analysis_result['execution_speed'] / 100, 10)  # 执行速度，最高10分
+            stability_score = analysis_result['stability'] * 5  # 稳定性，最高5分
+            growth_score = analysis_result['coverage_growth_rate'] * 20  # 覆盖率增长率
         
-        log_info(f"    质量评估: {analysis_result['coverage_quality']} (执行{analysis_result['total_executions']}次, 稳定性{analysis_result['stability']:.2f}, 新覆盖率{analysis_result['coverage_gain']})")
+        analysis_result['quality_score'] = coverage_score + speed_score + stability_score + growth_score
         
-        # 转换set为list以便JSON序列化
-        analysis_result['total_bitmap'] = list(analysis_result['total_bitmap'])
-        analysis_result['new_coverage'] = list(analysis_result['new_coverage'])
+        log_info(f"    质量分数: {analysis_result['quality_score']:.2f} (执行{analysis_result['total_executions']}次, 稳定性{analysis_result['stability']:.2f}, 新覆盖率{analysis_result['coverage_gain']})")
+        
+        # 移除total_bitmap字段，只保留必要的统计信息
+        # 保留total_bitmap的set格式用于内部计算，但不保存到JSON中
+        temp_total_bitmap = analysis_result['total_bitmap']
+        temp_new_coverage = analysis_result['new_coverage']
+        
+        # 从结果中移除total_bitmap和new_coverage，减少文件大小
+        del analysis_result['total_bitmap']
+        del analysis_result['new_coverage']
+        
+        # 为了后续处理，临时保存这些信息
+        analysis_result['_temp_total_bitmap'] = temp_total_bitmap
+        analysis_result['_temp_new_coverage'] = temp_new_coverage
         
         return analysis_result
     
     def select_best_harnesses(self, coverage_analyses: List[Dict], max_harnesses=3) -> List[Dict]:
-        """基于模糊测试质量选择最佳harness"""
-        log_info(f"选择最佳 Harness (基于模糊测试质量) - 最多选择{max_harnesses}个")
+        """基于综合质量分数选择最佳harness"""
+        log_info(f"选择最佳 Harness (基于综合质量评分) - 最多选择{max_harnesses}个")
         
-        # 过滤掉质量不好的harness
-        good_harnesses = []
+        if not coverage_analyses:
+            log_warning("没有可分析的harness")
+            return []
+        
+        # 显示所有harness的质量分数
         for analysis in coverage_analyses:
-            if analysis['coverage_quality'] == 'good':
-                good_harnesses.append(analysis)
-        
-        log_info(f"质量良好的harness数量: {len(good_harnesses)}")
-        
-        # 计算综合质量分数
-        for analysis in good_harnesses:
-            # 综合评分：覆盖率增益 + 执行速度 + 稳定性 + 覆盖率增长率
-            coverage_score = analysis['coverage_gain'] * 10  # 覆盖率增益权重最高
-            speed_score = min(analysis['execution_speed'] / 100, 10)  # 执行速度，最高10分
-            stability_score = analysis['stability'] * 5  # 稳定性，最高5分
-            growth_score = analysis['coverage_growth_rate'] * 20  # 覆盖率增长率
-            
-            analysis['quality_score'] = coverage_score + speed_score + stability_score + growth_score
-            
             log_info(f"  {analysis['harness']}: 质量分数={analysis['quality_score']:.2f} "
                   f"(覆盖率={analysis['coverage_gain']}, 速度={analysis['execution_speed']:.1f}/s, "
                   f"稳定性={analysis['stability']:.2f}, 增长率={analysis['coverage_growth_rate']:.2f})")
         
-        # 按综合质量分数排序
-        good_harnesses.sort(key=lambda x: x['quality_score'], reverse=True)
+        # 按综合质量分数排序，选择表现最好的
+        all_harnesses = sorted(coverage_analyses, key=lambda x: x['quality_score'], reverse=True)
         
         # 选择最佳harness并更新全局覆盖率
         selected_harnesses = []
         temp_global_bitmap = self.global_bitmap.copy()
         
-        for analysis in good_harnesses:
-            current_new_coverage = set(analysis['total_bitmap']) - temp_global_bitmap
+        for analysis in all_harnesses:
+            if len(selected_harnesses) >= max_harnesses:
+                break
+                
+            current_new_coverage = analysis['_temp_total_bitmap'] - temp_global_bitmap
             
-            # 即使没有新覆盖率，如果质量分数很高也可以选择（考虑执行速度等因素）
-            if len(current_new_coverage) > 0 or (len(selected_harnesses) == 0 and analysis['quality_score'] > 10):
-                selected_harnesses.append(analysis)
-                temp_global_bitmap.update(analysis['total_bitmap'])
+            # 简化选择策略：直接按分数排序选择
+            selected_harnesses.append(analysis)
+            temp_global_bitmap.update(analysis['_temp_total_bitmap'])
+            
+            selection_reason = f"质量分数: {analysis['quality_score']:.2f}"
+            if len(current_new_coverage) > 0:
+                selection_reason += f", 新增覆盖率: {len(current_new_coverage)}"
                 
                 log_success(f"  ✓ 选择harness: {analysis['harness']} "
-                      f"(质量分数: {analysis['quality_score']:.2f}, 新增覆盖率: {len(current_new_coverage)})")
+                      f"(质量分数: {analysis['quality_score']:.2f}, {selection_reason})")
                 
                 # 限制选择的harness数量为指定的最大值
                 if len(selected_harnesses) >= max_harnesses:
                     break
         
-        # 如果没有选择到任何harness，选择质量分数最高的一个
-        if not selected_harnesses and coverage_analyses:
-            # 从所有分析结果中选择质量分数最高的
-            all_analyses = sorted(coverage_analyses, 
-                                key=lambda x: x.get('quality_score', 0), reverse=True)
-            if all_analyses:
-                best_analysis = all_analyses[0]
-                selected_harnesses.append(best_analysis)
-                temp_global_bitmap.update(best_analysis['total_bitmap'])
-                log_warning(f"  ⚠ 备选: {best_analysis['harness']} (质量: {best_analysis['coverage_quality']})")
+        # 确保至少选择一个harness（如果有的话）
+        if not selected_harnesses and all_harnesses:
+            best_analysis = all_harnesses[0]
+            selected_harnesses.append(best_analysis)
+            temp_global_bitmap.update(best_analysis['_temp_total_bitmap'])
+            log_warning(f"  ⚠ 保底选择: {best_analysis['harness']} "
+                      f"(质量分数: {best_analysis['quality_score']:.2f})")
         
         # 更新全局覆盖率
         self.global_bitmap = temp_global_bitmap
@@ -415,13 +384,9 @@ class CoverageFilter:
             analysis = self.analyze_harness_coverage(harness_info)
             coverage_analyses.append(analysis)
             
-            # 更新统计信息
-            if analysis['coverage_quality'] == 'good':
+            # 更新统计信息（简化版本，不再按质量分类）
+            if analysis['total_executions'] > 0:
                 self.coverage_stats['coverage_success'] += 1
-            elif analysis['coverage_quality'] == 'no_new_coverage':
-                self.coverage_stats['no_new_coverage'] += 1
-            elif analysis['coverage_quality'] in ['execution_failed', 'unstable', 'too_slow', 'poor_coverage_growth']:
-                self.coverage_stats['coverage_failed'] += 1
             else:
                 self.coverage_stats['coverage_failed'] += 1
         
@@ -446,14 +411,26 @@ class CoverageFilter:
                         log_success(f"  已复制最佳harness: {dest_file}")
                         break
         
+        # 清理临时字段，避免保存到JSON中
+        for analysis in coverage_analyses:
+            if '_temp_total_bitmap' in analysis:
+                del analysis['_temp_total_bitmap']
+            if '_temp_new_coverage' in analysis:
+                del analysis['_temp_new_coverage']
+        
+        for harness in best_harnesses:
+            if '_temp_total_bitmap' in harness:
+                del harness['_temp_total_bitmap']
+            if '_temp_new_coverage' in harness:
+                del harness['_temp_new_coverage']
+        
         # 保存分析结果
         self.save_coverage_results(coverage_analyses, best_harnesses)
         
         log_info("模糊测试质量筛选完成:")
         log_info(f"  总数: {self.coverage_stats['total_harnesses']}")
-        log_success(f"  高质量: {self.coverage_stats['coverage_success']}")
-        log_warning(f"  无新覆盖率: {self.coverage_stats['no_new_coverage']}")
-        log_error(f"  质量问题: {self.coverage_stats['coverage_failed']}")
+        log_success(f"  成功分析: {self.coverage_stats['coverage_success']}")
+        log_info(f"  分析失败: {self.coverage_stats['coverage_failed']}")
         log_success(f"  最终选择: {len(best_harnesses)}")
         log_info(f"  全局覆盖率大小: {len(self.global_bitmap)}")
         
@@ -486,10 +463,19 @@ class CoverageFilter:
         log_success(f"最佳harness已保存到: {best_file}")
         log_success(f"全局覆盖率位图已保存到: {bitmap_file}")
 
-def coverage_filter(log_dir, seeds_valid_dir, final_dir=None, max_harnesses=3):
+def coverage_filter(log_dir, seeds_valid_dir, final_dir=None, max_harnesses=3, dict_file=None, coverage_log_dir=None):
     """基于模糊测试质量的harness筛选API接口"""
     # 创建覆盖率筛选器
-    filter = CoverageFilter(log_dir, seeds_valid_dir)
+    filter = CoverageFilter(log_dir, seeds_valid_dir, dict_file)
+    
+    # 设置正确的目录：log_dir用于读取step2结果，coverage_log_dir用于保存step3结果
+    filter.step2_log_dir = Path(log_dir)  # 读取step2结果的目录
+    if coverage_log_dir:
+        filter.log_dir = Path(coverage_log_dir)  # 保存step3结果的目录
+        # 确保目录存在
+        filter.log_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        filter.log_dir = Path(log_dir)  # 如果没有指定，则使用相同目录
     
     # 执行筛选
     best_harnesses = filter.filter_harnesses(final_dir, max_harnesses)
