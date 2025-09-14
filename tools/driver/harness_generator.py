@@ -10,16 +10,19 @@ import os
 import json
 import re
 from typing import Dict, List, Any
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from log import log_info, log_success, log_warning, log_error
 from utils import save_prompt_to_file, save_llm_response_to_file
 from libfuzzer2afl import convert_harness_file
 from step1_compile_filter import compile_filter
 
 # Import LLM modules
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from llm.base import create_llm_client
 from llm.config import LLMConfig
+from prompt import PromptGenerator
+
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 
 class HarnessGenerator:
@@ -27,7 +30,6 @@ class HarnessGenerator:
     
     def __init__(self, config_parser):
         self.config_parser = config_parser
-        from prompt import PromptGenerator
         self.prompt_generator = PromptGenerator(config_parser)
         
         # Initialize LLM client
@@ -299,8 +301,56 @@ class HarnessGenerator:
         language = library_info.get('language', 'C').upper()
         return '.cpp' if language == 'C++' else '.c'
     
+    def _generate_single_harness(self, api_info: Dict[str, Any], harness_index: int, 
+                                harness_libfuzzer_dir: str, harness_afl_dir: str, 
+                                library_output_dir: str) -> bool:
+        """Generate a single harness for an API"""
+        api_name = api_info.get('api_name', 'unknown_api')
+        file_ext = self._get_file_extension()
+        
+        try:
+            # Generate prompt
+            prompt = self.generate_fuzz_harness_prompt(api_info)
+            
+            # Call LLM to generate harness
+            response = self.llm_client.generate_response(prompt)
+            
+            # Save LLM response to file
+            response_filepath = save_llm_response_to_file(response, library_output_dir, 
+                                                        api_name, harness_index)
+            log_info(f"LLM response {harness_index} for {api_name} saved to {response_filepath}")
+            
+            # Extract harness code from response
+            harness_code = self._extract_code_from_response(response)
+            
+            if harness_code.strip():
+                harness_filename = f"{api_name}_harness_{harness_index}{file_ext}"
+                
+                # Save LibFuzzer version
+                libfuzzer_filepath = os.path.join(harness_libfuzzer_dir, harness_filename)
+                with open(libfuzzer_filepath, 'w', encoding='utf-8') as f:
+                    f.write(harness_code)
+                log_info(f"Harness {harness_index} for {api_name} saved to {libfuzzer_filepath}")
+                
+                # Convert to AFL++ version
+                afl_filepath = os.path.join(harness_afl_dir, harness_filename)
+                if convert_harness_file(libfuzzer_filepath, afl_filepath):
+                    log_info(f"AFL++ harness {harness_index} for {api_name} saved to {afl_filepath}")
+                    return True
+                else:
+                    log_warning(f"Failed to convert harness {harness_index} for {api_name} to AFL++ format")
+                    # Still count as success if LibFuzzer version was saved
+                    return True
+            else:
+                log_warning(f"Empty harness {harness_index} for {api_name}, skipping")
+                return False
+                
+        except Exception as e:
+            log_error(f"Failed to generate harness {harness_index} for {api_name}: {e}")
+            return False
+    
     def generate_harnesses_for_api(self, api_info: Dict[str, Any], library_output_dir: str) -> bool:
-        """Generate multiple harnesses for a single API"""
+        """Generate multiple harnesses for a single API using parallel execution"""
         if not self.llm_client:
             log_error("LLM client not available, cannot generate harnesses")
             return False
@@ -313,81 +363,61 @@ class HarnessGenerator:
         os.makedirs(harness_libfuzzer_dir, exist_ok=True)
         os.makedirs(harness_afl_dir, exist_ok=True)
         
-        # Generate and save prompt
+        # Generate and save prompt (for reference)
         prompt = self.generate_fuzz_harness_prompt(api_info)
         prompt_file = save_prompt_to_file(prompt, library_output_dir, api_name)
         log_info(f"Generated prompt for {api_name} saved to {prompt_file}")
         
-        # Get file extension
-        file_ext = self._get_file_extension()
-        
-        # Generate 3 harnesses in one call
+        # Generate 3 harnesses in parallel
         success_count = 0
-        try:
-            log_info(f"Generating 3 harnesses for {api_name}...")
+        log_info(f"Generating 3 harnesses for {api_name} in parallel...")
+        
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            # Submit tasks for parallel execution
+            future_to_index = {
+                executor.submit(self._generate_single_harness, api_info, i, 
+                              harness_libfuzzer_dir, harness_afl_dir, library_output_dir): i 
+                for i in range(1, 4)
+            }
             
-            # Call LLM to generate all 3 harnesses
-            response = self.llm_client.generate_response(prompt)
-            
-            # Save LLM response to file
-            response_filepath = save_llm_response_to_file(response, library_output_dir, api_name)
-            log_info(f"LLM response for {api_name} saved to {response_filepath}")
-            
-            # Extract 3 harnesses from response
-            harnesses = self._extract_multiple_harnesses(response)
-            
-            # Save each harness to file
-            for i, harness_code in enumerate(harnesses, 1):
-                if harness_code.strip():
-                    harness_filename = f"{api_name}_harness_{i}{file_ext}"
-                    
-                    # Save LibFuzzer version
-                    libfuzzer_filepath = os.path.join(harness_libfuzzer_dir, harness_filename)
-                    with open(libfuzzer_filepath, 'w', encoding='utf-8') as f:
-                        f.write(harness_code)
-                    log_info(f"Harness {i} for {api_name} saved to {libfuzzer_filepath}")
-                    
-                    # Convert to AFL++ version
-                    afl_filepath = os.path.join(harness_afl_dir, harness_filename)
-                    if convert_harness_file(libfuzzer_filepath, afl_filepath):
-                        log_info(f"AFL++ harness {i} for {api_name} saved to {afl_filepath}")
-                        success_count += 1
-                    else:
-                        log_warning(f"Failed to convert harness {i} for {api_name} to AFL++ format")
-                        # Still count as success if LibFuzzer version was saved
-                        success_count += 1
-                else:
-                    log_warning(f"Empty harness {i} for {api_name}, skipping")
-            
-            if success_count == 0:
-                log_error(f"No valid harnesses extracted for {api_name}")
-            else:
-                # 调用编译过滤器筛选生成的harness
-                log_info(f"Starting compile filtering for {api_name}...")
+            # Collect results
+            for future in as_completed(future_to_index):
+                harness_index = future_to_index[future]
                 try:
-                    # 设置编译过滤的目录
-                    compile_output_dir = os.path.join(library_output_dir, api_name, 'harness_compiled')
-                    compile_log_dir = os.path.join(library_output_dir, api_name, 'harness_compiled_logs')
-                    filtered_harness_dir = os.path.join(library_output_dir, api_name, 'harness_compiled_filtered')
-                    
-                    # 执行编译过滤
-                    successful_harnesses = compile_filter(
-                        harness_dir=harness_afl_dir,
-                        output_dir=compile_output_dir,
-                        log_dir=compile_log_dir,
-                        next_stage_dir=filtered_harness_dir,
-                        config_parser=self.config_parser
-                    )
-                    
-                    if successful_harnesses:
-                        log_success(f"Compile filtering completed for {api_name}: {len(successful_harnesses)} harnesses passed")
+                    if future.result():
+                        success_count += 1
+                        log_info(f"Harness {harness_index} for {api_name} generated successfully")
                     else:
-                        log_warning(f"No harnesses passed compile filtering for {api_name}")
-                        
+                        log_warning(f"Harness {harness_index} for {api_name} generation failed")
                 except Exception as e:
-                    log_error(f"Compile filtering failed for {api_name}: {e}")
+                    log_error(f"Harness {harness_index} for {api_name} generation exception: {e}")
+        
+        if success_count == 0:
+            log_error(f"No valid harnesses generated for {api_name}")
+        else:
+            # 调用编译过滤器筛选生成的harness
+            log_info(f"Starting compile filtering for {api_name}...")
+            try:
+                # 设置编译过滤的目录
+                compile_output_dir = os.path.join(library_output_dir, api_name, 'harness_compiled')
+                compile_log_dir = os.path.join(library_output_dir, api_name, 'harness_compiled_logs')
+                filtered_harness_dir = os.path.join(library_output_dir, api_name, 'harness_compiled_filtered')
                 
-        except Exception as e:
-            log_error(f"Failed to generate harnesses for {api_name}: {e}")
+                # 执行编译过滤
+                successful_harnesses = compile_filter(
+                    harness_dir=harness_afl_dir,
+                    output_dir=compile_output_dir,
+                    log_dir=compile_log_dir,
+                    next_stage_dir=filtered_harness_dir,
+                    config_parser=self.config_parser
+                )
+                
+                if successful_harnesses:
+                    log_success(f"Compile filtering completed for {api_name}: {len(successful_harnesses)} harnesses passed")
+                else:
+                    log_warning(f"No harnesses passed compile filtering for {api_name}")
+                    
+            except Exception as e:
+                log_error(f"Compile filtering failed for {api_name}: {e}")
         
         return success_count > 0

@@ -66,7 +66,7 @@ class PromptGenerator:
 
 {language_requirements}
 
-Please use the standard Libfuzzer entry function: `{entry_function}` to generate 3 complete {code_style} fuzz harnesses, including all necessary header files, function implementations, and error handling. The code should be directly usable for Libfuzzer fuzzing tests.
+Please use the standard Libfuzzer entry function: `{entry_function}` to generate 1 complete {code_style} fuzz harness, including all necessary header files, function implementations, and error handling. The code should be directly usable for Libfuzzer fuzzing tests.
 """
         
         return prompt
@@ -95,33 +95,3 @@ Please use the standard Libfuzzer entry function: `{entry_function}` to generate
                 examples_text += f"**Example {i}**:\n```c\n{code}\n```\n\n"
         
         return examples_text
-     
-     
-     
-     
-# ## Requirements
-
-# 1. **Fuzz Harness Structure**:
-#    - Use the standard Libfuzzer entry function: `extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)`
-#    - Perform reasonable length checks and boundary validation on input data
-#    - Handle memory allocation and deallocation correctly to avoid memory leaks
-#    - Include necessary error handling and exception handling
-
-# 2. **Input Data Processing**:
-#    - Parse fuzz input data reasonably according to API function parameter types
-#    - For string parameters, ensure null termination
-#    - For numeric parameters, apply reasonable range restrictions
-#    - For pointer parameters, perform null checks
-
-# 3. **Code Quality**:
-#    - Code should compile successfully
-#    - Follow C/C++ best practices
-#    - Add appropriate comments to explain key logic
-#    - Ensure harness can effectively trigger different execution paths of the target API
-
-# 4. **Security Considerations**:
-#    - Avoid buffer overflows
-#    - Handle boundary conditions correctly
-#    - Prevent infinite loops or excessive resource consumption
-
-# Please generate complete C/C++ code, including all necessary header files, function implementations, and error handling. The code should be directly usable for Libfuzzer fuzzing tests.

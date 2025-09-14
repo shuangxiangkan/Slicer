@@ -97,12 +97,13 @@ def save_prompt_to_file(prompt: str, library_output_dir: str, api_name: str) -> 
     Returns:
         保存的文件路径
     """
-    # 创建API专用目录
+    # 创建API专用目录和harness_generation_logs子目录
     api_dir = os.path.join(library_output_dir, api_name)
-    os.makedirs(api_dir, exist_ok=True)
+    logs_dir = os.path.join(api_dir, 'harness_generation_logs')
+    os.makedirs(logs_dir, exist_ok=True)
     
-    # 保存prompt文件
-    prompt_file = os.path.join(api_dir, f"{api_name}_prompt.txt")
+    # 保存prompt文件到harness_generation_logs目录
+    prompt_file = os.path.join(logs_dir, f"{api_name}_prompt.txt")
     with open(prompt_file, 'w', encoding='utf-8') as f:
         f.write(prompt)
     
@@ -122,15 +123,16 @@ def save_llm_response_to_file(response: str, library_output_dir: str, api_name: 
     Returns:
         保存的文件路径
     """
-    # 创建API专用目录
+    # 创建API专用目录和harness_generation_logs子目录
     api_dir = os.path.join(library_output_dir, api_name)
-    os.makedirs(api_dir, exist_ok=True)
+    logs_dir = os.path.join(api_dir, 'harness_generation_logs')
+    os.makedirs(logs_dir, exist_ok=True)
     
-    # 保存响应文件
+    # 保存响应文件到harness_generation_logs目录
     if response_index is not None:
-        response_file = os.path.join(api_dir, f"{api_name}_response_{response_index}.txt")
+        response_file = os.path.join(logs_dir, f"{api_name}_response_{response_index}.txt")
     else:
-        response_file = os.path.join(api_dir, f"{api_name}_response.txt")
+        response_file = os.path.join(logs_dir, f"{api_name}_response.txt")
     
     with open(response_file, 'w', encoding='utf-8') as f:
         f.write(response)
