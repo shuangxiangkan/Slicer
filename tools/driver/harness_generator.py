@@ -12,7 +12,7 @@ import re
 from typing import Dict, List, Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from log import log_info, log_success, log_warning, log_error
-from utils import save_prompt_to_file, save_llm_response_to_file
+from utils import save_prompt_to_file, save_llm_response_to_file, extract_code_from_response, get_file_extension
 from libfuzzer2afl import convert_harness_file
 from step1_compile_filter import compile_filter
 from step2_execution_filter import execution_filter
@@ -246,74 +246,17 @@ class HarnessGenerator:
             return sources[0].get('context', '')
         
         return ""
-    
-    def generate_fuzz_harness_prompt(self, api_info: Dict[str, Any]) -> str:
-        """为单个API生成fuzz harness的prompt"""
-        return self.prompt_generator.generate_fuzz_harness_prompt(api_info)
-    
-    def _extract_code_from_response(self, response: str) -> str:
-        """Extract C/C++ code from LLM response"""
-        # Try to find code blocks marked with ```c, ```cpp, or ```
-        code_patterns = [
-            r'```(?:c|cpp|c\+\+)\s*\n(.*?)```',
-            r'```\s*\n(.*?)```'
-        ]
-        
-        for pattern in code_patterns:
-            matches = re.findall(pattern, response, re.DOTALL | re.IGNORECASE)
-            if matches:
-                # Return the first (usually longest) code block
-                return matches[0].strip()
-        
-        # If no code blocks found, return the entire response
-        return response.strip()
-    
-    def _extract_multiple_harnesses(self, response: str) -> List[str]:
-        """Extract multiple C/C++ harnesses from LLM response"""
-        # Look for code blocks marked with ```c, ```cpp, or ```
-        patterns = [
-            r'```(?:c|cpp)\s*\n(.*?)```',
-            r'```\s*\n(.*?)```'
-        ]
-        
-        harnesses = []
-        for pattern in patterns:
-            matches = re.findall(pattern, response, re.DOTALL | re.IGNORECASE)
-            if matches:
-                harnesses.extend([match.strip() for match in matches])
-                break
-        
-        # If we found harnesses, return up to 3
-        if harnesses:
-            return harnesses[:3]
-        
-        # If no code blocks found, try to split by harness comments
-        harness_pattern = r'//\s*Harness\s*\d+.*?(?=//\s*Harness\s*\d+|$)'
-        harness_matches = re.findall(harness_pattern, response, re.DOTALL | re.IGNORECASE)
-        
-        if harness_matches:
-            return [match.strip() for match in harness_matches[:3]]
-        
-        # If still no matches, return the entire response as single harness
-        return [response.strip()]
-    
-    def _get_file_extension(self) -> str:
-        """Get file extension based on library language"""
-        library_info = self.config_parser.get_library_info()
-        language = library_info.get('language', 'C').upper()
-        return '.cpp' if language == 'C++' else '.c'
-    
 
     def _generate_single_harness(self, api_info: Dict[str, Any], harness_index: int, 
                                 harness_libfuzzer_dir: str, harness_afl_dir: str, 
                                 library_output_dir: str) -> bool:
         """Generate a single harness for an API"""
         api_name = api_info.get('api_name', 'unknown_api')
-        file_ext = self._get_file_extension()
+        file_ext = get_file_extension(self.config_parser)
         
         try:
             # Generate prompt
-            prompt = self.generate_fuzz_harness_prompt(api_info)
+            prompt = self.prompt_generator.generate_fuzz_harness_prompt(api_info)
             
             # Call LLM to generate harness
             response = self.llm_client.generate_response(prompt)
@@ -324,7 +267,7 @@ class HarnessGenerator:
             log_info(f"LLM response {harness_index} for {api_name} saved to {response_filepath}")
             
             # Extract harness code from response
-            harness_code = self._extract_code_from_response(response)
+            harness_code = extract_code_from_response(response)
             
             if harness_code.strip():
                 harness_filename = f"{api_name}_harness_{harness_index}{file_ext}"
@@ -367,7 +310,7 @@ class HarnessGenerator:
         os.makedirs(harness_afl_dir, exist_ok=True)
         
         # Generate and save prompt (for reference)
-        prompt = self.generate_fuzz_harness_prompt(api_info)
+        prompt = self.prompt_generator.generate_fuzz_harness_prompt(api_info)
         prompt_file = save_prompt_to_file(prompt, library_output_dir, api_name)
         log_info(f"Generated prompt for {api_name} saved to {prompt_file}")
         

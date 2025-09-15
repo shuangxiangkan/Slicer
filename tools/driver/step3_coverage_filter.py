@@ -430,7 +430,7 @@ class CoverageFilter:
         log_info("模糊测试质量筛选完成:")
         log_info(f"  总数: {self.coverage_stats['total_harnesses']}")
         log_success(f"  成功分析: {self.coverage_stats['coverage_success']}")
-        log_info(f"  分析失败: {self.coverage_stats['coverage_failed']}")
+        log_info(f"  失败分析: {self.coverage_stats['coverage_failed']}")
         log_success(f"  最终选择: {len(best_harnesses)}")
         log_info(f"  全局覆盖率大小: {len(self.global_bitmap)}")
         

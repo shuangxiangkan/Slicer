@@ -6,6 +6,7 @@ Utility functions for the fuzzing driver
 import shutil
 import subprocess
 import os
+import re
 from typing import List, Tuple
 
 
@@ -31,7 +32,6 @@ def verify_fuzzing_environment() -> Tuple[bool, List[str]]:
             missing_tools.append(tool)
     
     return len(missing_tools) == 0, missing_tools
-
 
 def check_afl_instrumentation(library_path: str) -> Tuple[bool, str]:
     """
@@ -84,7 +84,6 @@ def check_afl_instrumentation(library_path: str) -> Tuple[bool, str]:
     except Exception as e:
         return False, f"检查过程中发生错误: {str(e)}"
 
-
 def save_prompt_to_file(prompt: str, library_output_dir: str, api_name: str) -> str:
     """
     将生成的prompt保存到文件
@@ -108,7 +107,6 @@ def save_prompt_to_file(prompt: str, library_output_dir: str, api_name: str) -> 
         f.write(prompt)
     
     return prompt_file
-
 
 def save_llm_response_to_file(response: str, library_output_dir: str, api_name: str, response_index: int = None) -> str:
     """
@@ -138,6 +136,29 @@ def save_llm_response_to_file(response: str, library_output_dir: str, api_name: 
         f.write(response)
     
     return response_file
+
+def extract_code_from_response(response: str) -> str:
+    """Extract C/C++ code from LLM response"""
+    # Try to find code blocks marked with ```c, ```cpp, or ```
+    code_patterns = [
+        r'```(?:c|cpp|c\+\+)\s*\n(.*?)```',
+        r'```\s*\n(.*?)```'
+    ]
+    
+    for pattern in code_patterns:
+        matches = re.findall(pattern, response, re.DOTALL | re.IGNORECASE)
+        if matches:
+            # Return the first (usually longest) code block
+            return matches[0].strip()
+    
+    # If no code blocks found, return the entire response
+    return response.strip()
+
+def get_file_extension(config_parser) -> str:
+    """Get file extension based on library language"""
+    library_info = config_parser.get_library_info()
+    language = library_info.get('language', 'C').upper()
+    return '.cpp' if language == 'C++' else '.c'
 
 
 if __name__ == "__main__":
