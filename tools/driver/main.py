@@ -10,7 +10,7 @@ from config_parser import ConfigParser
 from log import *
 from utils import verify_fuzzing_environment
 
-# 添加项目根目录到路径
+# Add project root to path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -18,17 +18,17 @@ from parser.repo_analyzer import RepoAnalyzer
 
 def create_repo_analyzer(config_parser: ConfigParser) -> RepoAnalyzer:
     """
-    创建并初始化RepoAnalyzer实例
+    Create and initialize RepoAnalyzer instance
     
     Args:
-        config_parser: 配置解析器实例
+        config_parser: Configuration parser instance
         
     Returns:
-        已完成基础分析的RepoAnalyzer实例
+        RepoAnalyzer instance with basic analysis completed
     """
-    log_info(f"使用直接参数模式进行分析: {config_parser.get_target_library_dir()}")
+    log_info(f"Using direct parameter mode for analysis: {config_parser.get_target_library_dir()}")
     
-    # 初始化分析器（直接参数模式）
+    # Initialize analyzer (direct parameter mode)
     analyzer = RepoAnalyzer(
         library_path=config_parser.get_target_library_dir(),
         header_files=config_parser.get_headers(),
@@ -36,72 +36,72 @@ def create_repo_analyzer(config_parser: ConfigParser) -> RepoAnalyzer:
         exclude_files=config_parser.get_exclude_dirs()
     )
     
-    # 执行基础分析
+    # Execute basic analysis
     result = analyzer.analyze()
-    log_info(f"基础分析完成，总共找到 {result['total_functions']} 个函数")
+    log_info(f"Basic analysis completed, found {result['total_functions']} functions")
     
     return analyzer
 
 def harness_generation(config_path: str, library_type: str = "static") -> bool:
     """
-    生成harness的主函数
+    Main function for harness generation
     
     Args:
-        config_path: 配置文件路径
-        library_type: 库类型 ("static", "shared")
+        config_path: Configuration file path
+        library_type: Library type ("static", "shared")
         
     Returns:
         True if harness generation is successful, False otherwise.
     """
     try:
-        # 解析配置
+        # Parse configuration
         config_parser = ConfigParser(config_path)
         log_success("Configuration parsed successfully.")
         
-        # 验证模糊测试环境
+        # Verify fuzzing environment
         env_ready, missing_tools = verify_fuzzing_environment()
         if not env_ready:
-            log_error(f"模糊测试环境不完整，缺少必要工具: {', '.join(missing_tools)}")
-            log_error("请安装AFL++并确保其在PATH环境变量中")
+            log_error(f"Fuzzing environment incomplete, missing necessary tools: {', '.join(missing_tools)}")
+            log_error("Please install AFL++ and ensure it is in the PATH environment variable")
             return False
-        log_success("模糊测试环境验证通过")
+        log_success("Fuzzing environment verification passed")
         
-        # 通过config_parser获取目录路径
+        # Get directory path through config_parser
         library_output_dir = config_parser.get_output_dir()
         
-        # 创建LibraryHandler实例
+        # Create LibraryHandler instance
         handler = LibraryHandler(config_parser)
         
-        # 步骤1: 编译库文件
+        # Step 1: Compile library file
         success = handler.compile_library(library_type)
         if not success:
-            log_error("库文件编译失败，终止harness生成")
+            log_error("Library file compilation failed, terminating harness generation")    
             return False
         
-        # 步骤2: 创建RepoAnalyzer实例（在编译完成后）
+        # Step 2: Create RepoAnalyzer instance (after compilation)
         analyzer = create_repo_analyzer(config_parser)
         
-        # 步骤3: 提取API并保存到文件
+        # Step 3: Extract API and save to file
         api_functions = handler.get_all_apis(library_output_dir, analyzer)
         
-        # 步骤3: 检查API函数提取结果
+        # Step 3: Check API function extraction result
         if not api_functions:
-            log_error("未找到API函数，终止harness生成")
+            log_error("No API functions found, terminating harness generation")
             return False
         
-        # 步骤4: 计算API相似性并保存结果
+        # Step 4: Compute API similarity and save result
         similarity_results = handler.compute_api_similarity(api_functions, library_output_dir)
         
-        # 步骤5: 提取API注释并保存结果
+        # Step 5: Extract API comments and save result
         comments_results = handler.get_api_comments(api_functions, analyzer, library_output_dir)
         
-        # 步骤6: 搜索API文档说明并保存结果
+        # Step 6: Search API documentation and save result
         documentation_results = handler.get_api_documentation(api_functions, analyzer, library_output_dir)
         
-        # 步骤7: 计算API usage统计并保存结果
+        # Step 7: Compute API usage statistics and save result
         usage_results, api_categories = handler.get_api_usage(api_functions, analyzer, library_output_dir)
         
-        # 步骤8: 生成API harness
+        # Step 8: Generate API harness
         from harness_generator import HarnessGenerator
         harness_generator = HarnessGenerator(config_parser)
         harness_success = harness_generator.generate_harnesses_for_all_apis(
@@ -115,7 +115,7 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
          )
         
         if not harness_success:
-            log_warning("Harness生成过程中出现问题，但分析结果已保存")
+            log_warning("Harness generation过程中出现问题，但分析结果已保存")
         
         log_success("Harness generation completed successfully.")
             
@@ -126,7 +126,7 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
         return False
 
 if __name__ == "__main__":
-    # 手动修改这些参数
+    # Manually modify these parameters
     config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cJSON/cJSON.yaml"
     library_type = "static"  # "static", "shared"
     
