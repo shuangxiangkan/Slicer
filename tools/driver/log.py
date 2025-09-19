@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
-简化的日志工具模块
-只保留最常用的5个日志函数
+Simplified logging tool module
 """
 
 import sys
 
 class Colors:
-    """ANSI颜色代码"""
+    """ANSI color codes"""
     RED = '\033[31m'
     GREEN = '\033[32m'
     YELLOW = '\033[33m'
@@ -15,13 +14,13 @@ class Colors:
     RESET = '\033[0m'
 
 class Logger:
-    """简化的彩色日志记录器"""
+    """Simplified colored logger"""
     
     def __init__(self, enable_colors: bool = True):
         self.enable_colors = enable_colors
     
     def _log(self, color: str, symbol: str, level: str, message: str, file=None):
-        """内部日志方法"""
+        """Internal logging method"""
         if file is None:
             file = sys.stdout if level in ["INFO", "SUCCESS"] else sys.stderr
         
@@ -46,10 +45,10 @@ class Logger:
     
    
 
-# 创建全局日志实例
+# Create global logger instance
 logger = Logger()
 
-# 4个核心日志函数
+# 4 core logging functions
 def log_info(message: str):
     logger.info(message)
 
