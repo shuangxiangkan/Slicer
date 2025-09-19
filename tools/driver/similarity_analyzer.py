@@ -12,7 +12,7 @@ from typing import List, Tuple
 from difflib import SequenceMatcher
 import math
 
-# 添加项目根目录到Python路径
+# Add project root to Python path
 import sys
 from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
@@ -23,18 +23,19 @@ from parser.function_info import FunctionInfo
 
 class APISimilarityAnalyzer:
     """
-    API相似性分析器类
+    API similarity analyzer class
     
-    提供API函数之间相似度计算的完整功能，包括名称相似度、
-    类型相似度、参数相似度等多维度分析。
+    Provides complete functionality for computing similarity scores between API functions, including name similarity,
+    type similarity, parameter similarity, and multi-dimensional analysis.
+    Multi-dimensional analysis of parameter similarity.
     """
     
     def __init__(self, similarity_threshold: float = 0.2):
         """
-        初始化API相似性分析器
+        Initialize API similarity analyzer
         
         Args:
-            similarity_threshold: 默认的最小相似度阈值
+            similarity_threshold: Default minimum similarity threshold
         """
         self.similarity_threshold = similarity_threshold
         self.weights = {
@@ -49,16 +50,16 @@ class APISimilarityAnalyzer:
                               similarity_threshold: float = None,
                               max_results: int = 5) -> List[Tuple[FunctionInfo, float]]:
         """
-        找到与目标函数最相似的API函数
+        Find the most similar API function to the target function
         
         Args:
-            target_function: 目标函数的FunctionInfo对象
-            all_functions: 所有函数的FunctionInfo对象列表
-            similarity_threshold: 最小相似度阈值，如果为None则使用默认值
-            max_results: 返回的最大结果数量
+            target_function: FunctionInfo object of the target function
+            all_functions: List of FunctionInfo objects of all functions
+            similarity_threshold: Minimum similarity threshold, if None then use default value
+            max_results: Maximum number of results to return
             
         Returns:
-            List of (FunctionInfo, similarity_score) tuples, 按相似度降序排列
+            List of (FunctionInfo, similarity_score) tuples, sorted by similarity score in descending order
         """
         if similarity_threshold is None:
             similarity_threshold = self.similarity_threshold
@@ -66,7 +67,7 @@ class APISimilarityAnalyzer:
         similarities = []
         
         for func in all_functions:
-            # 跳过目标函数本身
+            # Skip the target function itself
             if func.name == target_function.name:
                 continue
                 
@@ -75,21 +76,21 @@ class APISimilarityAnalyzer:
             if similarity >= similarity_threshold:
                 similarities.append((func, similarity))
         
-        # 按相似度降序排序并限制结果数量
+        # Sort by similarity score in descending order and limit the number of results
         similarities.sort(key=lambda x: x[1], reverse=True)
         return similarities[:max_results]
 
 
     def compute_function_similarity(self, func1: FunctionInfo, func2: FunctionInfo) -> float:
         """
-        计算两个函数的整体相似度
+        Compute the overall similarity of two functions
         
         Args:
-            func1: 第一个函数
-            func2: 第二个函数
+            func1: The first function
+            func2: The second function
             
         Returns:
-            相似度分数 (0.0 到 1.0)
+            Similarity score (0.0 to 1.0)
         """
         similarities = {
             'name': self._compute_name_similarity(func1.name, func2.name),
@@ -98,7 +99,7 @@ class APISimilarityAnalyzer:
             'param_count': self._compute_param_count_similarity(func1, func2)
         }
         
-        # 加权平均
+        # Weighted average
         total_similarity = sum(similarities[key] * self.weights[key] for key in similarities)
         
         return total_similarity
@@ -106,9 +107,9 @@ class APISimilarityAnalyzer:
 
     def _compute_name_similarity(self, name1: str, name2: str) -> float:
         """
-        计算函数名相似度
+        Compute the similarity of function names
         """
-        # 分词处理
+        # Tokenization
         tokens1 = set(self._tokenize_name(name1))
         tokens2 = set(self._tokenize_name(name2))
     
@@ -117,32 +118,32 @@ class APISimilarityAnalyzer:
         if not tokens1 or not tokens2:
             return 0.0
             
-        # Jaccard相似度
+        # Jaccard similarity
         intersection = len(tokens1.intersection(tokens2))
         union = len(tokens1.union(tokens2))
         jaccard_similarity = intersection / union if union > 0 else 0.0
         
-        # 字符串相似度作为补充
+        # String similarity as a supplement
         string_similarity = SequenceMatcher(None, name1.lower(), name2.lower()).ratio()
         
-        # 组合两种度量
+        # Combine two measures
         return 0.7 * jaccard_similarity + 0.3 * string_similarity
 
 
     def _tokenize_name(self, name: str) -> List[str]:
         """
-        将函数名分解为语义组件
+        Decompose the function name into semantic components
         """
-        # 分割camelCase和snake_case
+        # Split camelCase and snake_case
         tokens = re.findall(r'[A-Z]?[a-z]+|[A-Z]+(?=[A-Z][a-z]|\b)|\d+', name)
         return [token.lower() for token in tokens if token]
 
 
     def _compute_type_similarity(self, type1: str, type2: str) -> float:
         """
-        计算类型相似度
+        Compute the similarity of types
         """
-        # 标准化类型
+        # Normalize types
         norm_type1 = self._normalize_type(type1)
         norm_type2 = self._normalize_type(type2)
         
@@ -153,30 +154,30 @@ class APISimilarityAnalyzer:
         elif self._are_similar_types(norm_type1, norm_type2):
             return 0.6
         else:
-            # 字符串相似度用于未知类型
+            # String similarity for unknown types
             return SequenceMatcher(None, norm_type1, norm_type2).ratio()
 
 
     def _normalize_type(self, type_str: str) -> str:
         """
-        标准化类型字符串用于比较
+        Normalize the type string for comparison
         """
-        # 移除空白和常见修饰符
+        # Remove whitespace and common modifiers
         normalized = re.sub(r'\s+', '', type_str.lower())
         normalized = re.sub(r'\b(const|static|extern|inline)\b', '', normalized)
-        normalized = re.sub(r'\*+', '*', normalized)  # 标准化指针级别
+        normalized = re.sub(r'\*+', '*', normalized)  # Normalize pointer levels
         return normalized.strip()
 
 
     def _are_compatible_types(self, type1: str, type2: str) -> bool:
         """
-        检查两个类型是否兼容 (例如 int 和 long)
+        Check if two types are compatible (e.g. int and long)
         """
         integer_types = {'int', 'long', 'short', 'char', 'int32_t', 'int64_t', 'size_t'}
         float_types = {'float', 'double', 'long double'}
         pointer_types = {'void*', 'char*', 'const char*'}
         
-        # 移除指针标识符进行基础类型比较
+        # Remove pointer identifiers for basic type comparison
         base_type1 = re.sub(r'\*+', '', type1)
         base_type2 = re.sub(r'\*+', '', type2)
         
@@ -187,15 +188,15 @@ class APISimilarityAnalyzer:
 
     def _are_similar_types(self, type1: str, type2: str) -> bool:
         """
-        检查两个类型是否语义相似
+        Check if two types are semantically similar
         """
-        # 都是指针
+        # Both are pointers
         if '*' in type1 and '*' in type2:
             return True
-        # 都是数组
+        # Both are arrays
         if '[' in type1 and '[' in type2:
             return True
-        # 都是函数指针
+        # Both are function pointers
         if '(' in type1 and ')' in type1 and '(' in type2 and ')' in type2:
             return True
         return False
@@ -203,7 +204,7 @@ class APISimilarityAnalyzer:
 
     def _compute_param_types_similarity(self, func1: FunctionInfo, func2: FunctionInfo) -> float:
         """
-        计算参数类型列表的相似度
+        Compute the similarity of parameter type lists
         """
         types1 = func1.parameters
         types2 = func2.parameters
@@ -216,13 +217,13 @@ class APISimilarityAnalyzer:
         max_len = max(len(types1), len(types2))
         min_len = min(len(types1), len(types2))
         
-        # 计算成对相似度
+        # Compute pairwise similarity
         similarities = []
         for i in range(min_len):
             sim = self._compute_type_similarity(types1[i], types2[i])
             similarities.append(sim)
             
-        # 平均相似度，带长度差异惩罚
+        # Average similarity, with length difference penalty
         avg_similarity = sum(similarities) / len(similarities) if similarities else 0.0
         length_penalty = min_len / max_len
         
@@ -231,7 +232,7 @@ class APISimilarityAnalyzer:
 
     def _compute_param_count_similarity(self, func1: FunctionInfo, func2: FunctionInfo) -> float:
         """
-        基于参数数量计算相似度
+        Compute the similarity based on the number of parameters
         """
         count1 = len(func1.parameters)
         count2 = len(func2.parameters)
@@ -243,26 +244,26 @@ class APISimilarityAnalyzer:
         elif abs(count1 - count2) == 2:
             return 0.6
         else:
-            # 对于更大的差异使用指数衰减
+            # For larger differences, use exponential decay
             return math.exp(-0.5 * abs(count1 - count2))
 
 
-# 为了向后兼容，提供函数式接口
+# For backward compatibility, provide a functional interface
 def find_most_similar_apis(target_function: FunctionInfo, 
                           all_functions: List[FunctionInfo],
                           similarity_threshold: float = 0.2,
                           max_results: int = 5) -> List[Tuple[FunctionInfo, float]]:
     """
-    向后兼容的函数式接口
+    Functional interface for backward compatibility
     
     Args:
-        target_function: 目标函数的FunctionInfo对象
-        all_functions: 所有函数的FunctionInfo对象列表
-        similarity_threshold: 最小相似度阈值
-        max_results: 返回的最大结果数量
+        target_function: FunctionInfo object of the target function
+        all_functions: List of FunctionInfo objects of all functions
+        similarity_threshold: Minimum similarity threshold
+        max_results: Maximum number of results to return
         
     Returns:
-        List of (FunctionInfo, similarity_score) tuples, 按相似度降序排列
+        List of (FunctionInfo, similarity_score) tuples, sorted by similarity score in descending order
     """
     analyzer = APISimilarityAnalyzer(similarity_threshold)
     return analyzer.find_most_similar_apis(target_function, all_functions, 
