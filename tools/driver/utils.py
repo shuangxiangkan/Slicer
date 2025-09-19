@@ -35,19 +35,19 @@ def verify_fuzzing_environment() -> Tuple[bool, List[str]]:
 
 def check_afl_instrumentation(library_path: str) -> Tuple[bool, str]:
     """
-    检查编译好的库文件是否被AFL++成功插桩。
+    Check if the compiled library file has been successfully instrumented by AFL++.
     
     Args:
-        library_path: 库文件的路径(.a或.so文件)
+        library_path: Path to the library file (.a or .so file)
         
     Returns:
         Tuple of (is_instrumented, message)
     """
     if not os.path.exists(library_path):
-        return False, f"库文件不存在: {library_path}"
+        return False, f"Library file does not exist: {library_path}"
     
     try:
-        # 使用strings命令检查二进制文件中的字符串
+        # Use strings command to check the strings in the binary file
         result = subprocess.run(
             ['strings', library_path], 
             capture_output=True, 
@@ -56,17 +56,17 @@ def check_afl_instrumentation(library_path: str) -> Tuple[bool, str]:
         )
         
         if result.returncode != 0:
-            return False, f"无法读取库文件内容: {library_path}"
+            return False, f"Cannot read library file content: {library_path}"
         
         output = result.stdout.lower()
         
-        # 检查AFL++插桩的特征字符串
+        # Check AFL++ instrumentation feature strings
         afl_signatures = [
-            '__afl_',           # AFL++函数前缀
-            'afl_area_ptr',     # AFL++共享内存指针
-            'afl_prev_loc',     # AFL++前一个位置
-            '__sanitizer_cov_trace_pc_guard',  # 覆盖率追踪
-            'llvm_gcov_',       # LLVM覆盖率
+            '__afl_',           # AFL++ function prefix
+            'afl_area_ptr',     # AFL++ shared memory pointer
+            'afl_prev_loc',     # AFL++ previous location
+            '__sanitizer_cov_trace_pc_guard',  # Coverage tracing
+            'llvm_gcov_',       # LLVM coverage
         ]
         
         found_signatures = []
@@ -75,33 +75,33 @@ def check_afl_instrumentation(library_path: str) -> Tuple[bool, str]:
                 found_signatures.append(signature)
         
         if found_signatures:
-            return True, f"检测到AFL++插桩特征: {', '.join(found_signatures)}"
+            return True, f"Detected AFL++ instrumentation features: {', '.join(found_signatures)}"
         else:
-            return False, "未检测到AFL++插桩特征，可能编译时未使用afl-clang-fast"
+            return False, "No AFL++ instrumentation features detected, possibly compiled without afl-clang-fast"
             
     except subprocess.TimeoutExpired:
-        return False, f"检查超时: {library_path}"
+        return False, f"Check timeout: {library_path}"
     except Exception as e:
-        return False, f"检查过程中发生错误: {str(e)}"
+        return False, f"Check error: {str(e)}"
 
 def save_prompt_to_file(prompt: str, library_output_dir: str, api_name: str) -> str:
     """
-    将生成的prompt保存到文件
+    Save the generated prompt to a file
     
     Args:
-        prompt: 生成的prompt内容
-        library_output_dir: 库的输出目录
-        api_name: API名称
+        prompt: Generated prompt content
+        library_output_dir: Library output directory
+        api_name: API name
         
     Returns:
-        保存的文件路径
+        Saved file path
     """
-    # 创建API专用目录和harness_generation_logs子目录
+    # Create API-specific directory and harness_generation_logs subdirectory
     api_dir = os.path.join(library_output_dir, api_name)
     logs_dir = os.path.join(api_dir, 'harness_generation_logs')
     os.makedirs(logs_dir, exist_ok=True)
     
-    # 保存prompt文件到harness_generation_logs目录
+    # Save prompt file to harness_generation_logs directory
     prompt_file = os.path.join(logs_dir, f"{api_name}_prompt.txt")
     with open(prompt_file, 'w', encoding='utf-8') as f:
         f.write(prompt)
@@ -110,23 +110,23 @@ def save_prompt_to_file(prompt: str, library_output_dir: str, api_name: str) -> 
 
 def save_llm_response_to_file(response: str, library_output_dir: str, api_name: str, response_index: int = None) -> str:
     """
-    将LLM响应保存到文件
+    Save the LLM response to a file
     
     Args:
-        response: LLM的响应内容
-        library_output_dir: 库的输出目录
-        api_name: API名称
-        response_index: 响应索引（可选，用于多个响应）
+        response: LLM response content
+        library_output_dir: Library output directory
+        api_name: API name
+        response_index: Response index (optional, for multiple responses)
         
     Returns:
-        保存的文件路径
+        Saved file path
     """
-    # 创建API专用目录和harness_generation_logs子目录
+    # Create API-specific directory and harness_generation_logs subdirectory
     api_dir = os.path.join(library_output_dir, api_name)
     logs_dir = os.path.join(api_dir, 'harness_generation_logs')
     os.makedirs(logs_dir, exist_ok=True)
     
-    # 保存响应文件到harness_generation_logs目录
+    # Save response file to harness_generation_logs directory
     if response_index is not None:
         response_file = os.path.join(logs_dir, f"{api_name}_response_{response_index}.txt")
     else:
@@ -164,7 +164,7 @@ def get_file_extension(config_parser) -> str:
 if __name__ == "__main__":
     ready, missing = verify_fuzzing_environment()
     if ready:
-        print("✓ 模糊测试环境已就绪!")
+        print("✓ Fuzzing environment ready!")
     else:
-        print(f"✗ 缺少必要工具: {', '.join(missing)}")
-        print("请安装AFL++并确保其在PATH环境变量中")
+        print(f"✗ Missing necessary tools: {', '.join(missing)}")
+        print("Please install AFL++ and ensure it is in the PATH environment variable")
