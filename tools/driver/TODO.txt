@@ -1,10 +1,8 @@
-2025-09-18:
+2025-09-24:
     
     注意：目前generate_harnesses_for_all_apis()代码中只是对有fuzz usage的API进行了测试，还没有对所有API进行测试，后面需要改过来
 
-    编译harness的时候还是报错
-
-    目前感觉寻找source和binary关系是通过step1_successful_harnesses.json的关系来的，但是我感觉太复杂，我觉得就每次只需要保留过滤后的源文件，在执行和覆盖率筛选的时候重新编译就好了，在/tmp/中重新编译执行就好了，这样应该可以简化，所有的编译，执行，fuzz都在tmp/中进行就好了
-
-    编译，执行，覆盖率，每个阶段只需要保留另个文件夹就行了：1. 过滤后的源文件；2.各种log及prompt信息
-    而且生成和编译的 源文件/ 和 log文件夹/ 可以只保留一个，
+    未处理好的地方：
+    1. 通过seeds执行harness检查的时候，如果报错也不一定是这个harness有问题，也可能是刚好找到了crash的种子，要判断这个crash是不是因为harness中API引起的问题
+    2. prompt还可以再优化
+    3，在提供harness实例的时候，要根据bottom up的顺序来逐个提供最好的harness实例（经过筛选过的）
