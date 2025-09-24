@@ -84,7 +84,7 @@ def check_afl_instrumentation(library_path: str) -> Tuple[bool, str]:
     except Exception as e:
         return False, f"Check error: {str(e)}"
 
-def save_prompt_to_file(prompt: str, library_output_dir: str, api_name: str) -> str:
+def save_prompt_to_file(prompt: str, library_output_dir: str, api_name: str, suffix: str = "") -> str:
     """
     Save the generated prompt to a file
     
@@ -92,6 +92,7 @@ def save_prompt_to_file(prompt: str, library_output_dir: str, api_name: str) -> 
         prompt: Generated prompt content
         library_output_dir: Library output directory
         api_name: API name
+        suffix: Optional suffix for filename (for different attempts/types)
         
     Returns:
         Saved file path
@@ -102,7 +103,10 @@ def save_prompt_to_file(prompt: str, library_output_dir: str, api_name: str) -> 
     os.makedirs(logs_dir, exist_ok=True)
     
     # Save prompt file to harness_generation_logs directory
-    prompt_file = os.path.join(logs_dir, f"{api_name}_prompt.txt")
+    if suffix:
+        prompt_file = os.path.join(logs_dir, f"{api_name}_prompt_{suffix}.txt")
+    else:
+        prompt_file = os.path.join(logs_dir, f"{api_name}_prompt.txt")
     with open(prompt_file, 'w', encoding='utf-8') as f:
         f.write(prompt)
     

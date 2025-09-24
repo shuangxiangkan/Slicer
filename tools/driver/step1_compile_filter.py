@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """
-三步筛选流程演示 - 第一步：编译筛选
-模拟 CompileHarness.checkSequence 和 compileHarness 方法的编译阶段
+编译工具类 - 为harness生成提供编译验证功能
+提供CompileUtils类用于在harness生成过程中进行编译验证
 """
 
 import subprocess
-import json
-import shutil
 import tempfile
 from pathlib import Path
 from log import *
@@ -123,15 +121,18 @@ class CompileUtils:
             else:
                 log_error(f"临时编译失败 [{source_name}]: {result.stderr}")
                 # 清理临时目录
+                import shutil
                 shutil.rmtree(temp_dir, ignore_errors=True)
                 return False, None, None
                 
         except subprocess.TimeoutExpired:
             log_error(f"临时编译超时 [{source_name}]")
+            import shutil
             shutil.rmtree(temp_dir, ignore_errors=True)
             return False, None, None
         except Exception as e:
             log_error(f"临时编译异常 [{source_name}]: {str(e)}")
+            import shutil
             shutil.rmtree(temp_dir, ignore_errors=True)
             return False, None, None
     
@@ -141,142 +142,16 @@ def create_compile_utils(config_parser=None):
     """创建编译工具实例"""
     return CompileUtils(config_parser)
 
-class CompileFilter:
-    def __init__(self, harness_dir, log_dir, next_stage_dir=None, config_parser=None):
-        self.harness_dir = Path(harness_dir)
-        self.log_dir = Path(log_dir)
-        self.next_stage_dir = Path(next_stage_dir) if next_stage_dir else None
-        self.config_parser = config_parser
-        self.compile_stats = {
-            'total': 0,
-            'compile_success': 0,
-            'compile_failed': 0,
-            'failed_harnesses': []
-        }
-        
-        # 创建编译工具
-        self.compile_utils = create_compile_utils(config_parser)
-    
-    def compile_harness(self, harness_file):
-        """编译单个harness文件（验证编译可行性，自动清理临时文件）"""
-        success, binary_path, temp_dir = self.compile_utils.compile_harness_in_temp(harness_file, "verification")
-        
-        # 立即清理临时目录，因为Step1只需要验证编译可行性
-        if temp_dir:
-            try:
-                import shutil
-                shutil.rmtree(temp_dir, ignore_errors=True)
-                log_info(f"清理编译验证临时目录: {temp_dir}")
-            except:
-                pass
-        
-        if success:
-            self.compile_stats['compile_success'] += 1
-            return True, "Compilation successful"
-        else:
-            self.compile_stats['compile_failed'] += 1
-            self.compile_stats['failed_harnesses'].append({
-                'file': harness_file.name,
-                'error': 'Compilation failed'
-            })
-            return False, "Compilation failed"
-    
-    def filter_harnesses(self):
-        """筛选所有harness文件"""
-        log_info("三步筛选流程 - 第一步：编译筛选")
-        log_info(f"扫描目录: {self.harness_dir}")
-        
-        # 获取所有C/C++文件
-        harness_files = list(self.harness_dir.glob("*.c")) + list(self.harness_dir.glob("*.cpp"))
-        self.compile_stats['total'] = len(harness_files)
-        
-        if not harness_files:
-            log_warning("未找到任何C/C++文件")
-            return []
-        
-        log_info(f"找到 {len(harness_files)} 个harness文件")
-        
-        successful_harnesses = []
-        
-        # 创建下一阶段目录
-        if self.next_stage_dir:
-            self.next_stage_dir.mkdir(parents=True, exist_ok=True)
-        
-        for harness_file in harness_files:
-            success, output = self.compile_harness(harness_file)
-            if success:
-                # 只保存源文件信息，不再维护binary路径
-                harness_info = {
-                    'source': str(harness_file),
-                    'compile_output': output
-                }
-                successful_harnesses.append(harness_info)
-                
-                # 复制成功编译的源文件到下一阶段目录
-                if self.next_stage_dir:
-                    dest_file = self.next_stage_dir / harness_file.name
-                    shutil.copy2(harness_file, dest_file)
-                    log_info(f"已复制到下一阶段: {dest_file}")
-        
-        # 保存编译统计信息
-        self.save_compile_stats()
-        
-        log_info("编译筛选完成")
-        failed_count = self.compile_stats['total'] - self.compile_stats['compile_success']
-        if failed_count == 0:
-            log_success(f"编译完成: 总数{self.compile_stats['total']}, 全部成功")
-        else:
-            log_warning(f"编译完成: 总数{self.compile_stats['total']}, 成功{self.compile_stats['compile_success']}, 失败{failed_count}")
-        
-        return successful_harnesses
-    
-    def save_compile_stats(self):
-        """保存编译统计信息"""
-        stats_file = self.log_dir / "step1_compile_stats.json"
-        with open(stats_file, 'w', encoding='utf-8') as f:
-            json.dump(self.compile_stats, f, indent=2, ensure_ascii=False)
-        log_info(f"编译统计信息已保存到: {stats_file}")
-
-def compile_filter(harness_dir, log_dir, next_stage_dir=None, config_parser=None):
-    """编译筛选API接口"""
-    # 确保日志目录存在
-    Path(log_dir).mkdir(parents=True, exist_ok=True)
-    
-    # 创建编译筛选器
-    filter = CompileFilter(harness_dir, log_dir, next_stage_dir, config_parser)
-    
-    # 执行筛选
-    successful_harnesses = filter.filter_harnesses()
-    
-    # 保存编译统计摘要（不再保存详细文件列表）
-    summary_file = Path(log_dir) / "step1_compile_summary.json"
-    summary_data = {
-        'total_harnesses': filter.compile_stats['total'],
-        'successful_harnesses': filter.compile_stats['compile_success'],
-        'failed_harnesses': filter.compile_stats['compile_failed'],
-        'success_rate': filter.compile_stats['compile_success'] / max(filter.compile_stats['total'], 1),
-        'note': f"成功编译的源文件已复制到: {next_stage_dir}"
-    }
-    
-    with open(summary_file, 'w', encoding='utf-8') as f:
-        json.dump(summary_data, f, indent=2, ensure_ascii=False)
-    
-    log_info(f"编译摘要已保存到: {summary_file}")
-    log_success(f"通过编译筛选的harness数量: {len(successful_harnesses)}")
-    
-    return successful_harnesses
+# CompileFilter class and compile_filter function have been removed
+# as compilation verification is now integrated into the harness generation process.
+# Only CompileUtils is retained for use in harness_generator.py
 
 def main():
-    """命令行入口（保持兼容性）"""
+    """命令行入口（已弃用，保持兼容性）"""
     import sys
-    if len(sys.argv) != 3:
-        log_error("用法: python step1_compile_filter.py <harness_dir> <log_dir>")
-        sys.exit(1)
-    
-    harness_dir = sys.argv[1]
-    log_dir = sys.argv[2]
-    
-    compile_filter(harness_dir, log_dir)
+    log_error("该命令行接口已弃用。编译验证现在集成在harness生成过程中。")
+    log_error("请使用 harness_generator.py 或 main.py 进行harness生成和验证。")
+    sys.exit(1)
 
 if __name__ == "__main__":
     main()
