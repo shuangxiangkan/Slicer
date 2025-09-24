@@ -68,4 +68,4 @@ documentation:       # optional
 # fuzzing configuration
 fuzzing:
   seeds_dir: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cJSON/seeds"  # required, absolute path to seeds directory
-  dictionary_file: "/home/kansx/SVF-Tools/Slicer/tools/driver/dictionaries/cJSON.dict"  # optional, absolute path to dictionary file
+  dictionary_file: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cJSON/json.dict"  # optional, absolute path to dictionary file
