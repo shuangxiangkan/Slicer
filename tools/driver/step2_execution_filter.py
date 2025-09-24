@@ -10,13 +10,15 @@ import shutil
 from pathlib import Path
 from typing import List, Dict, Tuple
 from log import *
+from step1_compile_filter import create_compile_utils
 
 class ExecutionFilter:
     
-    def __init__(self, log_dir, seeds_valid_dir, compile_log_dir=None):
+    def __init__(self, log_dir, seeds_valid_dir, compile_log_dir=None, config_parser=None):
         self.log_dir = Path(log_dir)
         self.seeds_valid_dir = Path(seeds_valid_dir)
         self.compile_log_dir = Path(compile_log_dir) if compile_log_dir else self.log_dir
+        self.config_parser = config_parser
         self.execution_stats = {
             'total_harnesses': 0,
             'execution_success': 0,
@@ -26,29 +28,37 @@ class ExecutionFilter:
             'valid_seed_failures': []
         }
         
-        # 在初始化时检查AFL++可用性，如果不可用直接报错
-        if not self._check_afl_available():
-            log_error("AFL++不可用，请确保已安装AFL++并在PATH中")
-            raise RuntimeError("AFL++不可用，请确保已安装AFL++并在PATH中")
+        # 创建编译工具
+        self.compile_utils = create_compile_utils(config_parser)
     
-    def _check_afl_available(self) -> bool:
-        """检查AFL++是否可用（私有方法，仅在初始化时调用）"""
-        try:
-            # 使用which命令检查afl-showmap是否存在
-            result = subprocess.run(['which', 'afl-showmap'], capture_output=True, timeout=5)
-            return result.returncode == 0
-        except:
-            return False
+    def _compile_harness_in_tmp(self, source_file):
+        """在临时目录编译harness"""
+        return self.compile_utils.compile_harness_in_temp(source_file, "execution")
     
-    def load_compiled_harnesses(self) -> List[Dict]:
-        """加载第一步编译成功的harness列表"""
-        success_file = self.compile_log_dir / "step1_successful_harnesses.json"
-        if not success_file.exists():
-            log_error(f"未找到编译成功的harness列表文件: {success_file}")
+    def load_compiled_harnesses_from_folder(self, compiled_harness_dir) -> List[Dict]:
+        """从编译过滤后的文件夹加载harness列表"""
+        compiled_dir = Path(compiled_harness_dir)
+        if not compiled_dir.exists():
+            log_error(f"编译过滤后的文件夹不存在: {compiled_dir}")
             return []
         
-        with open(success_file, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        # 获取所有C/C++文件
+        harness_files = list(compiled_dir.glob("*.c")) + list(compiled_dir.glob("*.cpp"))
+        
+        if not harness_files:
+            log_warning(f"在 {compiled_dir} 中未找到任何C/C++文件")
+            return []
+        
+        log_info(f"从 {compiled_dir} 加载了 {len(harness_files)} 个harness文件")
+        
+        # 转换为字典格式
+        harness_list = []
+        for harness_file in harness_files:
+            harness_list.append({
+                'source': str(harness_file)
+            })
+        
+        return harness_list
     
     def get_seed_files(self, seed_dir: Path) -> List[Path]:
         """获取种子文件列表"""
@@ -107,19 +117,37 @@ class ExecutionFilter:
     
 
     def test_harness_with_seeds(self, harness_info: Dict) -> Dict:
-        """使用种子文件测试harness"""
-        binary_path = Path(harness_info['binary'])
-        harness_name = binary_path.name
+        """使用种子文件测试harness（在临时目录编译并执行）"""
+        source_file = harness_info['source']
+        harness_name = Path(source_file).name
         
         log_info(f"测试harness: {harness_name}")
         
+        # 在临时目录编译harness
+        compile_success, binary_path, temp_dir = self._compile_harness_in_tmp(source_file)
+        
+        if not compile_success:
+            log_error(f"编译失败，跳过执行测试: {harness_name}")
+            return {
+                'harness': harness_name,
+                'source_path': str(source_file),
+                'valid_seed_results': [],
+                'crashed': False,
+                'timeout': False,
+                'execution_success': False,
+                'compile_failed': True
+            }
+        
         test_result = {
             'harness': harness_name,
+            'source_path': str(source_file),
             'binary_path': str(binary_path),
+            'temp_dir': str(temp_dir),
             'valid_seed_results': [],
             'crashed': False,
             'timeout': False,
-            'execution_success': True
+            'execution_success': True,
+            'compile_failed': False
         }
         
         # 测试有效种子
@@ -159,14 +187,25 @@ class ExecutionFilter:
             test_result['execution_success'] = False
             self.execution_stats['timeout_harnesses'].append(harness_name)
         
+        # 清理临时目录
+        try:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            log_info(f"清理临时目录: {temp_dir}")
+        except:
+            pass
+        
+        # 移除临时目录信息，避免保存到JSON中
+        if 'temp_dir' in test_result:
+            del test_result['temp_dir']
+        
         return test_result
     
-    def filter_harnesses(self, next_stage_dir=None) -> List[Dict]:
+    def filter_harnesses(self, compiled_harness_dir, executable_harness_dir=None) -> List[Dict]:
         """执行筛选所有harness"""
         log_info("OGHarn 第二步：执行筛选")
         
-        # 加载编译成功的harness
-        compiled_harnesses = self.load_compiled_harnesses()
+        # 从编译过滤后的文件夹加载harness
+        compiled_harnesses = self.load_compiled_harnesses_from_folder(compiled_harness_dir)
         self.execution_stats['total_harnesses'] = len(compiled_harnesses)
         
         if not compiled_harnesses:
@@ -176,8 +215,8 @@ class ExecutionFilter:
         log_info(f"开始测试 {len(compiled_harnesses)} 个编译成功的harness")
         
         # 创建下一阶段目录
-        if next_stage_dir:
-            next_stage_path = Path(next_stage_dir)
+        if executable_harness_dir:
+            next_stage_path = Path(executable_harness_dir)
             next_stage_path.mkdir(parents=True, exist_ok=True)
         
         successful_harnesses = []
@@ -188,15 +227,18 @@ class ExecutionFilter:
             all_test_results.append(test_result)
             
             if test_result['execution_success']:
-                successful_harnesses.append(harness_info)
+                # 保存成功执行的harness信息（只保存源文件路径）
+                successful_harness = {
+                    'source': harness_info['source']
+                }
+                successful_harnesses.append(successful_harness)
                 self.execution_stats['execution_success'] += 1
                 
                 # 复制成功执行的源文件到下一阶段目录
-                if next_stage_dir:
-                    source_file = Path(harness_info['source'])
-                    dest_file = next_stage_path / source_file.name
-                    shutil.copy2(source_file, dest_file)
-                    log_info(f"已复制到下一阶段: {dest_file}")
+                source_file = Path(harness_info['source'])
+                dest_file = next_stage_path / source_file.name
+                shutil.copy2(source_file, dest_file)
+                log_info(f"已复制到下一阶段: {dest_file}")
             else:
                 self.execution_stats['execution_failed'] += 1
         
@@ -234,24 +276,34 @@ class ExecutionFilter:
         log_info(f"执行统计信息已保存到: {stats_file}")
         log_info(f"详细执行结果已保存到: {results_file}")
 
-def execution_filter(log_dir, seeds_valid_dir, next_stage_dir=None, compile_log_dir=None):
+def execution_filter(log_dir, seeds_valid_dir, compiled_harness_dir, executable_harness_dir=None, config_parser=None):
     """执行筛选API接口"""
     # 创建执行筛选器
-    filter = ExecutionFilter(log_dir, seeds_valid_dir, compile_log_dir)
+    filter = ExecutionFilter(log_dir, seeds_valid_dir, log_dir, config_parser)
     
     # 执行筛选
-    successful_harnesses = filter.filter_harnesses(next_stage_dir)
+    successful_harnesses = filter.filter_harnesses(compiled_harness_dir, executable_harness_dir)
     
     # 确保日志目录存在
     log_dir_path = Path(log_dir)
     log_dir_path.mkdir(parents=True, exist_ok=True)
     
-    # 保存通过执行筛选的harness列表
-    success_file = log_dir_path / "step2_successful_harnesses.json"
-    with open(success_file, 'w', encoding='utf-8') as f:
-        json.dump(successful_harnesses, f, indent=2, ensure_ascii=False)
+    # 保存执行筛选摘要（不再保存详细文件列表）
+    summary_file = log_dir_path / "step2_execution_summary.json"
+    summary_data = {
+        'total_harnesses': filter.execution_stats['total_harnesses'],
+        'successful_harnesses': filter.execution_stats['execution_success'],
+        'failed_harnesses': filter.execution_stats['execution_failed'],
+        'crashed_harnesses': len(filter.execution_stats['crashed_harnesses']),
+        'timeout_harnesses': len(filter.execution_stats['timeout_harnesses']),
+        'success_rate': filter.execution_stats['execution_success'] / max(filter.execution_stats['total_harnesses'], 1),
+        'note': f"成功执行的源文件已复制到: {executable_harness_dir}"
+    }
     
-    log_info(f"通过执行筛选的harness列表已保存到: {success_file}")
+    with open(summary_file, 'w', encoding='utf-8') as f:
+        json.dump(summary_data, f, indent=2, ensure_ascii=False)
+    
+    log_info(f"执行摘要已保存到: {summary_file}")
     log_success(f"通过执行筛选的harness数量: {len(successful_harnesses)}")
     
     return successful_harnesses

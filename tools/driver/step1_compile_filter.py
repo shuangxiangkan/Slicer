@@ -7,22 +7,21 @@
 import subprocess
 import json
 import shutil
+import tempfile
 from pathlib import Path
 from log import *
 
-class CompileFilter:
-    def __init__(self, harness_dir, output_dir, log_dir, next_stage_dir=None, config_parser=None):
-        self.harness_dir = Path(harness_dir)
-        self.output_dir = Path(output_dir)
-        self.log_dir = Path(log_dir)
-        self.next_stage_dir = Path(next_stage_dir) if next_stage_dir else None
+class CompileUtils:
+    """通用编译工具类"""
+    
+    def __init__(self, config_parser=None):
+        """
+        初始化编译工具
+        
+        Args:
+            config_parser: 配置解析器实例
+        """
         self.config_parser = config_parser
-        self.compile_stats = {
-            'total': 0,
-            'compile_success': 0,
-            'compile_failed': 0,
-            'failed_harnesses': []
-        }
         
         # 获取编译配置
         if self.config_parser:
@@ -34,8 +33,17 @@ class CompileFilter:
             self.header_paths = []
             self.library_path = None
     
-    def _build_compile_command(self, harness_file, output_binary):
-        """构建编译命令"""
+    def build_compile_command(self, harness_file, output_binary):
+        """
+        构建编译命令
+        
+        Args:
+            harness_file: 源文件路径
+            output_binary: 输出二进制文件路径
+            
+        Returns:
+            list: 编译命令列表
+        """
         # 获取编译器
         if self.driver_config and self.driver_config['compiler']:
             compiler = self.driver_config['compiler'][0]
@@ -78,18 +86,28 @@ class CompileFilter:
         
         return compile_cmd
     
-    def compile_harness(self, harness_file):
-        """编译单个harness文件"""
-        log_info(f"正在编译 harness: {harness_file.name}")
+    def compile_harness_in_temp(self, source_file, purpose="testing"):
+        """
+        在临时目录编译harness
         
-        # 使用配置的编译器进行插桩编译
-        output_binary = self.output_dir / f"{harness_file.stem}_compiled"
+        Args:
+            source_file: 源文件路径
+            purpose: 编译目的（用于日志和临时目录命名）
+            
+        Returns:
+            tuple: (success: bool, binary_path: Path, temp_dir: Path)
+        """
+        source_name = Path(source_file).name
+        log_info(f"在临时目录编译harness用于{purpose}: {source_name}")
+        
+        # 创建临时目录
+        temp_dir = Path(tempfile.mkdtemp(prefix=f"harness_{purpose}_"))
+        output_binary = temp_dir / f"{Path(source_file).stem}_compiled"
         
         try:
             # 构建编译命令
-            compile_cmd = self._build_compile_command(harness_file, output_binary)
+            compile_cmd = self.build_compile_command(source_file, output_binary)
             
-            # 打印编译命令，方便调试
             log_info(f"编译命令: {' '.join(compile_cmd)}")
             
             result = subprocess.run(
@@ -100,34 +118,68 @@ class CompileFilter:
             )
             
             if result.returncode == 0:
-                log_success(f"编译成功: {harness_file.name}")
-                self.compile_stats['compile_success'] += 1
-                return True, output_binary, result.stdout
+                log_success(f"临时编译成功: {source_name}")
+                return True, output_binary, temp_dir
             else:
-                log_error(f"编译失败 [{harness_file.name}]: {result.stderr}")
-                self.compile_stats['compile_failed'] += 1
-                self.compile_stats['failed_harnesses'].append({
-                    'file': harness_file.name,
-                    'error': result.stderr
-                })
-                return False, None, result.stderr
+                log_error(f"临时编译失败 [{source_name}]: {result.stderr}")
+                # 清理临时目录
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                return False, None, None
                 
         except subprocess.TimeoutExpired:
-            log_error(f"编译失败 [{harness_file.name}]: 编译超时")
-            self.compile_stats['compile_failed'] += 1
-            self.compile_stats['failed_harnesses'].append({
-                'file': harness_file.name,
-                'error': 'Compilation timeout'
-            })
-            return False, None, "Compilation timeout"
+            log_error(f"临时编译超时 [{source_name}]")
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            return False, None, None
         except Exception as e:
-            log_error(f"编译失败 [{harness_file.name}]: 编译异常 - {str(e)}")
+            log_error(f"临时编译异常 [{source_name}]: {str(e)}")
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            return False, None, None
+    
+
+# 便捷函数
+def create_compile_utils(config_parser=None):
+    """创建编译工具实例"""
+    return CompileUtils(config_parser)
+
+class CompileFilter:
+    def __init__(self, harness_dir, log_dir, next_stage_dir=None, config_parser=None):
+        self.harness_dir = Path(harness_dir)
+        self.log_dir = Path(log_dir)
+        self.next_stage_dir = Path(next_stage_dir) if next_stage_dir else None
+        self.config_parser = config_parser
+        self.compile_stats = {
+            'total': 0,
+            'compile_success': 0,
+            'compile_failed': 0,
+            'failed_harnesses': []
+        }
+        
+        # 创建编译工具
+        self.compile_utils = create_compile_utils(config_parser)
+    
+    def compile_harness(self, harness_file):
+        """编译单个harness文件（验证编译可行性，自动清理临时文件）"""
+        success, binary_path, temp_dir = self.compile_utils.compile_harness_in_temp(harness_file, "verification")
+        
+        # 立即清理临时目录，因为Step1只需要验证编译可行性
+        if temp_dir:
+            try:
+                import shutil
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                log_info(f"清理编译验证临时目录: {temp_dir}")
+            except:
+                pass
+        
+        if success:
+            self.compile_stats['compile_success'] += 1
+            return True, "Compilation successful"
+        else:
             self.compile_stats['compile_failed'] += 1
             self.compile_stats['failed_harnesses'].append({
                 'file': harness_file.name,
-                'error': str(e)
+                'error': 'Compilation failed'
             })
-            return False, None, str(e)
+            return False, "Compilation failed"
     
     def filter_harnesses(self):
         """筛选所有harness文件"""
@@ -151,11 +203,11 @@ class CompileFilter:
             self.next_stage_dir.mkdir(parents=True, exist_ok=True)
         
         for harness_file in harness_files:
-            success, binary_path, output = self.compile_harness(harness_file)
+            success, output = self.compile_harness(harness_file)
             if success:
+                # 只保存源文件信息，不再维护binary路径
                 harness_info = {
-                    'source': harness_file,
-                    'binary': binary_path,
+                    'source': str(harness_file),
                     'compile_output': output
                 }
                 successful_harnesses.append(harness_info)
@@ -185,29 +237,31 @@ class CompileFilter:
             json.dump(self.compile_stats, f, indent=2, ensure_ascii=False)
         log_info(f"编译统计信息已保存到: {stats_file}")
 
-def compile_filter(harness_dir, output_dir, log_dir, next_stage_dir=None, config_parser=None):
+def compile_filter(harness_dir, log_dir, next_stage_dir=None, config_parser=None):
     """编译筛选API接口"""
-    # 确保输出目录存在
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    # 确保日志目录存在
     Path(log_dir).mkdir(parents=True, exist_ok=True)
     
     # 创建编译筛选器
-    filter = CompileFilter(harness_dir, output_dir, log_dir, next_stage_dir, config_parser)
+    filter = CompileFilter(harness_dir, log_dir, next_stage_dir, config_parser)
     
     # 执行筛选
     successful_harnesses = filter.filter_harnesses()
     
-    # 保存成功编译的harness列表
-    success_file = Path(log_dir) / "step1_successful_harnesses.json"
-    success_data = [{
-        'source': str(h['source']),
-        'binary': str(h['binary'])
-    } for h in successful_harnesses]
+    # 保存编译统计摘要（不再保存详细文件列表）
+    summary_file = Path(log_dir) / "step1_compile_summary.json"
+    summary_data = {
+        'total_harnesses': filter.compile_stats['total'],
+        'successful_harnesses': filter.compile_stats['compile_success'],
+        'failed_harnesses': filter.compile_stats['compile_failed'],
+        'success_rate': filter.compile_stats['compile_success'] / max(filter.compile_stats['total'], 1),
+        'note': f"成功编译的源文件已复制到: {next_stage_dir}"
+    }
     
-    with open(success_file, 'w', encoding='utf-8') as f:
-        json.dump(success_data, f, indent=2, ensure_ascii=False)
+    with open(summary_file, 'w', encoding='utf-8') as f:
+        json.dump(summary_data, f, indent=2, ensure_ascii=False)
     
-    log_info(f"成功编译的harness列表已保存到: {success_file}")
+    log_info(f"编译摘要已保存到: {summary_file}")
     log_success(f"通过编译筛选的harness数量: {len(successful_harnesses)}")
     
     return successful_harnesses
@@ -215,15 +269,14 @@ def compile_filter(harness_dir, output_dir, log_dir, next_stage_dir=None, config
 def main():
     """命令行入口（保持兼容性）"""
     import sys
-    if len(sys.argv) != 4:
-        log_error("用法: python step1_compile_filter.py <harness_dir> <output_dir> <log_dir>")
+    if len(sys.argv) != 3:
+        log_error("用法: python step1_compile_filter.py <harness_dir> <log_dir>")
         sys.exit(1)
     
     harness_dir = sys.argv[1]
-    output_dir = sys.argv[2]
-    log_dir = sys.argv[3]
+    log_dir = sys.argv[2]
     
-    compile_filter(harness_dir, output_dir, log_dir)
+    compile_filter(harness_dir, log_dir)
 
 if __name__ == "__main__":
     main()

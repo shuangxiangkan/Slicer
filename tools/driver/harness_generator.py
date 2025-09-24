@@ -352,7 +352,6 @@ class HarnessGenerator:
                 # 执行编译过滤
                 compile_successful_harnesses = compile_filter(
                     harness_dir=harness_afl_dir,
-                    output_dir=compile_output_dir,
                     log_dir=compile_log_dir,
                     next_stage_dir=filtered_harness_dir,
                     config_parser=self.config_parser
@@ -380,8 +379,9 @@ class HarnessGenerator:
                         execution_successful_harnesses = execution_filter(
                             log_dir=execution_log_dir,
                             seeds_valid_dir=seeds_valid_dir,
-                            next_stage_dir=execution_filtered_dir,
-                            compile_log_dir=compile_log_dir
+                            compiled_harness_dir=filtered_harness_dir,  # 从编译过滤后的文件夹读取
+                            executable_harness_dir=execution_filtered_dir,
+                            config_parser=self.config_parser
                         )
                         
                         if execution_successful_harnesses:
@@ -415,15 +415,15 @@ class HarnessGenerator:
                                     log_info(f"Dictionary file available for fuzzing: {dict_file}")
                                 
                                 # 执行覆盖率筛选
-                                # 使用execution_log_dir来读取step2_successful_harnesses.json
-                                # 使用coverage_log_dir来保存step3结果
+                                # 从执行过滤后的文件夹读取harness，保存step3结果到coverage_log_dir
                                 coverage_successful_harnesses = coverage_filter(
-                                    log_dir=execution_log_dir,
+                                    execution_filtered_dir=execution_filtered_dir,  # 从执行过滤后的文件夹读取
                                     seeds_valid_dir=seeds_valid_dir,
                                     final_dir=coverage_filtered_dir,
                                     max_harnesses=1,  # 只选择1个最佳harness
                                     dict_file=dict_file,  # 传递dict文件路径
-                                    coverage_log_dir=coverage_log_dir  # 指定覆盖率日志保存目录
+                                    coverage_log_dir=coverage_log_dir,  # 指定覆盖率日志保存目录
+                                    config_parser=self.config_parser
                                 )
                                 
                                 if coverage_successful_harnesses:

@@ -13,13 +13,15 @@ import sys
 from pathlib import Path
 from typing import List, Dict
 from log import *
+from step1_compile_filter import create_compile_utils
 
 class CoverageFilter:
-    def __init__(self, log_dir, seeds_valid_dir, dict_file=None):
+    def __init__(self, log_dir, seeds_valid_dir, dict_file=None, config_parser=None):
         self.log_dir = Path(log_dir)  # 用于保存step3结果
         self.step2_log_dir = Path(log_dir)  # 用于读取step2结果，初始与log_dir相同
         self.seeds_valid_dir = Path(seeds_valid_dir)
         self.dict_file = Path(dict_file) if dict_file else None
+        self.config_parser = config_parser
         self.global_bitmap = set()  # 模拟 OGHarn 的 globalBitmap
         self.coverage_stats = {
             'total_harnesses': 0,
@@ -28,16 +30,34 @@ class CoverageFilter:
             'best_harnesses': [],
             'coverage_analysis': []
         }
+        
+        # 创建编译工具
+        self.compile_utils = create_compile_utils(config_parser)
     
-    def load_execution_successful_harnesses(self) -> List[Dict]:
-        """加载第二步执行成功的harness列表"""
-        success_file = self.step2_log_dir / "step2_successful_harnesses.json"
-        if not success_file.exists():
-            log_error(f"错误: 未找到执行成功的harness列表文件: {success_file}")
+    def load_execution_successful_harnesses_from_folder(self, execution_filtered_dir) -> List[Dict]:
+        """从执行过滤后的文件夹加载harness列表"""
+        execution_dir = Path(execution_filtered_dir)
+        if not execution_dir.exists():
+            log_error(f"执行过滤后的文件夹不存在: {execution_dir}")
             return []
         
-        with open(success_file, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        # 获取所有C/C++文件
+        harness_files = list(execution_dir.glob("*.c")) + list(execution_dir.glob("*.cpp"))
+        
+        if not harness_files:
+            log_warning(f"在 {execution_dir} 中未找到任何C/C++文件")
+            return []
+        
+        log_info(f"从 {execution_dir} 加载了 {len(harness_files)} 个harness文件")
+        
+        # 转换为字典格式
+        harness_list = []
+        for harness_file in harness_files:
+            harness_list.append({
+                'source': str(harness_file)
+            })
+        
+        return harness_list
     
     def get_seed_files(self, seed_dir: Path) -> List[Path]:
         """获取种子文件列表"""
@@ -48,6 +68,10 @@ class CoverageFilter:
         seed_files = [f for f in seed_dir.iterdir() if f.is_file()]
         
         return seed_files
+    
+    def _compile_harness_in_tmp(self, source_file):
+        """在临时目录编译harness"""
+        return self.compile_utils.compile_harness_in_temp(source_file, "coverage")
       
     def fuzz_harness_with_timeout(self, binary_path: Path, fuzz_duration=10) -> Dict:
         """对harness进行限时模糊测试，评估其真实的模糊测试质量"""
@@ -234,28 +258,41 @@ class CoverageFilter:
         return fuzz_result
     
     def analyze_harness_coverage(self, harness_info: Dict) -> Dict:
-        """通过实际模糊测试分析harness的质量"""
-        binary_path = Path(harness_info['binary'])
-        harness_name = binary_path.name
+        """通过实际模糊测试分析harness的质量（在临时目录编译并测试）"""
+        source_file = harness_info['source']
+        harness_name = Path(source_file).name
         
         log_info(f"  分析harness质量: {harness_name}")
         
+        # 在临时目录编译harness
+        compile_success, binary_path, temp_dir = self._compile_harness_in_tmp(source_file)
+        
+        if not compile_success:
+            log_error(f"编译失败，跳过覆盖率测试: {harness_name}")
+            return {
+                'harness': harness_name,
+                'source_path': str(source_file),
+                'compile_failed': True,
+                'quality_score': 0.0  # 编译失败的harness质量分数为0
+            }
+        
         analysis_result = {
             'harness': harness_name,
+            'source_path': str(source_file),
             'binary_path': str(binary_path),
-            'total_bitmap': set(),
-            'new_coverage': set(),
-            'coverage_gain': 0,
             'fuzz_duration': 10,
-            'total_executions': 0,
-            'execution_speed': 0,
-            'stability': 0.0,
-            'unique_crashes': 0,
-            'coverage_growth_rate': 0.0
+            'compile_failed': False
         }
         
         # 进行限时模糊测试
         fuzz_result = self.fuzz_harness_with_timeout(binary_path, fuzz_duration=10)
+        
+        # 清理临时目录
+        try:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            log_info(f"清理临时目录: {temp_dir}")
+        except:
+            pass
         
         # 更新分析结果
         analysis_result.update({
@@ -271,6 +308,8 @@ class CoverageFilter:
             initial_coverage = fuzz_result['coverage_growth'][0] if fuzz_result['coverage_growth'] else 0
             final_coverage = fuzz_result['coverage_growth'][-1] if fuzz_result['coverage_growth'] else 0
             analysis_result['coverage_growth_rate'] = (final_coverage - initial_coverage) / analysis_result['fuzz_duration']
+        else:
+            analysis_result['coverage_growth_rate'] = 0.0
         
         # 计算相对于全局位图的新覆盖率
         analysis_result['new_coverage'] = analysis_result['total_bitmap'] - self.global_bitmap
@@ -319,9 +358,12 @@ class CoverageFilter:
         
         # 显示所有harness的质量分数
         for analysis in coverage_analyses:
-            log_info(f"  {analysis['harness']}: 质量分数={analysis['quality_score']:.2f} "
-                  f"(覆盖率={analysis['coverage_gain']}, 速度={analysis['execution_speed']:.1f}/s, "
-                  f"稳定性={analysis['stability']:.2f}, 增长率={analysis['coverage_growth_rate']:.2f})")
+            if analysis.get('compile_failed', False):
+                log_info(f"  {analysis['harness']}: 质量分数={analysis['quality_score']:.2f} (编译失败)")
+            else:
+                log_info(f"  {analysis['harness']}: 质量分数={analysis['quality_score']:.2f} "
+                      f"(覆盖率={analysis.get('coverage_gain', 0)}, 速度={analysis.get('execution_speed', 0):.1f}/s, "
+                      f"稳定性={analysis.get('stability', 0):.2f}, 增长率={analysis.get('coverage_growth_rate', 0):.2f})")
         
         # 按综合质量分数排序，选择表现最好的
         all_harnesses = sorted(coverage_analyses, key=lambda x: x['quality_score'], reverse=True)
@@ -333,6 +375,10 @@ class CoverageFilter:
         for analysis in all_harnesses:
             if len(selected_harnesses) >= max_harnesses:
                 break
+            
+            # 跳过编译失败的harness
+            if analysis.get('compile_failed', False):
+                continue
                 
             current_new_coverage = analysis['_temp_total_bitmap'] - temp_global_bitmap
             
@@ -351,25 +397,28 @@ class CoverageFilter:
                 if len(selected_harnesses) >= max_harnesses:
                     break
         
-        # 确保至少选择一个harness（如果有的话）
+        # 确保至少选择一个harness（如果有的话），但跳过编译失败的
         if not selected_harnesses and all_harnesses:
-            best_analysis = all_harnesses[0]
-            selected_harnesses.append(best_analysis)
-            temp_global_bitmap.update(best_analysis['_temp_total_bitmap'])
-            log_warning(f"  ⚠ 保底选择: {best_analysis['harness']} "
-                      f"(质量分数: {best_analysis['quality_score']:.2f})")
+            # 寻找第一个编译成功的harness作为保底选择
+            for analysis in all_harnesses:
+                if not analysis.get('compile_failed', False):
+                    selected_harnesses.append(analysis)
+                    temp_global_bitmap.update(analysis['_temp_total_bitmap'])
+                    log_warning(f"  ⚠ 保底选择: {analysis['harness']} "
+                              f"(质量分数: {analysis['quality_score']:.2f})")
+                    break
         
         # 更新全局覆盖率
         self.global_bitmap = temp_global_bitmap
         
         return selected_harnesses
     
-    def filter_harnesses(self, final_dir=None, max_harnesses=3) -> List[Dict]:
+    def filter_harnesses(self, execution_filtered_dir, final_dir=None, max_harnesses=3) -> List[Dict]:
         """执行代码覆盖率筛选"""
         log_info("OGHarn 第三步：代码覆盖率筛选 (Oracle 引导机制)")
         
-        # 加载执行成功的harness
-        execution_successful_harnesses = self.load_execution_successful_harnesses()
+        # 从执行过滤后的文件夹加载harness
+        execution_successful_harnesses = self.load_execution_successful_harnesses_from_folder(execution_filtered_dir)
         self.coverage_stats['total_harnesses'] = len(execution_successful_harnesses)
         
         if not execution_successful_harnesses:
@@ -385,7 +434,9 @@ class CoverageFilter:
             coverage_analyses.append(analysis)
             
             # 更新统计信息（简化版本，不再按质量分类）
-            if analysis['total_executions'] > 0:
+            if analysis.get('compile_failed', False):
+                self.coverage_stats['coverage_failed'] += 1
+            elif analysis.get('total_executions', 0) > 0:
                 self.coverage_stats['coverage_success'] += 1
             else:
                 self.coverage_stats['coverage_failed'] += 1
@@ -404,7 +455,7 @@ class CoverageFilter:
             for harness in best_harnesses:
                 # 从执行成功的harness中找到对应的源文件
                 for exec_harness in execution_successful_harnesses:
-                    if Path(exec_harness['binary']).name == harness['harness']:
+                    if Path(exec_harness['source']).name == harness['harness']:
                         source_file = Path(exec_harness['source'])
                         dest_file = final_path / source_file.name
                         shutil.copy2(source_file, dest_file)
@@ -463,22 +514,21 @@ class CoverageFilter:
         log_success(f"最佳harness已保存到: {best_file}")
         log_success(f"全局覆盖率位图已保存到: {bitmap_file}")
 
-def coverage_filter(log_dir, seeds_valid_dir, final_dir=None, max_harnesses=3, dict_file=None, coverage_log_dir=None):
+def coverage_filter(execution_filtered_dir, seeds_valid_dir, final_dir=None, max_harnesses=3, dict_file=None, coverage_log_dir=None, config_parser=None):
     """基于模糊测试质量的harness筛选API接口"""
     # 创建覆盖率筛选器
-    filter = CoverageFilter(log_dir, seeds_valid_dir, dict_file)
+    filter = CoverageFilter(coverage_log_dir or execution_filtered_dir, seeds_valid_dir, dict_file, config_parser)
     
-    # 设置正确的目录：log_dir用于读取step2结果，coverage_log_dir用于保存step3结果
-    filter.step2_log_dir = Path(log_dir)  # 读取step2结果的目录
+    # 设置正确的目录
     if coverage_log_dir:
         filter.log_dir = Path(coverage_log_dir)  # 保存step3结果的目录
         # 确保目录存在
         filter.log_dir.mkdir(parents=True, exist_ok=True)
     else:
-        filter.log_dir = Path(log_dir)  # 如果没有指定，则使用相同目录
+        filter.log_dir = Path(execution_filtered_dir)  # 如果没有指定，则使用执行过滤目录
     
     # 执行筛选
-    best_harnesses = filter.filter_harnesses(final_dir, max_harnesses)
+    best_harnesses = filter.filter_harnesses(execution_filtered_dir, final_dir, max_harnesses)
     
     log_info("模糊测试质量评估完成")
     log_success(f"最终选择的最佳harness数量: {len(best_harnesses)}")
@@ -487,7 +537,8 @@ def coverage_filter(log_dir, seeds_valid_dir, final_dir=None, max_harnesses=3, d
         log_info("最佳harness列表:")
         for i, harness in enumerate(best_harnesses, 1):
             quality_score = harness.get('quality_score', 0)
-            log_success(f"  {i}. {harness['harness']} (质量分数: {quality_score:.2f}, 覆盖率增益: {harness['coverage_gain']})")
+            coverage_gain = harness.get('coverage_gain', 0)
+            log_success(f"  {i}. {harness['harness']} (质量分数: {quality_score:.2f}, 覆盖率增益: {coverage_gain})")
     
     return best_harnesses
 
