@@ -4,9 +4,8 @@
 
     未处理好的地方：
     1. 通过seeds执行harness检查的时候，如果报错也不一定是这个harness有问题，也可能是刚好找到了crash的种子，要判断这个crash是不是因为harness中API引起的问题
-    2. prompt还可以再优化
+    2. prompt还可以再优化 (还需要传入参数类型和可能的取值范围)
     3，在提供harness实例的时候，要根据bottom up的顺序来逐个提供最好的harness实例（经过筛选过的）
-
 
 
 需要检查的：

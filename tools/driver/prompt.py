@@ -78,7 +78,11 @@ Please use the standard Libfuzzer entry function: `{entry_function}` to generate
         
         headers_list = []
         for header in self.include_headers:
-            headers_list.append(f"   - #include <{header}>")
+            # Remove any path prefix from header names
+            # e.g., "include/ucl.h" -> "ucl.h"
+            # e.g., "src/ucl.h" -> "ucl.h"
+            clean_header = header.split('/')[-1] if '/' in header else header
+            headers_list.append(f"   - #include <{clean_header}>")
         
         return "\n".join(headers_list)
     
