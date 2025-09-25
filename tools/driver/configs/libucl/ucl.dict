@@ -1,0 +1,131 @@
+#
+# AFL dictionary for UCL (Universal Configuration Language)
+# -----------------------------
+# UCL specific syntax elements and patterns
+#
+
+# UCL Basic Syntax
+assignment_operator="="
+section_start="{"
+section_end="}"
+array_start="["
+array_end="]"
+semicolon=";"
+comma=","
+colon=":"
+
+# UCL Comments
+line_comment="# comment"
+block_comment_start="/*"
+block_comment_end="*/"
+multiline_comment="/* comment */"
+
+# UCL String Formats
+quoted_string="\"string\""
+single_quoted="'string'"
+multiline_string_start="<<"
+multiline_string_end=">>"
+heredoc_start="<<EOF"
+heredoc_end="EOF"
+
+# UCL Boolean Values
+true_value="true"
+false_value="false"
+yes_value="yes"
+no_value="no"
+on_value="on"
+off_value="off"
+
+# UCL Numbers and Units
+integer="123"
+negative_integer="-123"
+float_number="123.45"
+scientific_notation="1.23e10"
+hex_number="0x1234"
+octal_number="0123"
+
+# UCL Size Units
+size_bytes="1024b"
+size_kilobytes="1k"
+size_megabytes="1M"
+size_gigabytes="1G"
+size_terabytes="1T"
+
+# UCL Time Units
+time_seconds="10s"
+time_minutes="5m"
+time_hours="2h"
+time_days="1d"
+time_weeks="1w"
+time_months="1mo"
+time_years="1y"
+time_milliseconds="100ms"
+time_microseconds="100us"
+
+# UCL Include Directives
+include_directive=".include"
+include_try_directive=".try_include"
+include_priority_directive=".include_priority"
+include_url=".include \"http://example.com/config\""
+
+# UCL Variables and Macros
+variable_reference="${var}"
+variable_assignment="var = value"
+macro_definition=".define"
+macro_call=".call"
+
+# UCL Object Types
+ucl_object="UCL_OBJECT"
+ucl_array="UCL_ARRAY"
+ucl_string="UCL_STRING"
+ucl_int="UCL_INT"
+ucl_float="UCL_FLOAT"
+ucl_boolean="UCL_BOOLEAN"
+ucl_time="UCL_TIME"
+ucl_userdata="UCL_USERDATA"
+ucl_null="UCL_NULL"
+
+# UCL Parser Flags
+ucl_parser_key_lowercase="UCL_PARSER_KEY_LOWERCASE"
+ucl_parser_zerocopy="UCL_PARSER_ZEROCOPY"
+ucl_parser_no_time="UCL_PARSER_NO_TIME"
+ucl_parser_no_implicit_arrays="UCL_PARSER_NO_IMPLICIT_ARRAYS"
+
+# UCL Emitter Types
+ucl_emit_json="UCL_EMIT_JSON"
+ucl_emit_json_compact="UCL_EMIT_JSON_COMPACT"
+ucl_emit_config="UCL_EMIT_CONFIG"
+ucl_emit_yaml="UCL_EMIT_YAML"
+ucl_emit_msgpack="UCL_EMIT_MSGPACK"
+
+# Common UCL Configuration Patterns
+section_pattern="section { key = value; }"
+array_pattern="array = [\"item1\", \"item2\"]"
+nested_section="parent { child { key = value; } }"
+multivalue_key="key = value1; key = value2"
+
+# UCL Error Patterns
+syntax_error="key = ;"
+unclosed_section="section {"
+unclosed_array="array = ["
+unclosed_string="key = \"unclosed"
+invalid_escape="key = \"\\invalid\""
+
+# UCL Special Characters
+escape_quote="\\\""
+escape_backslash="\\\\"
+escape_newline="\\n"
+escape_tab="\\t"
+escape_carriage="\\r"
+escape_unicode="\\u1234"
+
+# UCL Priority Values
+priority_normal="0"
+priority_high="10"
+priority_low="-10"
+
+# UCL Duplicate Strategy
+duplicate_append="append"
+duplicate_merge="merge"
+duplicate_replace="replace"
+duplicate_error="error"

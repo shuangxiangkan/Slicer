@@ -1,0 +1,98 @@
+#
+# AFL dictionary for HDF5
+# -----------------------------
+# HDF5 specific format elements and API patterns
+#
+
+# HDF5 Magic Numbers and Signatures
+hdf5_signature="\x89HDF\r\n\x1a\n"
+hdf5_superblock_signature="HDF5"
+
+# HDF5 Object Types
+group_signature="GROUP"
+dataset_signature="DATASET"
+datatype_signature="DATATYPE"
+dataspace_signature="DATASPACE"
+attribute_signature="ATTRIBUTE"
+
+# HDF5 Data Types
+h5t_native_int="H5T_NATIVE_INT"
+h5t_native_float="H5T_NATIVE_FLOAT"
+h5t_native_double="H5T_NATIVE_DOUBLE"
+h5t_native_char="H5T_NATIVE_CHAR"
+h5t_std_i32le="H5T_STD_I32LE"
+h5t_std_i64le="H5T_STD_I64LE"
+h5t_ieee_f32le="H5T_IEEE_F32LE"
+h5t_ieee_f64le="H5T_IEEE_F64LE"
+h5t_c_s1="H5T_C_S1"
+
+# HDF5 Dataspace Types
+h5s_scalar="H5S_SCALAR"
+h5s_simple="H5S_SIMPLE"
+h5s_null="H5S_NULL"
+h5s_unlimited="H5S_UNLIMITED"
+
+# HDF5 File Access Modes
+h5f_acc_rdonly="H5F_ACC_RDONLY"
+h5f_acc_rdwr="H5F_ACC_RDWR"
+h5f_acc_trunc="H5F_ACC_TRUNC"
+h5f_acc_excl="H5F_ACC_EXCL"
+h5f_acc_creat="H5F_ACC_CREAT"
+
+# HDF5 Property List Classes
+h5p_default="H5P_DEFAULT"
+h5p_file_create="H5P_FILE_CREATE"
+h5p_file_access="H5P_FILE_ACCESS"
+h5p_dataset_create="H5P_DATASET_CREATE"
+h5p_dataset_xfer="H5P_DATASET_XFER"
+h5p_group_create="H5P_GROUP_CREATE"
+h5p_group_access="H5P_GROUP_ACCESS"
+
+# Common HDF5 Paths and Names
+root_group="/"
+default_dataset="/dataset"
+default_group="/group"
+attribute_name="attr"
+dataset_name="data"
+group_name="group"
+
+# HDF5 Filter IDs
+h5z_filter_deflate="H5Z_FILTER_DEFLATE"
+h5z_filter_shuffle="H5Z_FILTER_SHUFFLE"
+h5z_filter_fletcher32="H5Z_FILTER_FLETCHER32"
+h5z_filter_szip="H5Z_FILTER_SZIP"
+
+# Common HDF5 Dimension Sizes
+small_size="10"
+medium_size="100"
+large_size="1000"
+huge_size="10000"
+
+# HDF5 Fill Values
+fill_value_default="H5D_FILL_VALUE_DEFAULT"
+fill_value_user_defined="H5D_FILL_VALUE_USER_DEFINED"
+fill_value_undefined="H5D_FILL_VALUE_UNDEFINED"
+
+# HDF5 Layout Types
+h5d_compact="H5D_COMPACT"
+h5d_contiguous="H5D_CONTIGUOUS"
+h5d_chunked="H5D_CHUNKED"
+
+# HDF5 Selection Types
+h5s_sel_points="H5S_SEL_POINTS"
+h5s_sel_hyperslabs="H5S_SEL_HYPERSLABS"
+h5s_sel_all="H5S_SEL_ALL"
+h5s_sel_none="H5S_SEL_NONE"
+
+# Common Error Values
+h5_error="-1"
+hid_t_invalid="H5I_INVALID_HID"
+
+# HDF5 Library Initialization
+h5_library_init="H5_library_init"
+h5_close="H5_close"
+
+# Chunk Dimensions
+chunk_1d="[1000]"
+chunk_2d="[100, 100]"
+chunk_3d="[10, 10, 10]"
