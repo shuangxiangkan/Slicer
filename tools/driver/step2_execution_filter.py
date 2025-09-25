@@ -102,18 +102,26 @@ class ExecutionFilter:
             # 检查是否崩溃 (返回码非0通常表示异常)
             if return_code < 0:
                 # 负数返回码通常表示被信号终止（崩溃）
-                return False, f"Crashed with signal {-return_code}: {error}", return_code
+                error_msg = f"Crashed with signal {-return_code}: {error}"
+                log_error(f"执行崩溃 - 二进制: {binary_path.name}, 种子: {seed_file.name}, 信号: {-return_code}, stderr: {error[:100]}")
+                return False, error_msg, return_code
             elif return_code > 0:
                 # 正数返回码可能是正常退出或错误
+                if error.strip():  # 如果有stderr输出，记录错误日志
+                    log_error(f"执行异常 - 二进制: {binary_path.name}, 种子: {seed_file.name}, 返回码: {return_code}, stderr: {error[:100]}")
                 return True, f"Exit code {return_code}: {output}", return_code
             else:
                 # 返回码0表示正常执行
                 return True, output, return_code
                 
         except subprocess.TimeoutExpired:
-            return False, "Execution timeout", -1
+            error_msg = "Execution timeout"
+            log_error(f"执行超时 - 二进制: {binary_path.name}, 种子: {seed_file.name}, 超时时间: {timeout}秒")
+            return False, error_msg, -1
         except Exception as e:
-            return False, f"Execution error: {str(e)}", -1
+            error_msg = f"Execution error: {str(e)}"
+            log_error(f"执行异常 - 二进制: {binary_path.name}, 种子: {seed_file.name}, 异常: {str(e)}")
+            return False, error_msg, -1
     
 
     def test_harness_with_seeds(self, harness_info: Dict) -> Dict:
@@ -127,7 +135,7 @@ class ExecutionFilter:
         compile_success, binary_path, temp_dir = self._compile_harness_in_tmp(source_file)
         
         if not compile_success:
-            log_error(f"编译失败，跳过执行测试: {harness_name}")
+            log_error(f"编译失败，跳过执行测试: {harness_name} (源文件: {source_file})")
             return {
                 'harness': harness_name,
                 'source_path': str(source_file),
@@ -169,8 +177,12 @@ class ExecutionFilter:
             if not success:
                 if "timeout" in output.lower():
                     test_result['timeout'] = True
+                    log_error(f"种子执行超时 - Harness: {harness_name}, 种子: {seed_file.name}, 错误: {output[:100]}")
                 elif "crash" in output.lower() or return_code < 0:
                     test_result['crashed'] = True
+                    log_error(f"种子执行崩溃 - Harness: {harness_name}, 种子: {seed_file.name}, 返回码: {return_code}, 错误: {output[:100]}")
+                else:
+                    log_error(f"种子执行失败 - Harness: {harness_name}, 种子: {seed_file.name}, 返回码: {return_code}, 错误: {output[:100]}")
                 
                 # 有效种子执行失败是问题
                 self.execution_stats['valid_seed_failures'].append({
@@ -183,9 +195,13 @@ class ExecutionFilter:
         if test_result['crashed']:
             test_result['execution_success'] = False
             self.execution_stats['crashed_harnesses'].append(harness_name)
+            log_error(f"Harness整体执行失败(崩溃) - {harness_name}, 崩溃种子数: {len([r for r in test_result['valid_seed_results'] if not r['success'] and r['return_code'] < 0])}")
         elif test_result['timeout']:
             test_result['execution_success'] = False
             self.execution_stats['timeout_harnesses'].append(harness_name)
+            log_error(f"Harness整体执行失败(超时) - {harness_name}, 超时种子数: {len([r for r in test_result['valid_seed_results'] if not r['success'] and 'timeout' in r['output'].lower()])}")
+        else:
+            log_info(f"Harness执行成功 - {harness_name}, 成功种子数: {len([r for r in test_result['valid_seed_results'] if r['success']])}/{len(test_result['valid_seed_results'])}")
         
         # 清理临时目录
         try:
