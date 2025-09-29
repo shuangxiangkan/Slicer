@@ -12,6 +12,7 @@ import time
 import sys
 from pathlib import Path
 from typing import List, Dict
+from datetime import datetime
 from log import *
 from step1_compile_filter import create_compile_utils
 
@@ -33,6 +34,120 @@ class CoverageFilter:
         
         # 创建编译工具
         self.compile_utils = create_compile_utils(config_parser)
+        
+        # 创建crash调试信息目录
+        self.crash_debug_dir = self.log_dir / "crash_failures"
+        self.crash_debug_dir.mkdir(parents=True, exist_ok=True)
+    
+    def save_crash_debug_info(self, harness_name: str, binary_path: Path, crash_dir: Path, 
+                             afl_cmd: List[str], fuzz_duration: int, crash_count: int):
+        """保存fuzz过程中发现的crash调试信息"""
+        try:
+            # 为每个发现crash的harness创建单独的目录
+            crash_debug_dir = self.crash_debug_dir / f"{harness_name}_crash_{crash_count}crashes"
+            crash_debug_dir.mkdir(parents=True, exist_ok=True)
+            
+            # 复制二进制文件
+            if binary_path.exists():
+                dest_binary = crash_debug_dir / binary_path.name
+                shutil.copy2(binary_path, dest_binary)
+                log_info(f"已保存crash的二进制文件: {dest_binary}")
+            
+            # 复制所有crash文件
+            crashes_dir = crash_dir / "default" / "crashes"
+            if crashes_dir.exists():
+                dest_crashes_dir = crash_debug_dir / "crashes"
+                shutil.copytree(crashes_dir, dest_crashes_dir, dirs_exist_ok=True)
+                crash_files = list(dest_crashes_dir.glob("*"))
+                log_info(f"已保存 {len(crash_files)} 个crash文件到: {dest_crashes_dir}")
+            
+            # 复制queue文件（测试用例）
+            queue_dir = crash_dir / "default" / "queue"
+            if queue_dir.exists():
+                dest_queue_dir = crash_debug_dir / "queue"
+                shutil.copytree(queue_dir, dest_queue_dir, dirs_exist_ok=True)
+                queue_files = list(dest_queue_dir.glob("*"))
+                log_info(f"已保存 {len(queue_files)} 个测试用例到: {dest_queue_dir}")
+            
+            # 复制AFL++统计文件
+            stats_file = crash_dir / "default" / "fuzzer_stats"
+            if stats_file.exists():
+                dest_stats = crash_debug_dir / "fuzzer_stats"
+                shutil.copy2(stats_file, dest_stats)
+                log_info(f"已保存AFL++统计文件: {dest_stats}")
+            
+            # 复制plot数据文件
+            plot_data = crash_dir / "default" / "plot_data"
+            if plot_data.exists():
+                dest_plot = crash_debug_dir / "plot_data"
+                shutil.copy2(plot_data, dest_plot)
+                log_info(f"已保存AFL++图表数据: {dest_plot}")
+            
+            # 保存crash调试信息
+            debug_info = {
+                'harness_name': harness_name,
+                'binary_path': str(binary_path),
+                'afl_command': afl_cmd,
+                'fuzz_duration_seconds': fuzz_duration,
+                'unique_crashes_found': crash_count,
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'crash_files_location': str(dest_crashes_dir) if crashes_dir.exists() else "No crashes directory found",
+                'queue_files_location': str(dest_queue_dir) if queue_dir.exists() else "No queue directory found",
+                'reproduction_notes': [
+                    f"1. 使用二进制文件: {binary_path.name}",
+                    f"2. 运行任意crash文件: ./{binary_path.name} < crashes/id:000000,sig:*",
+                    f"3. 或使用afl-tmin最小化crash: afl-tmin -i crashes/id:000000,sig:* -o minimized_crash -- ./{binary_path.name}",
+                    f"4. 使用gdb调试: gdb ./{binary_path.name}, 然后 run < crashes/id:000000,sig:*"
+                ]
+            }
+            
+            debug_file = crash_debug_dir / "crash_debug_info.json"
+            with open(debug_file, 'w', encoding='utf-8') as f:
+                json.dump(debug_info, f, indent=2, ensure_ascii=False)
+            
+            # 创建crash重现脚本
+            reproduce_script = crash_debug_dir / "reproduce_crashes.sh"
+            with open(reproduce_script, 'w', encoding='utf-8') as f:
+                f.write("#!/bin/bash\n")
+                f.write("# AFL++ Crash重现脚本\n")
+                f.write(f"# Harness: {harness_name}\n")
+                f.write(f"# 发现时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"# 发现的crash数量: {crash_count}\n\n")
+                
+                f.write("echo \"=== AFL++ Crash重现脚本 ===\"\n")
+                f.write(f"echo \"Harness: {harness_name}\"\n")
+                f.write(f"echo \"发现的crash数量: {crash_count}\"\n")
+                f.write("echo \"\"\n\n")
+                
+                if crashes_dir.exists():
+                    f.write("echo \"可用的crash文件:\"\n")
+                    f.write("ls -la crashes/\n")
+                    f.write("echo \"\"\n\n")
+                    
+                    f.write("echo \"重现第一个crash:\"\n")
+                    f.write(f"FIRST_CRASH=$(ls crashes/ | head -1)\n")
+                    f.write("if [ ! -z \"$FIRST_CRASH\" ]; then\n")
+                    f.write(f"    echo \"使用crash文件: $FIRST_CRASH\"\n")
+                    f.write(f"    ./{binary_path.name} < crashes/$FIRST_CRASH\n")
+                    f.write("    echo \"返回码: $?\"\n")
+                    f.write("else\n")
+                    f.write("    echo \"没有找到crash文件\"\n")
+                    f.write("fi\n\n")
+                    
+                    f.write("echo \"使用gdb调试第一个crash:\"\n")
+                    f.write("echo \"运行命令: gdb ./{}\"\n".format(binary_path.name))
+                    f.write("echo \"在gdb中运行: run < crashes/$FIRST_CRASH\"\n")
+                else:
+                    f.write("echo \"警告: 没有找到crash文件目录\"\n")
+            
+            # 设置脚本可执行权限
+            reproduce_script.chmod(0o755)
+            
+            log_success(f"Crash调试信息已保存到: {crash_debug_dir}")
+            log_info(f"Crash重现脚本: {reproduce_script}")
+            
+        except Exception as e:
+            log_error(f"保存crash调试信息失败: {str(e)}")
     
     def load_execution_successful_harnesses_from_folder(self, execution_filtered_dir) -> List[Dict]:
         """从执行过滤后的文件夹加载harness列表"""
@@ -191,6 +306,22 @@ class CoverageFilter:
                         elif 'stability' in line:
                             stability_str = line.split(':')[1].strip().rstrip('%')
                             fuzz_result['stability'] = float(stability_str) / 100.0
+                
+                # 检查是否发现了crash，如果有则保存调试信息
+                if fuzz_result['unique_crashes'] > 0:
+                    log_warning(f"      发现 {fuzz_result['unique_crashes']} 个crash，保存调试信息...")
+                    try:
+                        # 保存crash调试信息
+                        self.save_crash_debug_info(
+                            harness_name=binary_path.stem,
+                            binary_path=binary_path,
+                            crash_dir=output_dir,
+                            afl_cmd=cmd,
+                            fuzz_duration=duration,
+                            crash_count=fuzz_result['unique_crashes']
+                        )
+                    except Exception as e:
+                        log_error(f"      保存crash调试信息时出错: {str(e)}")
                 
                 # 收集覆盖率信息 - 在临时目录还存在时直接处理
                 queue_dir = output_dir / "default" / "queue"
