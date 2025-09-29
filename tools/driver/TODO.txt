@@ -3,7 +3,7 @@
     注意：目前generate_harnesses_for_all_apis()代码中只是对有fuzz usage的API进行了测试，还没有对所有API进行测试，后面需要改过来
 
     未处理好的地方：
-    1. 通过seeds执行harness检查的时候，如果报错也不一定是这个harness有问题，也可能是刚好找到了crash的种子，要判断这个crash是不是因为harness中API引起的问题
+    1. execution and Coverage filter 阶段已经保存执行出现bug 或者 crash 信息的功能，目前只是报错，后面考虑是不是可以直接过滤掉跟实际bug无关的信息，不然都需要人工去查，比较耗时间
     2. prompt还可以再优化 (还需要传入参数类型和可能的取值范围)
     3，在提供harness实例的时候，要根据bottom up的顺序来逐个提供最好的harness实例（经过筛选过的）
 
