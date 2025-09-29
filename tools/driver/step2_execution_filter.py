@@ -9,6 +9,7 @@ import json
 import shutil
 from pathlib import Path
 from typing import List, Dict, Tuple
+from datetime import datetime
 from log import *
 from step1_compile_filter import create_compile_utils
 
@@ -30,7 +31,75 @@ class ExecutionFilter:
         
         # 创建编译工具
         self.compile_utils = create_compile_utils(config_parser)
+        
+        # 创建失败调试信息目录
+        self.debug_dir = self.log_dir / "execution_failures"
+        self.debug_dir.mkdir(parents=True, exist_ok=True)
     
+    def save_execution_failure_debug_info(self, harness_name: str, binary_path: Path, seed_file: Path, 
+                                        cmd: List[str], output: str, error: str, return_code: int):
+        """保存执行失败的调试信息"""
+        try:
+            # 为每个失败的harness创建单独的目录
+            failure_dir = self.debug_dir / f"{harness_name}_{seed_file.stem}_failure"
+            failure_dir.mkdir(parents=True, exist_ok=True)
+            
+            # 复制二进制文件
+            if binary_path.exists():
+                dest_binary = failure_dir / binary_path.name
+                shutil.copy2(binary_path, dest_binary)
+                log_info(f"已保存失败的二进制文件: {dest_binary}")
+            
+            # 复制种子文件
+            if seed_file.exists():
+                dest_seed = failure_dir / f"seed_{seed_file.name}"
+                shutil.copy2(seed_file, dest_seed)
+                log_info(f"已保存失败的种子文件: {dest_seed}")
+            
+            # 保存执行命令和结果信息
+            debug_info = {
+                'harness_name': harness_name,
+                'binary_path': str(binary_path),
+                'seed_file': str(seed_file),
+                'command': cmd,
+                'return_code': return_code,
+                'stdout': output,
+                'stderr': error,
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'reproduction_command': f"cd {failure_dir} && {' '.join(cmd[:-1])} ./{binary_path.name} < seed_{seed_file.name}",
+                'note': f"对应的源文件: {harness_name}.c (根据二进制文件名推断)"
+            }
+            
+            debug_file = failure_dir / "debug_info.json"
+            with open(debug_file, 'w', encoding='utf-8') as f:
+                json.dump(debug_info, f, indent=2, ensure_ascii=False)
+            
+            # 创建重现脚本
+            reproduce_script = failure_dir / "reproduce.sh"
+            with open(reproduce_script, 'w', encoding='utf-8') as f:
+                f.write("#!/bin/bash\n")
+                f.write("# 重现执行失败的脚本\n")
+                f.write(f"# 原始命令: {' '.join(cmd)}\n")
+                f.write(f"# 返回码: {return_code}\n\n")
+                f.write(f"echo \"执行失败的harness: {harness_name}\"\n")
+                f.write(f"echo \"种子文件: seed_{seed_file.name}\"\n")
+                f.write(f"echo \"二进制文件: {binary_path.name}\"\n")
+                f.write("echo \"开始重现执行...\"\n\n")
+                
+                # 构建重现命令
+                simple_cmd = f"./{binary_path.name} < seed_{seed_file.name}"
+                f.write(f"{simple_cmd}\n")
+                f.write("echo \"执行完成，返回码: $?\"\n")
+            
+            # 设置脚本可执行权限
+            reproduce_script.chmod(0o755)
+            
+            log_info(f"执行失败调试信息已保存到: {failure_dir}")
+            log_info(f"重现脚本: {reproduce_script}")
+            
+        except Exception as e:
+            log_error(f"保存执行失败调试信息时出错: {str(e)}")  
+
     def _compile_harness_in_tmp(self, source_file):
         """在临时目录编译harness"""
         return self.compile_utils.compile_harness_in_temp(source_file, "execution")
@@ -70,45 +139,45 @@ class ExecutionFilter:
         
         return seed_files
     
-    def execute_harness_with_seed(self, binary_path: Path, seed_file: Path, timeout: int = 5) -> Tuple[bool, str, int]:
+    def execute_harness_with_seed(self, binary_path: Path, seed_file: Path, harness_name: str = None, timeout: int = 5) -> Tuple[bool, str, int]:
         """使用种子文件执行harness"""
         try:
-            # 使用AFL++的showmap来执行并获取覆盖率信息
-            # AFL++可用性已在初始化时检查，此处直接使用
-            cmd = [
-                'afl-showmap',
-                '-o', '/dev/stdout',
-                '-m', '50',  # 内存限制50MB
-                '-t', str(timeout * 1000),  # 超时时间(毫秒)
-                '--',
-                str(binary_path)
-            ]
-            
-            # 将种子文件作为stdin输入
-            with open(seed_file, 'rb') as f:
-                seed_data = f.read()
+            # 直接执行harness，利用AddressSanitizer自动检测内存错误
+            # 构建执行命令：harness + seed_file_path
+            cmd = [str(binary_path), str(seed_file)]
             
             result = subprocess.run(
                 cmd,
-                input=seed_data,
                 capture_output=True,
-                timeout=timeout + 2
+                timeout=timeout,
+                text=True
             )
             
             return_code = result.returncode
-            output = result.stdout.decode('utf-8', errors='ignore') if result.stdout else ''
-            error = result.stderr.decode('utf-8', errors='ignore') if result.stderr else ''
+            output = result.stdout if result.stdout else ''
+            error = result.stderr if result.stderr else ''
             
-            # 检查是否崩溃 (返回码非0通常表示异常)
+            # 检查是否崩溃或有内存错误
             if return_code < 0:
                 # 负数返回码通常表示被信号终止（崩溃）
                 error_msg = f"Crashed with signal {-return_code}: {error}"
                 log_error(f"执行崩溃 - 二进制: {binary_path.name}, 种子: {seed_file.name}, 信号: {-return_code}, stderr: {error[:100]}")
+                # 保存崩溃的调试信息
+                self.save_execution_failure_debug_info(harness_name, binary_path, seed_file, cmd, output, error, return_code)
+                
                 return False, error_msg, return_code
             elif return_code > 0:
                 # 正数返回码可能是正常退出或错误
-                if error.strip():  # 如果有stderr输出，记录错误日志
-                    log_error(f"执行异常 - 二进制: {binary_path.name}, 种子: {seed_file.name}, 返回码: {return_code}, stderr: {error[:100]}")
+                # 检查是否是AddressSanitizer检测到的内存错误
+                if any(keyword in error.lower() for keyword in ['addresssanitizer', 'asan', 'heap-buffer-overflow', 'stack-buffer-overflow', 'use-after-free']):
+                    error_msg = f"Memory error detected: {error}"
+                    log_error(f"内存错误 - 二进制: {binary_path.name}, 种子: {seed_file.name}, 返回码: {return_code}, stderr: {error[:100]}")
+                    # 保存内存错误的调试信息
+                    self.save_execution_failure_debug_info(harness_name, binary_path, seed_file, cmd, output, error, return_code)
+                    return False, error_msg, return_code
+                elif error.strip():  # 如果有其他stderr输出，记录但不认为是失败
+                    log_warning(f"执行警告 - 二进制: {binary_path.name}, 种子: {seed_file.name}, 返回码: {return_code}, stderr: {error[:100]}")
+                
                 return True, f"Exit code {return_code}: {output}", return_code
             else:
                 # 返回码0表示正常执行
@@ -117,12 +186,18 @@ class ExecutionFilter:
         except subprocess.TimeoutExpired:
             error_msg = "Execution timeout"
             log_error(f"执行超时 - 二进制: {binary_path.name}, 种子: {seed_file.name}, 超时时间: {timeout}秒")
+            # 保存超时的调试信息
+            cmd = [str(binary_path), str(seed_file)]
+            self.save_execution_failure_debug_info(harness_name, binary_path, seed_file, cmd, error_msg, "", -1)
+            
             return False, error_msg, -1
         except Exception as e:
             error_msg = f"Execution error: {str(e)}"
-            log_error(f"执行异常 - 二进制: {binary_path.name}, 种子: {seed_file.name}, 异常: {str(e)}")
+            log_error(f"执行异常 - 二进制: {binary_path.name}, 种子: {seed_file.name}, 异常: {str(e)}")    
+            # 保存执行异常的调试信息
+            self.save_execution_failure_debug_info(harness_name, binary_path, seed_file, cmd if 'cmd' in locals() else [], error_msg, str(e), -1)
+            
             return False, error_msg, -1
-    
 
     def test_harness_with_seeds(self, harness_info: Dict) -> Dict:
         """使用种子文件测试harness（在临时目录编译并执行）"""
@@ -163,7 +238,7 @@ class ExecutionFilter:
         log_info(f"测试 {len(valid_seeds)} 个有效种子")
         
         for seed_file in valid_seeds:
-            success, output, return_code = self.execute_harness_with_seed(binary_path, seed_file)
+            success, output, return_code = self.execute_harness_with_seed(binary_path, seed_file, harness_name)
             
             result_info = {
                 'seed_file': str(seed_file),
