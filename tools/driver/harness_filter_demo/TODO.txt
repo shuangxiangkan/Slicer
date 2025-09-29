@@ -1,1 +1,0 @@
-对于发生crash，可以检查crash的信息，如果是在library 的API处（需要提供所有的API的list），那么这个crash可能是有用的，需要保留下来
