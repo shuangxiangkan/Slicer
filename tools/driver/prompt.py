@@ -49,7 +49,8 @@ class PromptGenerator:
 
 ## Target API Information
 
-**Function Signature**: {signature}
+**Function Signature**: 
+{signature}
 
 **Include Headers**:
 {headers_section}
@@ -133,7 +134,8 @@ Please use the standard Libfuzzer entry function: `{entry_function}` to generate
 
 ## Target API Information
 
-**Function Signature**: {signature}
+**Function Signature**: 
+{signature}
 
 **Include Headers**:
 {headers_section}
