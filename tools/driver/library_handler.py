@@ -5,10 +5,19 @@ Library handler for compiling and managing libraries.
 
 import subprocess
 import os
+import json
+import asyncio
+import concurrent.futures
+from typing import List, Dict, Any
 from config_parser import ConfigParser
 from log import *
 from utils import check_afl_instrumentation
 from similarity_analyzer import APISimilarityAnalyzer
+from prompt import PromptGenerator
+
+# Import LLM modules
+from llm.base import create_llm_client
+from llm.config import LLMConfig
 
 class LibraryHandler:
     """Handles library operations like compilation."""
@@ -23,6 +32,18 @@ class LibraryHandler:
         self.config_parser = config_parser
         self.library_name = self.config_parser.get_library_info()['name']
         self.library_dir = self.config_parser.get_libraries_dir()
+        
+        # Initialize prompt generator
+        self.prompt_generator = PromptGenerator(config_parser)
+        
+        # Initialize LLM client
+        try:
+            self.llm_config = LLMConfig.from_env()
+            self.llm_client = create_llm_client(provider=self.llm_config.default_provider, config=self.llm_config)
+            log_info(f"LLM client initialized with provider: {self.llm_config.default_provider}")
+        except Exception as e:
+            log_warning(f"Failed to initialize LLM client: {e}")
+            self.llm_client = None
 
     def get_all_apis(self, output_dir: str, analyzer=None):
         """
@@ -462,77 +483,167 @@ class LibraryHandler:
 
     def get_api_documentation(self, api_functions, analyzer, output_dir: str):
         """
-        获取API函数在文档中的说明并保存到文件
+        使用LLM并行分析文档，提取API函数的使用描述
         
         Args:
-            api_functions: API函数列表，由get_all_apis返回
-            analyzer: RepoAnalyzer实例，用于搜索API文档
-            output_dir: 文档结果文件的输出目录
+            api_functions: API函数列表
+            analyzer: RepoAnalyzer实例
+            output_dir: 输出目录
             
         Returns:
-            dict: 文档信息结果，格式为 {function_name: doc_details}
+            dict: API文档结果
         """
         try:
             if not api_functions:
-                log_warning("没有API函数可用于文档搜索")
+                log_warning("没有API函数可用于文档分析")
                 return {}
             
-            log_info(f"开始搜索 {len(api_functions)} 个API函数的文档说明...")
+            if not self.llm_client:
+                log_error("LLM客户端未初始化，无法进行文档分析")
+                return {}
             
-            # 获取文档配置
+            log_info(f"开始并行分析 {len(api_functions)} 个API函数的文档...")
+            
+            # 获取文档配置和内容
             doc_config = self.config_parser.get_documentation_config()
-            target_files = None
-            if doc_config and doc_config.get('target_files'):
-                target_files = doc_config['target_files']
-                log_info(f"使用配置的目标文档文件: {target_files}")
-            else:
-                log_info("未配置目标文档文件，将搜索所有文档")
+            target_files = doc_config.get('target_files', []) if doc_config else []
+            document_contents = self._get_document_contents(analyzer, target_files)
             
-            # 存储所有文档结果
-            documentation_results = {}
+            if not document_contents:
+                log_warning("未找到任何文档文件")
+                return {}
+            
+            # 并行分析所有文档
+            api_docs = asyncio.run(self._parallel_analyze_documents(document_contents))
+            
+            # 合并结果并保存
+            result = self._save_documentation_results(api_docs, api_functions, output_dir)
+            
+            log_success(f"文档分析完成，共处理 {len(document_contents)} 个文档文件")
+            return result
+            
+        except Exception as e:
+            log_error(f"文档分析时发生错误: {e}")
+            import traceback
+            traceback.print_exc()
+            return {}
+
+    def _get_document_contents(self, analyzer, target_files: List[str] = None) -> Dict[str, str]:
+        """获取文档文件内容"""
+        try:
+            document_contents = {}
+            
+            if target_files:
+                # 处理指定文件 - 获取具体的库目录
+                target_library_dir = self.config_parser.get_target_library_dir()
+                for target_file in target_files:
+                    file_path = target_file if os.path.isabs(target_file) else os.path.join(target_library_dir, target_file)
+                    if os.path.exists(file_path):
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            content = f.read().strip()
+                            if content:
+                                document_contents[file_path] = content
+            else:
+                # 获取所有文档文件
+                all_doc_files = analyzer.get_all_document_files()
+                for file_path in all_doc_files:
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            content = f.read().strip()
+                            if content:
+                                document_contents[file_path] = content
+                    except:
+                        continue
+            
+            return document_contents
+        except Exception as e:
+            log_error(f"获取文档内容失败: {e}")
+            return {}
+
+    async def _parallel_analyze_documents(self, document_contents: Dict[str, str]) -> Dict[str, Any]:
+        """并行分析所有文档"""
+        try:
+            all_apis = {}
+            
+            # 使用线程池并行处理
+            with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+                futures = []
+                
+                for file_path, content in document_contents.items():
+                    future = executor.submit(self._analyze_single_document, content)
+                    futures.append(future)
+                
+                # 收集结果
+                for future in concurrent.futures.as_completed(futures):
+                    try:
+                        result = future.result()
+                        if result:
+                            # 合并API结果
+                            for api_name, api_info in result.items():
+                                if api_name not in all_apis:
+                                    all_apis[api_name] = api_info
+                                else:
+                                    # 合并描述
+                                    existing_desc = all_apis[api_name].get('description', '')
+                                    new_desc = api_info.get('description', '')
+                                    if new_desc and new_desc not in existing_desc:
+                                        all_apis[api_name]['description'] = f"{existing_desc} {new_desc}".strip()
+                    except Exception as e:
+                        log_warning(f"处理文档时发生错误: {e}")
+            
+            return all_apis
+        except Exception as e:
+            log_error(f"并行分析文档失败: {e}")
+            return {}
+
+    def _analyze_single_document(self, content: str) -> Dict[str, Any]:
+        """分析单个文档"""
+        try:
+            # 生成提示
+            prompt = self.prompt_generator.generate_api_documentation_extraction_prompt(content, [])
+            
+            # 调用LLM
+            response = self.llm_client.generate_response(prompt)
+            
+            if response:
+                # 解析JSON
+                json_start = response.find('{')
+                json_end = response.rfind('}') + 1
+                if json_start != -1 and json_end > json_start:
+                    json_str = response[json_start:json_end]
+                    result = json.loads(json_str)
+                    return result.get('apis', {})
+            
+            return {}
+        except Exception as e:
+            log_warning(f"分析文档失败: {e}")
+            return {}
+
+    def _save_documentation_results(self, api_docs: Dict[str, Any], api_functions: List, output_dir: str) -> Dict[str, Any]:
+        """保存文档分析结果"""
+        try:
+            # 合并结果
+            results = {}
             apis_with_docs = 0
             
-            # 为每个API函数搜索文档
-            for i, func in enumerate(api_functions, 1):
-                log_info(f"搜索函数文档 {i}/{len(api_functions)}: {func.name}")
+            for func in api_functions:
+                func_name = func.name
+                has_doc = func_name in api_docs
                 
-                # 使用RepoAnalyzer的search_api_in_documents方法搜索文档，传入目标文件配置
-                doc_results = analyzer.search_api_in_documents(func.name, target_files=target_files)
-                
-                # 统计详细信息
-                doc_details = {
-                    'function_name': func.name,
-                    'function_signature': func.get_signature(),
-                    'has_documentation': bool(doc_results),
-                    'documentation_count': len(doc_results),
-                    'documentation_sources': []
+                results[func_name] = {
+                    'function_name': func_name,
+                    'has_documentation': has_doc,
+                    'description': api_docs.get(func_name, {}).get('description', '') if has_doc else ''
                 }
                 
-                # 处理找到的文档
-                for doc_result in doc_results:
-                    doc_source = {
-                        'file_path': doc_result['file_path'],
-                        'file_name': doc_result['file_name'],
-                        'line_number': doc_result['line_number'],
-                        'match_type': doc_result['match_type'],
-                        'file_type': doc_result['file_type'],
-                        'context': doc_result['context']
-                    }
-                    doc_details['documentation_sources'].append(doc_source)
-                
-                if doc_results:
+                if has_doc:
                     apis_with_docs += 1
-                
-                documentation_results[func.name] = doc_details
             
-            # 计算统计信息
+            # 保存到文件
             total_apis = len(api_functions)
             doc_rate = (apis_with_docs / total_apis) * 100 if total_apis else 0
             
-            # 保存文档结果到JSON文件
             docs_file_path = os.path.join(output_dir, f"{self.library_name}_api_documentation.json")
-            
-            # 构建JSON数据结构
             json_data = {
                 "library_name": self.library_name,
                 "analysis_summary": {
@@ -540,22 +651,17 @@ class LibraryHandler:
                     "apis_with_documentation": apis_with_docs,
                     "documentation_rate_percentage": round(doc_rate, 1)
                 },
-                "api_functions": documentation_results
+                "api_functions": results
             }
             
-            import json
             with open(docs_file_path, 'w', encoding='utf-8') as f:
                 json.dump(json_data, f, ensure_ascii=False, indent=2)
             
-            log_info(f"API文档分析结果已保存到: {docs_file_path}")
-            log_success(f"API文档分析完成，共分析 {total_apis} 个函数，{apis_with_docs} 个有文档说明")
-            
-            return documentation_results
+            log_info(f"文档分析结果已保存到: {docs_file_path}")
+            return results
             
         except Exception as e:
-            log_error(f"搜索API文档时发生错误: {e}")
-            import traceback
-            traceback.print_exc()
+            log_error(f"保存结果失败: {e}")
             return {}
 
     def compute_api_similarity(self, api_functions, output_dir: str, similarity_threshold: float = 0.2):

@@ -72,6 +72,38 @@ Please use the standard Libfuzzer entry function: `{entry_function}` to generate
         
         return prompt
     
+    def generate_api_documentation_extraction_prompt(self, document_content: str, api_functions: List[str]) -> str:
+        """Generate prompt for extracting API documentation and usage from documents"""
+        
+        prompt = f"""Analyze the following document content and extract API function information.
+        
+## API Functions to Extract:
+{api_functions}
+
+Document content:
+```
+{document_content}
+```
+
+Extract the following information for API functions mentioned in the document:
+- Function name
+- Function description (Try to use the descriptions from the document and preserve as much usage information related to this API as possible.)
+
+Output in JSON format:
+```json
+{{
+  "apis": {{
+    "function_name": {{
+      "description": "function description (Try to use the descriptions from the document and preserve as much usage information related to this API as possible.)"
+    }}
+  }}
+}}
+```
+
+Only extract API information that actually exists in the document, do not make up content."""
+        
+        return prompt
+    
     def _build_headers_section(self) -> str:
         """Build headers include section"""
         if not self.include_headers:
