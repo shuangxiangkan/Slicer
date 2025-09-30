@@ -23,7 +23,7 @@ class PromptGenerator:
         signature = api_info.get('signature', '')
         comments = api_info.get('comments', '')
         documentation = api_info.get('documentation', '')
-        usage_examples = api_info.get('top_3_usage', [])
+        usage_examples = api_info.get('top_n_usage', [])
         
         # Get library language information
         library_info = self.config_parser.get_library_info()
@@ -72,6 +72,9 @@ Please use the standard Libfuzzer entry function: `{entry_function}` to generate
         
         return prompt
     
+    
+    
+    
     def generate_api_documentation_extraction_prompt(self, document_content: str, api_functions: List[str]) -> str:
         """Generate prompt for extracting API documentation and usage from documents"""
         
@@ -103,6 +106,10 @@ Output in JSON format:
 Only extract API information that actually exists in the document, do not make up content."""
         
         return prompt
+    
+    
+    
+    
     
     def _build_headers_section(self) -> str:
         """Build headers include section"""
@@ -140,7 +147,7 @@ Only extract API information that actually exists in the document, do not make u
         signature = api_info.get('signature', '')
         comments = api_info.get('comments', '')
         documentation = api_info.get('documentation', '')
-        usage_examples = api_info.get('top_3_usage', [])
+        usage_examples = api_info.get('top_n_usage', [])
         
         # Get library language information
         library_info = self.config_parser.get_library_info()
