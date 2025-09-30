@@ -239,13 +239,12 @@ class HarnessGenerator:
         """
         从文档信息中提取摘要
         """
-        if not doc_info or not doc_info.get('documentation_sources'):
+        if not doc_info:
             return ""
         
-        # 取第一个文档源的context作为摘要
-        sources = doc_info['documentation_sources']
-        if sources and len(sources) > 0:
-            return sources[0].get('context', '')
+        # 从API文档结果中提取description字段
+        if doc_info.get('has_documentation') and doc_info.get('description'):
+            return doc_info['description']
         
         return ""
 

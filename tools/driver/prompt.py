@@ -55,10 +55,10 @@ class PromptGenerator:
 **Include Headers**:
 {headers_section}
 
-**Function Description**:
+**Function Comment**:
 {comments}
 
-**Documentation**:
+**Function information in Documentation files**:
 {documentation}
 
 {examples_section}
@@ -172,10 +172,10 @@ Only extract API information that actually exists in the document, do not make u
 **Include Headers**:
 {headers_section}
 
-**Function Description**:
+**Function Comment**:
 {comments}
 
-**Documentation**:
+**Function information in Documentation files**:
 {documentation}
 
 {examples_section}
