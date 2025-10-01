@@ -231,7 +231,7 @@ class HarnessGenerator:
     def _extract_top_usage(self, usage_info, max_count=3):
         """
         从usage信息中提取指定数量的usage示例
-        按照原有顺序选择，跳过超过100行的代码
+        按照原有顺序选择前max_count个示例
         
         Args:
             usage_info: usage信息字典
@@ -241,7 +241,7 @@ class HarnessGenerator:
         if usage_info and usage_info.get('all_usage'):
             all_usage = usage_info['all_usage']
             
-            # 按照原有顺序遍历，跳过超过100行的代码
+            # 按照原有顺序遍历，选择前max_count个示例
             for file_path, file_usage in all_usage.items():
                 if len(top_usage) >= max_count:
                     break
@@ -252,12 +252,6 @@ class HarnessGenerator:
                         break
                         
                     code = caller.get('code', '')
-                    line_count = len(code.split('\n')) if code else 0
-                    
-                    # 跳过超过100行的代码
-                    if line_count > 100:
-                        continue
-                    
                     top_usage.append({
                         "code": code
                     })
