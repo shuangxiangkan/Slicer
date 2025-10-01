@@ -252,12 +252,12 @@ class ExecutionFilter:
             if not success:
                 if "timeout" in output.lower():
                     test_result['timeout'] = True
-                    log_error(f"种子执行超时 - Harness: {harness_name}, 种子: {seed_file.name}, 错误: {output[:100]}")
+                    log_error(f"种子执行超时 - Harness: {harness_name}, 种子: {seed_file.name}, 错误: {output[:500]}")
                 elif "crash" in output.lower() or return_code < 0:
                     test_result['crashed'] = True
-                    log_error(f"种子执行崩溃 - Harness: {harness_name}, 种子: {seed_file.name}, 返回码: {return_code}, 错误: {output[:100]}")
+                    log_error(f"种子执行崩溃 - Harness: {harness_name}, 种子: {seed_file.name}, 返回码: {return_code}, 错误: {output[:500]}")
                 else:
-                    log_error(f"种子执行失败 - Harness: {harness_name}, 种子: {seed_file.name}, 返回码: {return_code}, 错误: {output[:100]}")
+                    log_error(f"种子执行失败 - Harness: {harness_name}, 种子: {seed_file.name}, 返回码: {return_code}, 错误: {output[:500]}")
                 
                 # 有效种子执行失败是问题
                 self.execution_stats['valid_seed_failures'].append({

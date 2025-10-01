@@ -39,11 +39,19 @@ class LibraryHandler:
         # Initialize LLM client
         try:
             self.llm_config = LLMConfig.from_env()
-            self.llm_client = create_llm_client(provider=self.llm_config.default_provider, config=self.llm_config)
-            log_info(f"LLM client initialized with provider: {self.llm_config.default_provider}")
+            self.llm_client = create_llm_client(config=self.llm_config)
+            log_info(f"LLM client initialized with provider: {self.llm_client.provider}")
         except Exception as e:
             log_warning(f"Failed to initialize LLM client: {e}")
             self.llm_client = None
+        
+        # Initialize documentation analysis cost statistics
+        self.doc_analysis_stats = {
+            'total_documents_processed': 0,
+            'total_llm_calls': 0,
+            'successful_analyses': 0,
+            'failed_analyses': 0
+        }
 
     def get_all_apis(self, output_dir: str, analyzer=None):
         """
@@ -513,11 +521,17 @@ class LibraryHandler:
                 log_warning("未找到任何文档文件")
                 return {}
             
+            # 统计处理的文档数量
+            self.doc_analysis_stats['total_documents_processed'] = len(document_contents)
+            
             # 并行分析所有文档
             api_docs = asyncio.run(self._parallel_analyze_documents(document_contents))
             
             # 合并结果并保存
             result = self._save_documentation_results(api_docs, api_functions, output_dir)
+            
+            # 生成文档分析成本报告
+            self._generate_doc_analysis_cost_report(output_dir)
             
             log_success(f"文档分析完成，共处理 {len(document_contents)} 个文档文件")
             return result
@@ -602,7 +616,8 @@ class LibraryHandler:
             # 生成提示
             prompt = self.prompt_generator.generate_api_documentation_extraction_prompt(content, [])
             
-            # 调用LLM
+            # 调用LLM并统计成本
+            self.doc_analysis_stats['total_llm_calls'] += 1
             response = self.llm_client.generate_response(prompt)
             
             if response:
@@ -612,11 +627,14 @@ class LibraryHandler:
                 if json_start != -1 and json_end > json_start:
                     json_str = response[json_start:json_end]
                     result = json.loads(json_str)
+                    self.doc_analysis_stats['successful_analyses'] += 1
                     return result.get('apis', {})
             
+            self.doc_analysis_stats['failed_analyses'] += 1
             return {}
         except Exception as e:
             log_warning(f"分析文档失败: {e}")
+            self.doc_analysis_stats['failed_analyses'] += 1
             return {}
 
     def _save_documentation_results(self, api_docs: Dict[str, Any], api_functions: List, output_dir: str) -> Dict[str, Any]:
@@ -984,6 +1002,58 @@ class LibraryHandler:
         log_success(f"All build outputs verified successfully for {library_type} library")
         return True
 
+    def _generate_doc_analysis_cost_report(self, output_dir: str):
+        """生成文档分析成本报告"""
+        try:
+            # 获取LLM成本信息
+            llm_cost_info = self.llm_client.get_total_cost() if self.llm_client else None
+            
+            # 构建成本报告 - 格式与harness生成报告一致
+            cost_report = {
+                "documentation_analysis_summary": {
+                    "total_documents_processed": self.doc_analysis_stats['total_documents_processed'],
+                    "total_llm_calls": self.doc_analysis_stats['total_llm_calls'],
+                    "successful_analyses": self.doc_analysis_stats['successful_analyses'],
+                    "failed_analyses": self.doc_analysis_stats['failed_analyses'],
+                    "success_rate": (self.doc_analysis_stats['successful_analyses'] / 
+                                   max(self.doc_analysis_stats['total_documents_processed'], 1)) * 100
+                },
+                "llm_cost_details": {
+                    "provider": self.llm_client.provider if hasattr(self, 'llm_client') and self.llm_client else "unknown",
+                    "model": getattr(self.llm_config, f"{self.llm_client.provider}_model", "unknown") if hasattr(self, 'llm_client') and self.llm_client and hasattr(self, 'llm_config') else "unknown",
+                    "input_tokens": llm_cost_info.input_tokens if llm_cost_info else 0,
+                    "output_tokens": llm_cost_info.output_tokens if llm_cost_info else 0,
+                    "total_tokens": llm_cost_info.total_tokens if llm_cost_info else 0,
+                    "total_cost_usd": llm_cost_info.cost_usd if llm_cost_info else 0.0,
+                    "total_requests": llm_cost_info.requests_count if llm_cost_info else 0
+                },
+                "cost_breakdown": {
+                    "cost_per_document": (llm_cost_info.cost_usd / max(self.doc_analysis_stats['total_documents_processed'], 1)) if llm_cost_info else 0.0,
+                    "cost_per_successful_analysis": (llm_cost_info.cost_usd / max(self.doc_analysis_stats['successful_analyses'], 1)) if llm_cost_info else 0.0,
+                    "average_tokens_per_call": (llm_cost_info.total_tokens / max(self.doc_analysis_stats['total_llm_calls'], 1)) if llm_cost_info else 0.0
+                }
+            }
+            
+            # 保存成本报告
+            cost_report_path = os.path.join(output_dir, f"{self.library_name}_doc_analysis_cost_report.json")
+            with open(cost_report_path, 'w', encoding='utf-8') as f:
+                json.dump(cost_report, f, ensure_ascii=False, indent=2)
+            
+            # 记录成本摘要
+            log_info(f"文档分析成本报告已保存到: {cost_report_path}")
+            if llm_cost_info:
+                log_success(f"文档分析成本报告:")
+                log_info(f"  - 处理文档数量: {self.doc_analysis_stats['total_documents_processed']}")
+                log_info(f"  - 成功分析: {self.doc_analysis_stats['successful_analyses']}, 失败: {self.doc_analysis_stats['failed_analyses']}")
+                log_info(f"  - LLM调用次数: {self.doc_analysis_stats['total_llm_calls']}")
+                log_info(f"  - 总token数: {llm_cost_info.total_tokens:,} (输入: {llm_cost_info.input_tokens:,}, 输出: {llm_cost_info.output_tokens:,})")
+                log_info(f"  - 总成本: ${llm_cost_info.cost_usd:.4f} USD")
+                log_info(f"  - 平均每个文档成本: ${cost_report['cost_breakdown']['cost_per_document']:.4f} USD")
+                log_info(f"  - 平均每次成功分析成本: ${cost_report['cost_breakdown']['cost_per_successful_analysis']:.4f} USD")
+                log_success(f"详细成本报告已保存到: {cost_report_path}")
+            
+        except Exception as e:
+            log_error(f"生成文档分析成本报告失败: {e}")
 
 if __name__ == '__main__':
     # Example usage:

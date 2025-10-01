@@ -8,7 +8,6 @@ Harness Generator Module
 
 import os
 import json
-import re
 import shutil
 import subprocess
 from typing import Dict, List, Any
@@ -39,11 +38,20 @@ class HarnessGenerator:
         # Initialize LLM client
         try:
             self.llm_config = LLMConfig.from_env()
-            self.llm_client = create_llm_client(provider=self.llm_config.default_provider, config=self.llm_config)
-            log_info(f"LLM client initialized with provider: {self.llm_config.default_provider}")
+            self.llm_client = create_llm_client(config=self.llm_config)
+            log_info(f"LLM client initialized with provider: {self.llm_client.provider}")
         except Exception as e:
             log_warning(f"Failed to initialize LLM client: {e}")
             self.llm_client = None
+        
+        # Initialize cost tracking
+        self.harness_generation_stats = {
+            'total_apis_processed': 0,
+            'total_harnesses_generated': 0,
+            'total_llm_calls': 0,
+            'successful_harnesses': 0,
+            'failed_harnesses': 0
+        }
     
     def generate_harnesses_for_all_apis(self, 
                                        api_functions: List[Any],
@@ -112,6 +120,9 @@ class HarnessGenerator:
                     )
                     api_info_list.append(api_info)
                     
+                    # Update API processing statistics
+                    self.harness_generation_stats['total_apis_processed'] += 1
+                    
                     # Generate harnesses using LLM (包含prompt生成和保存)
                     if self.llm_client:
                         harness_success = self.generate_harnesses_for_api(api_info, library_output_dir)
@@ -132,6 +143,10 @@ class HarnessGenerator:
                 }, f, indent=2, ensure_ascii=False)
             
             log_success(f"API信息生成完成: 共处理 {len(api_info_list)} 个API，保存到 {api_info_file}")
+            
+            # Generate and save cost report
+            self._generate_cost_report(library_output_dir)
+            
             return True
             
         except Exception as e:
@@ -311,6 +326,9 @@ class HarnessGenerator:
                 # Call LLM to generate harness
                 response = self.llm_client.generate_response(prompt)
                 
+                # Update LLM call statistics
+                self.harness_generation_stats['total_llm_calls'] += 1
+                
                 # Save LLM response to file
                 response_filepath = save_llm_response_to_file(response, library_output_dir, 
                                                             api_name, f"{harness_index}_attempt_{attempt + 1}")
@@ -378,6 +396,10 @@ class HarnessGenerator:
                     except:
                         pass
                     
+                    # Update successful harness statistics
+                    self.harness_generation_stats['successful_harnesses'] += 1
+                    self.harness_generation_stats['total_harnesses_generated'] += 1
+                    
                     return True
                 else:
                     # Compilation failed, prepare for retry
@@ -410,6 +432,9 @@ class HarnessGenerator:
                     
                     if attempt == max_retries - 1:
                         log_error(f"Failed to generate compilable harness {harness_index} for {api_name} after {max_retries} attempts")
+                        # Update failed harness statistics
+                        self.harness_generation_stats['failed_harnesses'] += 1
+                        self.harness_generation_stats['total_harnesses_generated'] += 1
                         return False
                     
                     # Continue to next attempt with fix prompt
@@ -561,3 +586,61 @@ class HarnessGenerator:
                 log_error(f"Pre-verified harness processing failed for {api_name}: {e}")
         
         return success_count > 0
+    
+    def _generate_cost_report(self, library_output_dir: str):
+        """生成成本报告并保存到文件"""
+        try:
+            # Get LLM cost information
+            llm_cost_info = None
+            if self.llm_client:
+                llm_cost_info = self.llm_client.get_total_cost()
+            
+            # Generate comprehensive cost report
+            cost_report = {
+                "harness_generation_summary": {
+                    "total_apis_processed": self.harness_generation_stats['total_apis_processed'],
+                    "total_harnesses_generated": self.harness_generation_stats['total_harnesses_generated'],
+                    "successful_harnesses": self.harness_generation_stats['successful_harnesses'],
+                    "failed_harnesses": self.harness_generation_stats['failed_harnesses'],
+                    "success_rate": (self.harness_generation_stats['successful_harnesses'] / 
+                                   max(self.harness_generation_stats['total_harnesses_generated'], 1)) * 100,
+                    "total_llm_calls": self.harness_generation_stats['total_llm_calls']
+                },
+                "llm_cost_details": {
+                    "provider": self.llm_client.provider if hasattr(self, 'llm_client') and self.llm_client else "unknown",
+                    "model": getattr(self.llm_config, f"{self.llm_client.provider}_model", "unknown") if hasattr(self, 'llm_client') and self.llm_client and hasattr(self, 'llm_config') else "unknown",
+                    "input_tokens": llm_cost_info.input_tokens if llm_cost_info else 0,
+                    "output_tokens": llm_cost_info.output_tokens if llm_cost_info else 0,
+                    "total_tokens": llm_cost_info.total_tokens if llm_cost_info else 0,
+                    "total_cost_usd": llm_cost_info.cost_usd if llm_cost_info else 0.0,
+                    "total_requests": llm_cost_info.requests_count if llm_cost_info else 0
+                },
+                "cost_breakdown": {
+                    "cost_per_api": (llm_cost_info.cost_usd / max(self.harness_generation_stats['total_apis_processed'], 1)) if llm_cost_info else 0.0,
+                    "cost_per_harness": (llm_cost_info.cost_usd / max(self.harness_generation_stats['total_harnesses_generated'], 1)) if llm_cost_info else 0.0,
+                    "cost_per_successful_harness": (llm_cost_info.cost_usd / max(self.harness_generation_stats['successful_harnesses'], 1)) if llm_cost_info else 0.0,
+                    "average_tokens_per_call": (llm_cost_info.total_tokens / max(self.harness_generation_stats['total_llm_calls'], 1)) if llm_cost_info else 0.0
+                }
+            }
+            
+            # Save cost report to file
+            cost_report_file = os.path.join(library_output_dir, "harness_generation_cost_report.json")
+            with open(cost_report_file, 'w', encoding='utf-8') as f:
+                json.dump(cost_report, f, indent=2, ensure_ascii=False)
+            
+            # Log cost summary
+            if llm_cost_info:
+                log_success(f"Harness生成成本报告:")
+                log_info(f"  - 处理API数量: {self.harness_generation_stats['total_apis_processed']}")
+                log_info(f"  - 生成harness数量: {self.harness_generation_stats['total_harnesses_generated']} (成功: {self.harness_generation_stats['successful_harnesses']}, 失败: {self.harness_generation_stats['failed_harnesses']})")
+                log_info(f"  - LLM调用次数: {self.harness_generation_stats['total_llm_calls']}")
+                log_info(f"  - 总token数: {llm_cost_info.total_tokens:,} (输入: {llm_cost_info.input_tokens:,}, 输出: {llm_cost_info.output_tokens:,})")
+                log_info(f"  - 总成本: ${llm_cost_info.cost_usd:.4f} USD")
+                log_info(f"  - 平均每个API成本: ${cost_report['cost_breakdown']['cost_per_api']:.4f} USD")
+                log_info(f"  - 平均每个成功harness成本: ${cost_report['cost_breakdown']['cost_per_successful_harness']:.4f} USD")
+                log_success(f"详细成本报告已保存到: {cost_report_file}")
+            else:
+                log_warning("LLM客户端不可用，无法生成详细成本信息")
+                
+        except Exception as e:
+            log_error(f"生成成本报告时发生错误: {e}")

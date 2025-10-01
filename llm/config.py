@@ -44,7 +44,6 @@ class LLMConfig:
     claude_max_tokens: Optional[int] = None
     
     # 通用配置
-    default_provider: Optional[str] = None
     timeout: Optional[int] = None
     retry_times: Optional[int] = None
     retry_delay: Optional[float] = None
@@ -85,8 +84,6 @@ class LLMConfig:
             config.claude_max_tokens = int(os.getenv('CLAUDE_MAX_TOKENS'))
         
         # 通用配置
-        if os.getenv('DEFAULT_LLM_PROVIDER'):
-            config.default_provider = os.getenv('DEFAULT_LLM_PROVIDER')
         if os.getenv('LLM_TIMEOUT'):
             config.timeout = int(os.getenv('LLM_TIMEOUT'))
         if os.getenv('LLM_RETRY_TIMES'):
@@ -118,16 +115,9 @@ class LLMConfig:
     
     def validate(self) -> bool:
         """验证配置"""
-        if self.default_provider == "openai" and not self.openai_api_key:
-            logger.error("OpenAI API密钥未设置")
-            return False
-        
-        if self.default_provider == "claude" and not self.claude_api_key:
-            logger.error("Claude API密钥未设置")
-            return False
-        
-        if self.default_provider not in ["openai", "claude"]:
-            logger.error(f"不支持的默认提供商: {self.default_provider}")
+        # 检查是否至少有一个提供商的API密钥可用
+        if not self.openai_api_key and not self.claude_api_key:
+            logger.error("至少需要设置一个LLM提供商的API密钥（OpenAI或Claude）")
             return False
         
         return True
