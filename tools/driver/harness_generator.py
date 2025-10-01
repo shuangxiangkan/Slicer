@@ -545,6 +545,18 @@ class HarnessGenerator:
                                 
                                 if coverage_successful_harnesses:
                                     log_success(f"Coverage filtering completed for {api_name}: {len(coverage_successful_harnesses)} harnesses passed")
+                                    
+                                    # 立即保存过滤后的harness到统一目录
+                                    save_success = self._save_filtered_harnesses_to_unified_directories(
+                                        api_name=api_name,
+                                        library_output_dir=library_output_dir,
+                                        coverage_successful_harnesses=coverage_successful_harnesses
+                                    )
+                                    
+                                    if save_success:
+                                        log_success(f"Successfully saved filtered harnesses for {api_name} to unified directories")
+                                    else:
+                                        log_warning(f"Failed to save some filtered harnesses for {api_name} to unified directories")
                                 else:
                                     log_warning(f"No harnesses passed coverage filtering for {api_name}")
                                     
@@ -620,3 +632,81 @@ class HarnessGenerator:
                 
         except Exception as e:
             log_error(f"生成成本报告时发生错误: {e}")
+    
+    def _save_filtered_harnesses_to_unified_directories(self, api_name: str, library_output_dir: str, 
+                                                       coverage_successful_harnesses: List[Dict]) -> bool:
+        """
+        将过滤后的最佳harness保存到统一目录
+        
+        Args:
+            api_name: API名称
+            library_output_dir: 库输出目录
+            coverage_successful_harnesses: coverage filtering返回的成功harness列表
+            
+        Returns:
+            bool: 保存是否成功
+        """
+        try:
+            # 创建统一目录
+            final_afl_dir = os.path.join(library_output_dir, "final_harness_afl")
+            final_libfuzzer_dir = os.path.join(library_output_dir, "final_harness_libfuzzer")
+            
+            os.makedirs(final_afl_dir, exist_ok=True)
+            os.makedirs(final_libfuzzer_dir, exist_ok=True)
+            
+            log_info(f"实时保存API {api_name} 的最佳harness到统一目录...")
+            
+            saved_count = 0
+            
+            # 处理每个最佳harness
+            for harness_info in coverage_successful_harnesses:
+                try:
+                    # 从harness_info中获取源文件路径
+                    source_path = harness_info.get('source_path')
+                    if not source_path or not os.path.exists(source_path):
+                        log_warning(f"harness源文件不存在: {source_path}")
+                        continue
+                    
+                    source_file = os.path.basename(source_path)
+                    
+                    # 获取文件扩展名
+                    file_ext = os.path.splitext(source_file)[1]  # 例如: .c
+                    
+                    # 复制AFL harness（coverage filtered的就是AFL版本）
+                    afl_dest_name = f"{api_name}_harness_afl{file_ext}"
+                    afl_dest_path = os.path.join(final_afl_dir, afl_dest_name)
+                    shutil.copy2(source_path, afl_dest_path)
+                    log_info(f"  保存AFL harness: {afl_dest_name}")
+                    
+                    # 查找对应的LibFuzzer harness
+                    api_dir = os.path.join(library_output_dir, api_name)
+                    libfuzzer_dir = os.path.join(api_dir, "harness_libfuzzer")
+                    
+                    if os.path.exists(libfuzzer_dir):
+                        libfuzzer_source = os.path.join(libfuzzer_dir, source_file)
+                        if os.path.exists(libfuzzer_source):
+                            libfuzzer_dest_name = f"{api_name}_harness_libfuzzer{file_ext}"
+                            libfuzzer_dest_path = os.path.join(final_libfuzzer_dir, libfuzzer_dest_name)
+                            shutil.copy2(libfuzzer_source, libfuzzer_dest_path)
+                            log_info(f"  保存LibFuzzer harness: {libfuzzer_dest_name}")
+                        else:
+                            log_warning(f"  未找到对应的LibFuzzer harness: {libfuzzer_source}")
+                    else:
+                        log_warning(f"  API {api_name} 没有harness_libfuzzer目录")
+                    
+                    saved_count += 1
+                    
+                except Exception as harness_error:
+                    log_error(f"处理harness时发生错误: {harness_error}")
+                    continue
+            
+            if saved_count > 0:
+                log_success(f"API {api_name} 的 {saved_count} 个最佳harness已实时保存到统一目录")
+                return True
+            else:
+                log_warning(f"API {api_name} 没有成功保存任何harness")
+                return False
+            
+        except Exception as e:
+            log_error(f"实时保存最佳harness到统一目录时发生错误: {e}")
+            return False

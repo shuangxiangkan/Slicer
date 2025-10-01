@@ -592,7 +592,7 @@ class CoverageFilter:
                         shutil.copy2(source_file, dest_file)
                         log_success(f"  已复制最佳harness: {dest_file}")
                         break
-        
+                  
         # 清理临时字段，避免保存到JSON中
         for analysis in coverage_analyses:
             if '_temp_total_bitmap' in analysis:
