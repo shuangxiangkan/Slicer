@@ -299,6 +299,12 @@ class LibraryHandler:
         """
         根据usage文件路径分析API的使用类型
         
+        分类逻辑：
+        - fuzz: 文件路径包含'fuzz'关键词
+        - test_demo: 文件路径包含测试、演示、示例、文档等相关关键词
+          包括: 'test', 'demo', 'example', 'sample', 'benchmark', 'unit', 'usage', 'main', 'driver', 'harness'
+        - other: 其他类型的使用
+        
         Args:
             all_usage: 包含文件路径和对应caller信息的字典
             
@@ -318,7 +324,11 @@ class LibraryHandler:
                     has_fuzz = True
                 
                 # 检查是否有test/demo相关的usage
-                if any(keyword in path_lower for keyword in ['test', 'demo']):
+                test_demo_keywords = [
+                    'test', 'demo', 'example', 'sample', 'benchmark', 
+                    'unit', 'usage', 'main', 'driver', 'harness'
+                ]
+                if any(keyword in path_lower for keyword in test_demo_keywords):
                     has_test_demo = True
             
             # 优先级：fuzz > test_demo > other
