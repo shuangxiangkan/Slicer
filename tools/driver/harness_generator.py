@@ -231,7 +231,7 @@ class HarnessGenerator:
     def _extract_top_usage(self, usage_info, max_count=3):
         """
         从usage信息中提取指定数量的usage示例
-        优先选择行数不超过100行的usage case，如果凑不到指定数量则包含长代码
+        按照原有顺序选择，跳过超过100行的代码
         
         Args:
             usage_info: usage信息字典
@@ -241,43 +241,25 @@ class HarnessGenerator:
         if usage_info and usage_info.get('all_usage'):
             all_usage = usage_info['all_usage']
             
-            # 收集所有可用的usage cases
-            all_candidates = []
+            # 按照原有顺序遍历，跳过超过100行的代码
             for file_path, file_usage in all_usage.items():
+                if len(top_usage) >= max_count:
+                    break
+                    
                 callers = file_usage.get('callers', [])
                 for caller in callers:
+                    if len(top_usage) >= max_count:
+                        break
+                        
                     code = caller.get('code', '')
                     line_count = len(code.split('\n')) if code else 0
-                    all_candidates.append({
-                        "code": code,
-                        "line_count": line_count
-                    })
-            
-            # 按行数排序，优先选择较短的代码
-            all_candidates.sort(key=lambda x: x['line_count'])
-            
-            # 首先尝试选择不超过100行的usage cases
-            short_cases = [case for case in all_candidates if case['line_count'] <= 100]
-            
-            # 如果短代码足够指定数量，直接使用
-            if len(short_cases) >= max_count:
-                for i in range(max_count):
+                    
+                    # 跳过超过100行的代码
+                    if line_count > 100:
+                        continue
+                    
                     top_usage.append({
-                        "code": short_cases[i]['code']
-                    })
-            else:
-                # 如果短代码不够指定数量，先添加所有短代码
-                for case in short_cases:
-                    top_usage.append({
-                        "code": case['code']
-                    })
-                
-                # 然后从长代码中补充，直到凑够指定数量
-                long_cases = [case for case in all_candidates if case['line_count'] > 100]
-                remaining_needed = max_count - len(short_cases)
-                for i in range(min(remaining_needed, len(long_cases))):
-                    top_usage.append({
-                        "code": long_cases[i]['code']
+                        "code": code
                     })
         
         return top_usage

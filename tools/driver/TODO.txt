@@ -8,5 +8,8 @@
     3，在提供harness实例的时候，要根据bottom up的顺序来逐个提供最好的harness实例（经过筛选过的）
 
 
+top 3 harness会排除掉比较长的usage，这个有待商量，似乎在libucl中有个example harness过长被排除掉了，这样不太好
+
+
 需要检查的：
 1. hdf5的hdf5.yaml没检查对不对
