@@ -274,8 +274,22 @@ class HarnessGenerator:
         # 从dependency_graph获取当前API的参考信息
         current_node = self.dependency_graph.get_node(api_name)
         
-        if current_node and current_node.best_reference:
-            # 如果当前API有参考API，添加到相似API列表
+        if current_node and current_node.similar_references:
+            # 如果当前API有参考API列表，添加所有相似API到列表
+            for ref_info in current_node.similar_references:
+                reference_api = ref_info['api_name']
+                similarity_score = ref_info['similarity']
+                
+                # 检查是否已有生成的harness文件
+                reference_file = self._find_reference_harness_file(reference_api, library_output_dir)
+                
+                base_info["dependency_context"]["similar_apis"].append({
+                    "api_name": reference_api,
+                    "similarity_score": similarity_score,
+                    "has_reference": reference_file is not None
+                })
+        elif current_node and current_node.best_reference:
+            # 向后兼容：如果只有best_reference，使用它
             reference_api = current_node.best_reference
             similarity_score = current_node.similarity_score
             

@@ -13,7 +13,7 @@ import json
 import os
 import re
 import math
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 from datetime import datetime
 from difflib import SequenceMatcher
 import networkx as nx
@@ -47,10 +47,10 @@ class APISimilarityAnalyzer:
         """
         self.similarity_threshold = similarity_threshold
         self.weights = {
-            'name': 0.35,
-            'return_type': 0.25,
-            'param_types': 0.25,
-            'param_count': 0.15
+            'name': 0.40,
+            'return_type': 0.10,
+            'param_types': 0.40,
+            'param_count': 0.10
         }
 
     def compute_function_similarity(self, func1: FunctionInfo, func2: FunctionInfo) -> float:
@@ -169,7 +169,7 @@ class APISimilarityAnalyzer:
 
     def _compute_param_types_similarity(self, func1: FunctionInfo, func2: FunctionInfo) -> float:
         """
-        Compute the similarity of parameter type lists
+        Compute the similarity of parameter type lists using optimal matching
         """
         types1 = func1.parameters
         types2 = func2.parameters
@@ -179,20 +179,108 @@ class APISimilarityAnalyzer:
         if not types1 or not types2:
             return 0.0
             
-        max_len = max(len(types1), len(types2))
-        min_len = min(len(types1), len(types2))
-        
-        # Compute pairwise similarity
-        similarities = []
-        for i in range(min_len):
-            sim = self._compute_type_similarity(types1[i], types2[i])
-            similarities.append(sim)
+        # Use optimal matching to find best parameter correspondences
+        return self._compute_optimal_param_matching(types1, types2)
+    
+    def _compute_optimal_param_matching(self, types1: List[str], types2: List[str]) -> float:
+        """
+        Compute set-based similarity between two parameter lists using Jaccard coefficient and cosine similarity
+        """
+        if not types1 and not types2:
+            return 1.0
+        if not types1 or not types2:
+            return 0.0
             
-        # Average similarity, with length difference penalty
-        avg_similarity = sum(similarities) / len(similarities) if similarities else 0.0
-        length_penalty = min_len / max_len
+        # Combine Jaccard similarity and cosine similarity for robust comparison
+        jaccard_sim = self._compute_jaccard_similarity(types1, types2)
+        cosine_sim = self._compute_cosine_similarity(types1, types2)
         
-        return avg_similarity * length_penalty
+        # Weight combination: Jaccard focuses on exact matches, cosine on proportional similarity
+        combined_similarity = 0.6 * jaccard_sim + 0.4 * cosine_sim
+        
+        return combined_similarity
+    
+    def _compute_jaccard_similarity(self, types1: List[str], types2: List[str]) -> float:
+        """
+        Compute Jaccard similarity coefficient between two type sets
+        """
+        # Normalize types for better matching
+        set1 = set(self._normalize_type(t) for t in types1)
+        set2 = set(self._normalize_type(t) for t in types2)
+        
+        # Calculate intersection and union
+        intersection = len(set1.intersection(set2))
+        union = len(set1.union(set2))
+        
+        if union == 0:
+            return 1.0  # Both sets are empty
+            
+        return intersection / union
+    
+    def _compute_cosine_similarity(self, types1: List[str], types2: List[str]) -> float:
+        """
+        Compute cosine similarity between two parameter type vectors
+        """
+        # Create type frequency vectors
+        all_types = set(self._normalize_type(t) for t in types1 + types2)
+        
+        if not all_types:
+            return 1.0
+            
+        # Build frequency vectors
+        vec1 = []
+        vec2 = []
+        
+        normalized_types1 = [self._normalize_type(t) for t in types1]
+        normalized_types2 = [self._normalize_type(t) for t in types2]
+        
+        for type_name in all_types:
+            vec1.append(normalized_types1.count(type_name))
+            vec2.append(normalized_types2.count(type_name))
+        
+        # Calculate cosine similarity
+        dot_product = sum(a * b for a, b in zip(vec1, vec2))
+        magnitude1 = sum(a * a for a in vec1) ** 0.5
+        magnitude2 = sum(b * b for b in vec2) ** 0.5
+        
+        if magnitude1 == 0 or magnitude2 == 0:
+            return 0.0
+            
+        return dot_product / (magnitude1 * magnitude2)
+    
+    def _normalize_type(self, type_str: str) -> str:
+        """
+        Normalize type string for better comparison
+        """
+        if not type_str:
+            return ""
+            
+        # Remove common prefixes/suffixes and normalize
+        normalized = type_str.strip()
+        
+        # Remove const, volatile, static keywords
+        for keyword in ['const', 'volatile', 'static', 'extern']:
+            normalized = normalized.replace(keyword + ' ', '').replace(' ' + keyword, '')
+        
+        # Remove pointer/reference indicators for base type comparison
+        normalized = normalized.replace('*', '').replace('&', '').strip()
+        
+        # Normalize common type aliases
+        type_aliases = {
+            'unsigned int': 'uint',
+            'signed int': 'int',
+            'unsigned long': 'ulong',
+            'signed long': 'long',
+            'unsigned char': 'uchar',
+            'signed char': 'char'
+        }
+        
+        for alias, canonical in type_aliases.items():
+            if normalized == alias:
+                normalized = canonical
+                break
+        
+        return normalized.lower()
 
     def _compute_param_count_similarity(self, func1: FunctionInfo, func2: FunctionInfo) -> float:
         """
@@ -218,13 +306,31 @@ class APINode:
     def __init__(self, name: str, category: str):
         self.name = name                    # API名字
         self.category = category            # category类型 (fuzz/test_demo/other_usage/no_usage)
-        self.best_reference = None          # 最相似的已有harness API名字
-        self.similarity_score = 0.0         # 与最相似API的相似度分数
+        self.similar_references = []        # 最相似的已有harness API列表 (最多3个)
+        self.best_reference = None          # 保持向后兼容：最相似的API名字
+        self.similarity_score = 0.0         # 保持向后兼容：与最相似API的相似度分数
+    
+    def set_references(self, references: List[Dict[str, Any]]):
+        """设置多个相似的参考API
+        
+        Args:
+            references: 包含{'api_name': str, 'similarity': float}的字典列表
+        """
+        # 按相似度降序排序，最多保留3个
+        sorted_refs = sorted(references, key=lambda x: x['similarity'], reverse=True)[:3]
+        self.similar_references = sorted_refs
+        
+        # 保持向后兼容
+        if sorted_refs:
+            self.best_reference = sorted_refs[0]['api_name']
+            self.similarity_score = sorted_refs[0]['similarity']
+        else:
+            self.best_reference = None
+            self.similarity_score = 0.0
     
     def set_reference(self, reference_api: str, similarity: float):
-        """设置最相似的参考API"""
-        self.best_reference = reference_api
-        self.similarity_score = similarity
+        """设置最相似的参考API（保持向后兼容）"""
+        self.set_references([{'api_name': reference_api, 'similarity': similarity}])
     
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典格式"""
@@ -232,7 +338,8 @@ class APINode:
             'name': self.name,
             'category': self.category,
             'best_reference': self.best_reference,
-            'similarity_score': self.similarity_score
+            'similarity_score': self.similarity_score,
+            'similar_references': self.similar_references
         }
 
 class APISimilarityDependencyGraph:
@@ -344,7 +451,13 @@ class APISimilarityDependencyGraph:
             if best_api:
                 self.generation_order.append(best_api)
                 remaining_apis.remove(best_api)
-                log_info(f"添加API: {best_api} (相似度: {self.nodes[best_api].similarity_score:.3f}, 参考: {self.nodes[best_api].best_reference})")
+                
+                # 显示所有相似的API
+                node = self.nodes[best_api]
+                similar_info = []
+                for ref in node.similar_references:
+                    similar_info.append(f"{ref['api_name']} (相似度: {ref['similarity']:.3f})")
+                log_info(f"添加API: {best_api} - 相似API: [{', '.join(similar_info)}]")
             else:
                 # 没有找到相似的API，按优先级顺序添加剩余API
                 log_info("没有找到相似API，按优先级顺序添加剩余API...")
@@ -369,8 +482,7 @@ class APISimilarityDependencyGraph:
     def _find_most_similar_api_on_demand(self, candidate_apis: List[str]) -> Optional[str]:
         """在候选API中找到与已有API最相似的一个（按需计算相似度）"""
         best_api = None
-        max_similarity = 0.0
-        best_reference = None
+        api_similarities = {}  # 存储每个候选API的最佳相似度信息
         
         # 遍历每个候选API，计算与generation_order中所有API的相似度
         for candidate_api in candidate_apis:
@@ -384,6 +496,9 @@ class APISimilarityDependencyGraph:
             if not candidate_func:
                 continue
                 
+            # 存储该候选API的所有相似度信息
+            similarities = []
+            
             # 计算与generation_order中每个API的相似度
             for existing_api in self.generation_order:
                 # 获取已有API的函数信息
@@ -399,20 +514,35 @@ class APISimilarityDependencyGraph:
                 try:
                     # 计算相似度
                     similarity_score = self.similarity_analyzer.compute_function_similarity(candidate_func, existing_func)
-                    
-                    # 更新最佳匹配
-                    if similarity_score > max_similarity:
-                        max_similarity = similarity_score
-                        best_api = candidate_api
-                        best_reference = existing_api
+                    similarities.append({
+                        'api_name': existing_api,
+                        'similarity': similarity_score
+                    })
                         
                 except Exception as e:
                     log_warning(f"计算 {candidate_api} 与 {existing_api} 相似度时出错: {str(e)}")
                     continue
+            
+            # 对相似度进行排序，取前3个
+            similarities.sort(key=lambda x: x['similarity'], reverse=True)
+            top_similarities = similarities[:3]
+            
+            # 只保留相似度大于阈值的
+            filtered_similarities = [s for s in top_similarities if s['similarity'] > 0.1]
+            
+            if filtered_similarities:
+                api_similarities[candidate_api] = filtered_similarities
         
-        # 设置最佳参考（只有当相似度大于阈值时才设置）
-        if best_api and best_reference and max_similarity > 0.1:  # 使用相似度阈值
-            self.nodes[best_api].set_reference(best_reference, max_similarity)
+        # 找到整体最相似的API（基于最高相似度）
+        max_similarity = 0.0
+        for api, similarities in api_similarities.items():
+            if similarities and similarities[0]['similarity'] > max_similarity:
+                max_similarity = similarities[0]['similarity']
+                best_api = api
+        
+        # 设置最佳API的相似度信息
+        if best_api and best_api in api_similarities:
+            self.nodes[best_api].set_references(api_similarities[best_api])
             return best_api
         
         return None
