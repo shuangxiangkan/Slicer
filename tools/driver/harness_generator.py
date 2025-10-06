@@ -161,44 +161,6 @@ class HarnessGenerator:
             log_error(f"生成API harness时发生错误: {str(e)}")
             return False
     
-    def _prioritize_apis(self, api_functions: List[Any], api_categories: Dict[str, Any]) -> Dict[str, List[Any]]:
-        """
-        按优先级对API进行分类排序
-        
-        Returns:
-            Dict[str, List[Any]]: 按优先级分类的API列表
-        """
-        prioritized = {
-            "fuzz": [],
-            "test_demo": [],
-            "other": [],
-            "no_usage": []
-        }
-        
-        # 创建API名称到函数对象的映射
-        api_name_to_func = {func.name: func for func in api_functions}
-        
-        # 按分类添加API
-        for category, api_names in api_categories.items():
-            if category == "with_fuzz":
-                for api_name in api_names:
-                    if api_name in api_name_to_func:
-                        prioritized["fuzz"].append(api_name_to_func[api_name])
-            elif category == "with_test_demo":
-                for api_name in api_names:
-                    if api_name in api_name_to_func:
-                        prioritized["test_demo"].append(api_name_to_func[api_name])
-            elif category == "with_other_usage":
-                for api_name in api_names:
-                    if api_name in api_name_to_func:
-                        prioritized["other"].append(api_name_to_func[api_name])
-            elif category == "no_usage":
-                for api_name in api_names:
-                    if api_name in api_name_to_func:
-                        prioritized["no_usage"].append(api_name_to_func[api_name])
-        
-        return prioritized
-    
     def _collect_api_info(self,
                          api_func: Any,
                          usage_results: Dict[str, Any],
@@ -279,26 +241,6 @@ class HarnessGenerator:
                     "api_name": reference_api,
                     "similarity_score": similarity_score,
                     "has_reference": reference_file is not None
-                })
-        elif current_node and current_node.best_reference:
-            # 向后兼容：如果只有best_reference，使用它
-            reference_api = current_node.best_reference
-            similarity_score = current_node.similarity_score
-            
-            # 检查是否已有生成的harness文件
-            reference_file = self._find_reference_harness_file(reference_api, library_output_dir)
-            
-            base_info["dependency_context"]["similar_apis"].append({
-                "api_name": reference_api,
-                "similarity_score": similarity_score,
-                "has_reference": reference_file is not None
-            })
-            
-            if reference_file:
-                base_info["dependency_context"]["reference_harnesses"].append({
-                    "api_name": reference_api,
-                    "similarity_score": similarity_score,
-                    "harness_file": reference_file
                 })
         
         return base_info
