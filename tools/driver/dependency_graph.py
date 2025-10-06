@@ -52,41 +52,6 @@ class APISimilarityAnalyzer:
             'param_types': 0.25,
             'param_count': 0.15
         }
-    
-    def find_most_similar_apis(self, target_function: FunctionInfo, 
-                              all_functions: List[FunctionInfo],
-                              similarity_threshold: float = None,
-                              max_results: int = 5) -> List[Tuple[FunctionInfo, float]]:
-        """
-        Find the most similar API function to the target function
-        
-        Args:
-            target_function: FunctionInfo object of the target function
-            all_functions: List of FunctionInfo objects of all functions
-            similarity_threshold: Minimum similarity threshold, if None then use default value
-            max_results: Maximum number of results to return
-            
-        Returns:
-            List of (FunctionInfo, similarity_score) tuples, sorted by similarity score in descending order
-        """
-        if similarity_threshold is None:
-            similarity_threshold = self.similarity_threshold
-            
-        similarities = []
-        
-        for func in all_functions:
-            # Skip the target function itself
-            if func.name == target_function.name:
-                continue
-                
-            similarity = self.compute_function_similarity(target_function, func)
-            
-            if similarity >= similarity_threshold:
-                similarities.append((func, similarity))
-        
-        # Sort by similarity score in descending order and limit the number of results
-        similarities.sort(key=lambda x: x[1], reverse=True)
-        return similarities[:max_results]
 
     def compute_function_similarity(self, func1: FunctionInfo, func2: FunctionInfo) -> float:
         """
@@ -371,7 +336,6 @@ class APISimilarityDependencyGraph:
         base_apis.extend(test_demo_apis)
         
         # 基础API已有足够信息生成harness，无需设置相似度参考
-        
         self.generation_order.extend(base_apis)
         log_info(f"添加 {len(fuzz_apis)} 个fuzz API，{len(test_demo_apis)} 个test_demo API，总共 {len(base_apis)} 个基础API")
         
@@ -457,8 +421,6 @@ class APISimilarityDependencyGraph:
             return best_api
         
         return None
-    
-
     
     def get_generation_order(self) -> List[str]:
         """获取API生成顺序"""
