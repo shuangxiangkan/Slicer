@@ -8,11 +8,18 @@ import os
 import json
 import asyncio
 import concurrent.futures
+import sys
+from pathlib import Path
 from typing import List, Dict, Any
+
+# Add project root to path for llm module imports
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
 from config_parser import ConfigParser
 from log import *
 from utils import check_afl_instrumentation
-from similarity_analyzer import APISimilarityAnalyzer
+
 from prompt import PromptGenerator
 
 # Import LLM modules
@@ -692,93 +699,7 @@ class LibraryHandler:
             log_error(f"保存结果失败: {e}")
             return {}
 
-    def compute_api_similarity(self, api_functions, output_dir: str, similarity_threshold: float = 0.2):
-        """
-        计算API函数之间的相似性并保存结果到文件
-        
-        Args:
-            api_functions: API函数列表，由get_all_apis返回
-            output_dir: 相似性结果文件的输出目录
-            similarity_threshold: 相似度阈值，默认0.2
-            
-        Returns:
-            dict: 相似性分析结果，格式为 {function_name: [(similar_func, similarity_score), ...]}
-        """
-        try:
-            if not api_functions:
-                log_warning("没有API函数可用于相似性分析")
-                return {}
-            
-            log_info(f"开始计算 {len(api_functions)} 个API函数的相似性...")
-            
-            # 初始化相似性分析器
-            analyzer = APISimilarityAnalyzer(similarity_threshold=similarity_threshold)
-            
-            # 存储所有相似性结果
-            similarity_results = {}
-            
-            # 为每个API函数找到最相似的其他函数
-            for i, target_func in enumerate(api_functions):
-                log_info(f"分析函数相似性 {i+1}/{len(api_functions)}: {target_func.name}")
-                
-                # 获取与当前函数最相似的其他函数
-                similar_funcs = analyzer.find_most_similar_apis(
-                    target_function=target_func,
-                    all_functions=api_functions,
-                    similarity_threshold=similarity_threshold,
-                    max_results=3
-                )
-                
-                similarity_results[target_func.name] = similar_funcs
-            
-            # 保存相似性结果到JSON文件
-            similarity_file_path = os.path.join(output_dir, f"{self.library_name}_api_similarity.json")
-            
-            # 构建JSON数据结构
-            json_data = {
-                "library_name": self.library_name,
-                "analysis_summary": {
-                    "total_api_functions": len(api_functions),
-                    "similarity_threshold": similarity_threshold
-                },
-                "similarity_results": {}
-            }
-            
-            # 转换相似性结果为JSON格式
-            for func_name, similar_funcs in similarity_results.items():
-                # 找到目标函数对象以获取其完整签名
-                target_func = next((f for f in api_functions if f.name == func_name), None)
-                
-                json_data["similarity_results"][func_name] = {
-                    "target_function": {
-                        "function_name": func_name,
-                        "function_signature": target_func.get_signature() if target_func else func_name
-                    },
-                    "similar_functions_count": len(similar_funcs),
-                    "similar_functions": []
-                }
-                
-                for similar_func, score in similar_funcs:
-                    json_data["similarity_results"][func_name]["similar_functions"].append({
-                        "function_name": similar_func.name,
-                        "similarity_score": round(score, 3),
-                        "function_signature": similar_func.get_signature()
-                    })
-            
-            import json
-            with open(similarity_file_path, 'w', encoding='utf-8') as f:
-                json.dump(json_data, f, ensure_ascii=False, indent=2)
-            
-            log_info(f"相似性分析结果已保存到: {similarity_file_path}")
-            log_success(f"API相似性分析完成，共分析 {len(api_functions)} 个函数")
-            
-            return similarity_results
-            
-        except Exception as e:
-            log_error(f"计算API相似性时发生错误: {e}")
-            import traceback
-            traceback.print_exc()
-            return {}
+
 
 
     def compile_library(self, library_type: str = "static") -> bool:

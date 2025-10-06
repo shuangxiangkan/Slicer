@@ -18,6 +18,7 @@ from libfuzzer2afl import convert_harness_file
 from step1_compile_filter import create_compile_utils
 from step2_execution_filter import execution_filter
 from step3_coverage_filter import coverage_filter
+from dependency_graph import APISimilarityDependencyGraph
 
 # Import LLM modules
 from llm.base import create_llm_client
@@ -52,23 +53,24 @@ class HarnessGenerator:
             'successful_harnesses': 0,
             'failed_harnesses': 0
         }
+        
+        # 初始化简化的依赖图
+        self.dependency_graph = APISimilarityDependencyGraph()
     
     def generate_harnesses_for_all_apis(self, 
                                        api_functions: List[Any],
                                        api_categories: Dict[str, Any],
                                        usage_results: Dict[str, Any],
-                                       similarity_results: Dict[str, Any],
                                        comments_results: Dict[str, Any],
                                        documentation_results: Dict[str, Any],
                                        library_output_dir: str) -> bool:
         """
-        生成按优先级排序的API完整信息
+        使用简化依赖图生成API harness，按底向上的顺序生成
         
         Args:
             api_functions: API函数列表
             api_categories: API分类信息
             usage_results: API使用情况结果
-            similarity_results: API相似性结果
             comments_results: API注释结果
             documentation_results: API文档结果
             library_output_dir: 输出目录
@@ -77,80 +79,97 @@ class HarnessGenerator:
             bool: 生成是否成功
         """
         try:
-            log_info("开始生成API信息...")
+            log_info("开始使用简化依赖图生成API harness...")
             
-            # 按优先级排序API
-            prioritized_apis = self._prioritize_apis(api_functions, api_categories)
+            # 构建简化依赖图
+            log_info("构建简化依赖图...")
+            success = self.dependency_graph.build_generation_order(
+                api_functions, api_categories, usage_results
+            )
             
-            # 生成完整的API信息
+            if not success:
+                log_warning("构建依赖图失败")
+                return False
+            
+            # 保存依赖图的JSON和PDF文件到library_output_dir
+            log_info("保存API依赖图分析结果...")
+            try:
+                self.dependency_graph.save_complete_output(library_output_dir)
+                log_success(f"依赖图分析结果已保存到 {library_output_dir}")
+            except Exception as e:
+                log_warning(f"保存依赖图文件时出错: {str(e)}")
+            
+            # 获取生成顺序
+            generation_order = self.dependency_graph.get_generation_order()
+            if not generation_order:
+                log_warning("没有找到合适的API进行harness生成")
+                return False
+            
+            # 生成完整的API信息列表
             api_info_list = []
+            successful_generations = 0
             
-            # 按优先级顺序处理：fuzz -> test_demo -> other -> no_usage
-            priority_order = ["fuzz", "test_demo", "other", "no_usage"]
+            # 按依赖图顺序逐个生成API harness
+            log_info(f"按依赖图顺序生成 {len(generation_order)} 个API的harness...")
             
-            # 注释掉所有API的测试，只测试有fuzz usage的API
-            # for priority in priority_order:
-            #     api_list = prioritized_apis.get(priority, [])
-            #     for api_func in api_list:
-            
-            # 只处理有fuzz usage的API进行测试
-            for priority in priority_order:
-                api_list = prioritized_apis.get(priority, [])
+            for order_index, api_name in enumerate(generation_order, 1):
+                log_info(f"[{order_index}/{len(generation_order)}] 处理API: {api_name}")
                 
-                # 过滤出有fuzz usage的API
-                fuzz_apis = []
-                for api_func in api_list:
-                    api_name = getattr(api_func, 'name', 'unknown')
-                    if api_name in usage_results and usage_results[api_name].get('usage_category') == 'fuzz':
-                        fuzz_apis.append(api_func)
+                # 查找对应的API函数对象
+                api_func = None
+                for func in api_functions:
+                    if getattr(func, 'name', 'unknown') == api_name:
+                        api_func = func
+                        break
                 
-                if not fuzz_apis:
+                if not api_func:
+                    log_warning(f"未找到API函数对象: {api_name}")
                     continue
-                    
-                log_info(f"处理 {priority} 类型API中有fuzz usage的API ({len(fuzz_apis)}个)...")
                 
-                for api_func in fuzz_apis:
-                    api_info = self._collect_api_info(
-                        api_func,
-                        usage_results,
-                        similarity_results,
-                        comments_results,
-                        documentation_results,
-                        priority
-                    )
-                    api_info_list.append(api_info)
-                    
-                    # Update API processing statistics
-                    self.harness_generation_stats['total_apis_processed'] += 1
-                    
-                    # Generate harnesses using LLM (包含prompt生成和保存)
-                    if self.llm_client:
-                        harness_success = self.generate_harnesses_for_api(api_info, library_output_dir)
-                        if harness_success:
-                            log_success(f"Successfully generated harnesses for {api_info.get('api_name', 'unknown_api')}")
-                        else:
-                            log_warning(f"Failed to generate harnesses for {api_info.get('api_name', 'unknown_api')}")
+                # 收集API信息
+                api_info = self._collect_api_info_with_dependency_context(
+                    api_func,
+                    usage_results,
+                    comments_results,
+                    documentation_results,
+                    order_index,
+                    library_output_dir
+                )
+                api_info_list.append(api_info)
+                
+                # 更新统计信息
+                self.harness_generation_stats['total_apis_processed'] += 1
+                
+                # 生成harness
+                if self.llm_client:
+                    harness_success = self.generate_harnesses_for_api(api_info, library_output_dir)
+                    if harness_success:
+                        successful_generations += 1
+                        log_success(f"成功为 {api_name} 生成harness ({successful_generations}/{order_index})")
                     else:
-                        log_warning(f"LLM client not available, skipping harness generation for {api_info.get('api_name', 'unknown_api')}")
+                        log_warning(f"为 {api_name} 生成harness失败")
+                else:
+                    log_warning(f"LLM客户端不可用，跳过 {api_name} 的harness生成")
             
             # 保存API信息到JSON文件
-            api_info_file = os.path.join(library_output_dir, "api_info_prioritized.json")
+            api_info_file = os.path.join(library_output_dir, "api_info_dependency_ordered.json")
             with open(api_info_file, 'w', encoding='utf-8') as f:
                 json.dump({
                     "total_apis": len(api_info_list),
-                    "priority_order": priority_order,
+                    "successful_generations": successful_generations,
+                    "generation_order": generation_order,
                     "apis": api_info_list
                 }, f, indent=2, ensure_ascii=False)
             
-            log_success(f"API信息生成完成: 共处理 {len(api_info_list)} 个API，保存到 {api_info_file}")
+            log_success(f"依赖图驱动的API harness生成完成: 共处理 {len(api_info_list)} 个API，成功生成 {successful_generations} 个，保存到 {api_info_file}")
             
-            # Generate and save cost report
+            # 生成成本报告
             self._generate_cost_report(library_output_dir)
             
             return True
             
         except Exception as e:
-            log_error(f"生成API信息时发生错误: {str(e)}")
+            log_error(f"生成API harness时发生错误: {str(e)}")
             return False
     
     def _prioritize_apis(self, api_functions: List[Any], api_categories: Dict[str, Any]) -> Dict[str, List[Any]]:
@@ -194,7 +213,6 @@ class HarnessGenerator:
     def _collect_api_info(self,
                          api_func: Any,
                          usage_results: Dict[str, Any],
-                         similarity_results: Dict[str, Any],
                          comments_results: Dict[str, Any],
                          documentation_results: Dict[str, Any],
                          priority: str) -> Dict[str, Any]:
@@ -227,6 +245,84 @@ class HarnessGenerator:
             "documentation": doc_text,
             "top_n_usage": top_n_usage
         }
+    
+    def _collect_api_info_with_dependency_context(self,
+                                                 api_func: Any,
+                                                 usage_results: Dict[str, Any],
+                                                 comments_results: Dict[str, Any],
+                                                 documentation_results: Dict[str, Any],
+                                                 order_index: int,
+                                                 library_output_dir: str) -> Dict[str, Any]:
+        """
+        收集带依赖上下文的API完整信息，包括已生成的参考harness
+        """
+        api_name = api_func.name
+        
+        # 获取基础API信息
+        base_info = self._collect_api_info(
+            api_func, usage_results, 
+            comments_results, documentation_results, "dependency_ordered"
+        )
+        
+        # 添加依赖上下文信息
+        base_info.update({
+            "generation_order": order_index,
+            "dependency_context": {
+                "similar_apis": [],
+                "reference_harnesses": []
+            }
+        })
+        
+        # 查找相似API和已生成的参考harness
+        # 从dependency_graph获取当前API的参考信息
+        current_node = self.dependency_graph.get_node(api_name)
+        
+        if current_node and current_node.best_reference:
+            # 如果当前API有参考API，添加到相似API列表
+            reference_api = current_node.best_reference
+            similarity_score = current_node.similarity_score
+            
+            # 检查是否已有生成的harness文件
+            reference_file = self._find_reference_harness_file(reference_api, library_output_dir)
+            
+            base_info["dependency_context"]["similar_apis"].append({
+                "api_name": reference_api,
+                "similarity_score": similarity_score,
+                "has_reference": reference_file is not None
+            })
+            
+            if reference_file:
+                base_info["dependency_context"]["reference_harnesses"].append({
+                    "api_name": reference_api,
+                    "similarity_score": similarity_score,
+                    "harness_file": reference_file
+                })
+        
+        return base_info
+    
+    def _find_reference_harness_file(self, api_name: str, library_output_dir: str) -> str:
+        """
+        查找指定API的已生成harness文件
+        """
+        # 检查libfuzzer目录
+        libfuzzer_dir = os.path.join(library_output_dir, "harnesses", "libfuzzer")
+        if os.path.exists(libfuzzer_dir):
+            for file in os.listdir(libfuzzer_dir):
+                if file.startswith(f"{api_name}_harness") and file.endswith(".cpp"):
+                    harness_path = os.path.join(libfuzzer_dir, file)
+                    if os.path.isfile(harness_path):
+                        return harness_path
+        
+        # 检查afl目录
+        afl_dir = os.path.join(library_output_dir, "harnesses", "afl")
+        if os.path.exists(afl_dir):
+            for file in os.listdir(afl_dir):
+                if file.startswith(f"{api_name}_harness") and file.endswith(".cpp"):
+                    harness_path = os.path.join(afl_dir, file)
+                    if os.path.isfile(harness_path):
+                        return harness_path
+        
+        return None
     
     def _extract_top_usage(self, usage_info, max_count=3):
         """

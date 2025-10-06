@@ -89,26 +89,22 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
             log_error("No API functions found, terminating harness generation")
             return False
         
-        # Step 4: Compute API similarity and save result
-        similarity_results = handler.compute_api_similarity(api_functions, library_output_dir)
-        
-        # Step 5: Extract API comments and save result
+        # Step 4: Extract API comments and save result
         comments_results = handler.get_api_comments(api_functions, analyzer, library_output_dir)
         
-        # Step 6: Search API documentation and save result
+        # Step 5: Search API documentation and save result
         documentation_results = handler.get_api_documentation(api_functions, analyzer, library_output_dir)
         
-        # Step 7: Compute API usage statistics and save result
+        # Step 6: Compute API usage statistics and save result
         usage_results, api_categories = handler.get_api_usage(api_functions, analyzer, library_output_dir)
         
-        # Step 8: Generate API harness
+        # Step 7: Generate API harness
         from harness_generator import HarnessGenerator
         harness_generator = HarnessGenerator(config_parser)
         harness_success = harness_generator.generate_harnesses_for_all_apis(
              api_functions,
              api_categories,
              usage_results,
-             similarity_results,
              comments_results,
              documentation_results,
              library_output_dir
