@@ -260,9 +260,7 @@ class APISimilarityDependencyGraph:
         Returns:
             bool: 构建是否成功
         """
-        try:
-            log_info("开始构建简化的API依赖图...")
-            
+        try:            
             # 保存API函数列表，用于按需计算相似度
             self.api_functions = api_functions
             
@@ -283,8 +281,7 @@ class APISimilarityDependencyGraph:
                          api_categories: Dict[str, Any], 
                          usage_results: Dict[str, Any]):
         """创建API节点"""
-        log_info("创建API节点...")
-        
+                
         # 为每个API创建节点
         for api_func in api_functions:
             api_name = api_func.name
@@ -295,8 +292,6 @@ class APISimilarityDependencyGraph:
             # 创建节点
             node = APINode(api_name, category)
             self.nodes[api_name] = node
-            
-            log_info(f"创建节点: {api_name} (category: {category})")
     
     def _get_api_category(self, api_name: str, api_categories: Dict[str, Any]) -> str:
         """获取API的category类型"""
@@ -674,16 +669,6 @@ class APISimilarityDependencyGraph:
         summary = self._get_summary()
         log_info(f"API分类统计: {summary['category_distribution']}")
         log_info(f"参考情况统计: {summary['reference_distribution']}")
-        
-        # 显示前10个API的详细信息
-        log_info("前10个API详细信息:")
-        for i, api_name in enumerate(self.generation_order[:10]):
-            node = self.nodes[api_name]
-            ref_str = f" -> {node.best_reference} (相似度: {node.similarity_score:.3f})" if node.best_reference else " (基础API)"
-            log_info(f"  {i}: {api_name} [{node.category}]{ref_str}")
-        
-        if len(self.generation_order) > 10:
-            log_info(f"  ... 还有 {len(self.generation_order) - 10} 个API")
     
     def save_and_print_summary(self, output_dir: str):
         """保存依赖图并打印摘要"""

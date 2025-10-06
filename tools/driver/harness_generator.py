@@ -79,10 +79,7 @@ class HarnessGenerator:
             bool: 生成是否成功
         """
         try:
-            log_info("开始使用简化依赖图生成API harness...")
-            
-            # 构建简化依赖图
-            log_info("构建简化依赖图...")
+            log_info("使用API similarity 依赖图生成API harness...")
             success = self.dependency_graph.build_generation_order(
                 api_functions, api_categories, usage_results
             )
