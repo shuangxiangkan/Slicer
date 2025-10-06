@@ -355,7 +355,8 @@ class APISimilarityDependencyGraph:
     def build_generation_order(self, 
                              api_functions: List[Any],
                              api_categories: Dict[str, Any],
-                             usage_results: Dict[str, Any]) -> bool:
+                             usage_results: Dict[str, Any],
+                             library_output_dir: str = None) -> bool:
         """
         构建API生成顺序
         
@@ -363,6 +364,7 @@ class APISimilarityDependencyGraph:
             api_functions: API函数列表
             api_categories: API分类信息
             usage_results: API使用情况结果
+            library_output_dir: 输出目录，用于保存依赖图文件
             
         Returns:
             bool: 构建是否成功
@@ -378,6 +380,16 @@ class APISimilarityDependencyGraph:
             self._build_generation_order()
             
             log_success(f"API依赖图构建完成，总共 {len(self.generation_order)} 个API")
+            
+            # 3. 保存依赖图文件（如果提供了输出目录）
+            if library_output_dir:
+                log_info("保存API依赖图分析结果...")
+                try:
+                    self.save_complete_output(library_output_dir)
+                    log_success(f"依赖图分析结果已保存到 {library_output_dir}")
+                except Exception as e:
+                    log_warning(f"保存依赖图文件时出错: {str(e)}")
+            
             return True
             
         except Exception as e:

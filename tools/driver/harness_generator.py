@@ -81,20 +81,12 @@ class HarnessGenerator:
         try:
             log_info("使用API similarity 依赖图生成API harness...")
             success = self.dependency_graph.build_generation_order(
-                api_functions, api_categories, usage_results
+                api_functions, api_categories, usage_results, library_output_dir
             )
             
             if not success:
                 log_warning("构建依赖图失败")
                 return False
-            
-            # 保存依赖图的JSON和PDF文件到library_output_dir
-            log_info("保存API依赖图分析结果...")
-            try:
-                self.dependency_graph.save_complete_output(library_output_dir)
-                log_success(f"依赖图分析结果已保存到 {library_output_dir}")
-            except Exception as e:
-                log_warning(f"保存依赖图文件时出错: {str(e)}")
             
             # 获取生成顺序
             generation_order = self.dependency_graph.get_generation_order()
