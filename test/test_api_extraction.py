@@ -19,21 +19,36 @@ def test_api_extraction():
     """测试API提取功能"""
     
     # 测试配置
+    # test_configs = {
+    #     'cJSON': {
+    #         'config_file': 'benchmarks/configs/cjson_config.json',
+    #         'api_keywords': ['CJSON_PUBLIC'],
+    #         'api_prefix': 'cJSON'
+    #     }
+    #     ,
+    #     'miniz': {
+    #         'config_file': 'benchmarks/configs/miniz_config.json', 
+    #         'api_keywords': ['MINIZ_EXPORT'],
+    #         'api_prefix': 'mz_'
+    #     },
+    #     'zlib': {
+    #         'config_file': 'benchmarks/configs/zlib_config.json',
+    #         'api_keywords': ['ZEXPORT'],
+    #         'api_prefix': None  # zlib没有统一前缀
+    #     }
+    # }
+    
     test_configs = {
-        'cJSON': {
-            'config_file': 'benchmarks/configs/cjson_config.json',
-            'api_keywords': ['CJSON_PUBLIC'],
-            'api_prefix': 'cJSON'
-        },
-        'miniz': {
-            'config_file': 'benchmarks/configs/miniz_config.json', 
-            'api_keywords': ['MINIZ_EXPORT'],
-            'api_prefix': 'mz_'
-        },
-        'zlib': {
-            'config_file': 'benchmarks/configs/zlib_config.json',
-            'api_keywords': ['ZEXPORT'],
-            'api_prefix': None  # zlib没有统一前缀
+        'mocklib': {
+            'config_file': 'benchmarks/configs/mocklib_config.json',
+            'api_keywords': ['MOCKLIB_API'],
+            'api_prefix': 'mock_'
+        }
+        ,
+        'libucl': {
+            'config_file': 'benchmarks/configs/libucl_config.json',
+            'api_keywords': ['UCL_EXTERN'],
+            'api_prefix': 'ucl_'
         }
     }
     

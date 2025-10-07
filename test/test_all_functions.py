@@ -9,7 +9,8 @@ from parser.repo_analyzer import RepoAnalyzer
 def main():
     # 使用 benchmarks/utf8/utf8.h 进行测试
     # test_file = 'benchmarks/utf8/utf8.h'
-    config_path = os.path.join(os.path.dirname(__file__), "../benchmarks/configs/cjson_config.json")
+    # config_path = os.path.join(os.path.dirname(__file__), "../benchmarks/configs/libucl_config.json")
+    config_path = os.path.join(os.path.dirname(__file__), "../benchmarks/configs/mocklib_config.json")
     analyzer = RepoAnalyzer(config_path)
 
     # 分析文件中的所有函数
@@ -19,6 +20,10 @@ def main():
     # 分离函数声明和定义
     declarations = [f for f in functions if f.is_declaration]
     definitions = [f for f in functions if not f.is_declaration]
+    
+    print(f"找到 {len(functions)} 个函数")
+    print(f"声明数：{len(declarations)}")
+    print(f"定义数：{len(definitions)}")
 
     print("--- Function Declarations ---")
     for func in declarations:

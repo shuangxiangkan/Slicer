@@ -6,6 +6,7 @@
 import time
 import logging
 import os
+import re
 from typing import List, Dict, Optional
 from .file_finder import FileFinder
 from .function_extractor import FunctionExtractor
@@ -396,21 +397,43 @@ class RepoAnalyzer:
         
         return matches
     
-    def get_api_functions(self, api_keyword, include_declarations: bool = True, 
-                         include_definitions: bool = True, header_files: List[str] = None,
+    def get_api_functions(self, api_keyword, header_files: List[str] = None,
                          api_prefix = None) -> List[FunctionInfo]:
         """
-        Extract functions that contain the specified API keyword(s)
+        Get API function definitions based on keyword and prefix filtering.
+        
+        This method returns only function definitions (not declarations) that match the API criteria.
+        It uses a text-based approach instead of tree-sitter's direct parsing to avoid parsing 
+        issues with complex function declarations.
+        
+        Why not use tree-sitter directly?
+        ================================
+        Tree-sitter has known parsing issues with certain function declarations, particularly
+        those with complex macro prefixes. For example, a declaration like:
+        
+            MOCKLIB_API mock_parser_t* mock_parser_create(void);
+        
+        May be incorrectly parsed by tree-sitter as two separate nodes:
+        1. A 'declaration' node containing only "MOCKLIB_API mock_parser_t"
+        2. An 'expression_statement' node containing "* mock_parser_create(void);"
+        
+        This fragmentation prevents the FunctionExtractor from correctly identifying
+        the complete function declaration. The text-based approach used here:
+        
+        1. First extracts potential API function names from header files using regex
+        2. Then matches these names against parsed function definitions
+        3. Returns only the function definitions that match the API criteria
+        
+        This hybrid approach is more reliable and avoids tree-sitter's parsing limitations
+        while still leveraging its capabilities for function body analysis.
         
         Args:
-            api_keyword: API keyword (str) or list of keywords (e.g., "CJSON_PUBLIC", ["API", "EXPORT"] etc.)
-            include_declarations: Whether to include function declarations
-            include_definitions: Whether to include function definitions
-            header_files: List of header files (absolute paths), if None then no header file check
+            api_keyword: API keyword (str) or list of keywords (e.g., "MOCKLIB_API", ["CJSON_PUBLIC", "TIFFAPI"])
+            header_files: List of specific header files to search (if None, searches all header files)
             api_prefix: API function name prefix (str) or list of prefixes (e.g., "TIFF", ["cJSON", "json"]), if None then no prefix check
             
         Returns:
-            A list of FunctionInfo objects that contain the API keyword(s)
+            A list of FunctionInfo objects containing only function definitions that match the API criteria
         """
         if not self.all_functions:
             logger.warning("No function analysis has been performed yet. Please call the analyze() method first.")
@@ -420,26 +443,91 @@ class RepoAnalyzer:
         keywords = [api_keyword] if isinstance(api_keyword, str) else api_keyword
         prefixes = [api_prefix] if isinstance(api_prefix, str) else (api_prefix if api_prefix else None)
         
+        # Step 1: Extract potential API function names from header files using text matching
+        api_function_names = self._extract_api_function_names_from_headers(keywords, prefixes, header_files)
+        
+        # Step 2: Find matching function definitions in our parsed function list
         api_functions = []
         seen_functions = set()  # To avoid duplicates
         
         for func in self.all_functions:
-            # Filter function types based on user selection
-            if func.is_declaration and not include_declarations:
-                continue
-            if not func.is_declaration and not include_definitions:
+            # Only include function definitions, skip declarations
+            if func.is_declaration:
                 continue
             
-            # Check each keyword
-            for keyword in keywords:
-                # Use FunctionInfo method to check if it contains the API keyword and is in specified header files
-                if func.is_api_function(keyword, header_files, prefixes):
-                    if func.name not in seen_functions:
-                        api_functions.append(func)
-                        seen_functions.add(func.name)
-                    break  # Found match, no need to check other keywords for this function
+            # Check if this function is in our API function names list
+            if func.name in api_function_names:
+                if func.name not in seen_functions:
+                    api_functions.append(func)
+                    seen_functions.add(func.name)
         
         return api_functions
+    
+    def _extract_api_function_names_from_headers(self, keywords: List[str], prefixes: List[str] = None, 
+                                               header_files: List[str] = None) -> set:
+        """
+        Extract API function names from header files using text-based pattern matching.
+        
+        This method uses regular expressions to find function declarations with specific
+        keywords (like CJSON_PUBLIC, etc.) and optional prefixes.
+        
+        This text-based approach is used instead of tree-sitter parsing because tree-sitter
+        has known issues with parsing complex function declarations that include macro
+        prefixes, often splitting them into multiple nodes incorrectly.
+        
+        Args:
+            keywords: List of API keywords to search for
+            prefixes: List of function name prefixes to filter by (optional)
+            header_files: List of header files to search (if None, searches all header files)
+            
+        Returns:
+            Set of function names that match the criteria
+        """
+        
+        api_function_names = set()
+        
+        # Determine which files to search
+        if header_files:
+            # Check if all specified header files exist
+            for file_path in header_files:
+                if not os.path.exists(file_path):
+                    raise FileNotFoundError(f"Header file not found: {file_path}")
+            files_to_search = header_files
+        else:
+            # Search all header files in the project
+            files_to_search = [f for f in self.processed_files if f.endswith(('.h', '.hpp', '.hxx'))]
+        
+        # Pattern to match function declarations/definitions
+        # This pattern looks for: [keywords] [return_type] [*] function_name(parameters)
+        # Updated to handle cases like "MOCKLIB_API mock_parser_t* mock_parser_create(void);"
+        function_pattern = r'(?:' + '|'.join(re.escape(kw) for kw in keywords) + r')\s+(?:[^(]*?\*?\s*)?(\w+)\s*\('
+        
+        for file_path in files_to_search:
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                
+                # Remove comments to avoid false matches
+                content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
+                content = re.sub(r'//.*?$', '', content, flags=re.MULTILINE)
+                
+                # Find all potential function names
+                matches = re.findall(function_pattern, content, re.MULTILINE)
+                
+                for func_name in matches:
+                    # Apply prefix filtering if specified
+                    if prefixes:
+                        if any(func_name.startswith(prefix) for prefix in prefixes):
+                            api_function_names.add(func_name)
+                    else:
+                        api_function_names.add(func_name)
+                        
+            except Exception as e:
+                logger.warning(f"Failed to read header file {file_path}: {e}")
+                continue
+        
+        logger.info(f"Extracted {len(api_function_names)} potential API function names from headers")
+        return api_function_names
     
     def get_functions(self) -> List[FunctionInfo]:
         """

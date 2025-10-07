@@ -126,6 +126,15 @@ class FunctionExtractor:
             for child in node.children:
                 if child.type == 'function_declarator':
                     function_declarator = child
+                elif child.type == 'pointer_declarator':
+                    # 处理指针返回类型的情况
+                    # pointer_declarator包含 * 和 function_declarator
+                    for subchild in child.children:
+                        if subchild.type == 'function_declarator':
+                            function_declarator = subchild
+                            break
+                    # 添加指针符号到返回类型
+                    return_type_parts.append('*')
                 elif child.type == 'compound_statement':
                     # 跳过函数体
                     continue
@@ -205,6 +214,15 @@ class FunctionExtractor:
             for child in node.children:
                 if child.type == 'function_declarator':
                     function_declarator = child
+                elif child.type == 'pointer_declarator':
+                    # 处理指针返回类型的情况
+                    # pointer_declarator包含 * 和 function_declarator
+                    for subchild in child.children:
+                        if subchild.type == 'function_declarator':
+                            function_declarator = subchild
+                            break
+                    # 添加指针符号到返回类型
+                    return_type_parts.append('*')
                 else:
                     # 收集返回类型相关的节点
                     if child.type in [

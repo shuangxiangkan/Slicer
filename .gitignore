@@ -224,4 +224,4 @@ llm/.env
 tools/driver/OGHarn/
 tools/driver/Libraries/
 tools/driver/libraries
-tools/driver/Output
+tools/driver/Output*
