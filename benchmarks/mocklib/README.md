@@ -1,171 +1,171 @@
-# MockLib - 模拟库
+# MockLib - Mock Library
 
-MockLib 是一个用于快速测试工具链生成的模拟C库，包含10个简化的API函数，专门设计用于测试而无需实际编译复杂的真实库。
+MockLib is a mock C library designed for rapid toolchain testing, containing 10 simplified API functions specifically designed for testing without the need to compile complex real libraries.
 
-## 文件结构
+## File Structure
 
 ```
 src/
-├── mocklib.h          # 头文件，定义所有API
-├── mocklib.c          # 实现文件
-├── CMakeLists.txt     # 构建配置
-├── README.md          # 本文档
-├── fuzz/              # 模糊测试程序
-│   ├── fuzz_buffer.c  # 针对buffer API的模糊测试
-│   └── fuzz_parser.c  # 针对parser API的模糊测试
-└── test/              # 测试用例
-    ├── test_buffer.c  # buffer API测试
-    └── test_parser.c  # parser API测试
+├── mocklib.h          # Header file defining all APIs
+├── mocklib.c          # Implementation file
+├── CMakeLists.txt     # Build configuration
+├── README.md          # This document
+├── fuzz/              # Fuzzing test programs
+│   ├── fuzz_buffer.c  # Fuzzing tests for buffer APIs
+│   └── fuzz_parser.c  # Fuzzing tests for parser APIs
+└── test/              # Test cases
+    ├── test_buffer.c  # Buffer API tests
+    └── test_parser.c  # Parser API tests
 ```
 
-## API 详细说明
+## API Detailed Description
 
-### 1. Buffer管理API
+### 1. Buffer Management APIs
 
 #### `mock_buffer_t* mock_buffer_create(size_t capacity)`
-**功能**: 创建一个新的缓冲区对象
-**参数**: 
-- `capacity`: 缓冲区的初始容量
-**返回值**: 成功返回缓冲区指针，失败返回NULL
-**使用示例**:
+**Function**: Create a new buffer object
+**Parameters**: 
+- `capacity`: Initial capacity of the buffer
+**Return Value**: Returns buffer pointer on success, NULL on failure
+**Usage Example**:
 ```c
 mock_buffer_t *buffer = mock_buffer_create(1024);
 if (buffer) {
-    // 使用缓冲区
+    // Use the buffer
     mock_buffer_destroy(buffer);
 }
 ```
 
 #### `void mock_buffer_destroy(mock_buffer_t* buffer)`
-**功能**: 销毁缓冲区对象并释放内存
-**参数**: 
-- `buffer`: 要销毁的缓冲区指针
-**返回值**: 无
-**使用示例**:
+**Function**: Destroy buffer object and free memory
+**Parameters**: 
+- `buffer`: Buffer pointer to destroy
+**Return Value**: None
+**Usage Example**:
 ```c
 mock_buffer_destroy(buffer);
 ```
 
 #### `int mock_buffer_append(mock_buffer_t* buffer, const char* data, size_t size)`
-**功能**: 向缓冲区追加数据
-**参数**: 
-- `buffer`: 目标缓冲区
-- `data`: 要追加的数据
-- `size`: 数据大小
-**返回值**: 成功返回0，失败返回-1
-**使用示例**:
+**Function**: Append data to buffer
+**Parameters**: 
+- `buffer`: Target buffer
+- `data`: Data to append
+- `size`: Size of data
+**Return Value**: Returns 0 on success, -1 on failure
+**Usage Example**:
 ```c
 const char *text = "Hello World";
 int result = mock_buffer_append(buffer, text, strlen(text));
 if (result == 0) {
-    printf("数据追加成功\n");
+    printf("Data appended successfully\n");
 }
 ```
 
 #### `int mock_buffer_resize(mock_buffer_t* buffer, size_t new_capacity)`
-**功能**: 调整缓冲区容量
-**参数**: 
-- `buffer`: 目标缓冲区
-- `new_capacity`: 新的容量大小
-**返回值**: 成功返回0，失败返回-1
-**使用示例**:
+**Function**: Resize buffer capacity
+**Parameters**: 
+- `buffer`: Target buffer
+- `new_capacity`: New capacity size
+**Return Value**: Returns 0 on success, -1 on failure
+**Usage Example**:
 ```c
 int result = mock_buffer_resize(buffer, 2048);
 if (result == 0) {
-    printf("缓冲区扩容成功\n");
+    printf("Buffer resized successfully\n");
 }
 ```
 
 #### `const char* mock_buffer_get_data(mock_buffer_t* buffer)`
-**功能**: 获取缓冲区中的数据
-**参数**: 
-- `buffer`: 目标缓冲区
-**返回值**: 返回数据指针，失败返回NULL
-**使用示例**:
+**Function**: Get data from buffer
+**Parameters**: 
+- `buffer`: Target buffer
+**Return Value**: Returns data pointer on success, NULL on failure
+**Usage Example**:
 ```c
 const char *data = mock_buffer_get_data(buffer);
 if (data) {
-    printf("缓冲区内容: %s\n", data);
+    printf("Buffer content: %s\n", data);
 }
 ```
 
-### 2. Parser API
+### 2. Parser APIs
 
 #### `mock_parser_t* mock_parser_create(void)`
-**功能**: 创建一个新的解析器对象
-**参数**: 无
-**返回值**: 成功返回解析器指针，失败返回NULL
-**使用示例**:
+**Function**: Create a new parser object
+**Parameters**: None
+**Return Value**: Returns parser pointer on success, NULL on failure
+**Usage Example**:
 ```c
 mock_parser_t *parser = mock_parser_create();
 if (parser) {
-    // 使用解析器
+    // Use the parser
     mock_parser_destroy(parser);
 }
 ```
 
 #### `void mock_parser_destroy(mock_parser_t* parser)`
-**功能**: 销毁解析器对象并释放内存
-**参数**: 
-- `parser`: 要销毁的解析器指针
-**返回值**: 无
-**使用示例**:
+**Function**: Destroy parser object and free memory
+**Parameters**: 
+- `parser`: Parser pointer to destroy
+**Return Value**: None
+**Usage Example**:
 ```c
 mock_parser_destroy(parser);
 ```
 
 #### `int mock_parser_parse(mock_parser_t* parser, const char* input, size_t size)`
-**功能**: 解析输入数据（内部调用mock_buffer_append）
-**参数**: 
-- `parser`: 解析器对象
-- `input`: 要解析的输入数据
-- `size`: 输入数据大小
-**返回值**: 成功返回0，失败返回-1
-**调用关系**: 此函数内部会调用`mock_buffer_append`来存储解析的数据
-**使用示例**:
+**Function**: Parse input data (internally calls mock_buffer_append)
+**Parameters**: 
+- `parser`: Parser object
+- `input`: Input data to parse
+- `size`: Size of input data
+**Return Value**: Returns 0 on success, -1 on failure
+**Call Relationship**: This function internally calls `mock_buffer_append` to store parsed data
+**Usage Example**:
 ```c
 const char *input = "data to parse";
 int result = mock_parser_parse(parser, input, strlen(input));
 if (result == 0) {
-    printf("解析成功\n");
+    printf("Parsing successful\n");
 }
 ```
 
-### 3. 工具函数
+### 3. Utility Functions
 
 #### `int mock_validate_input(const char* input, size_t size)`
-**功能**: 验证输入数据的有效性
-**参数**: 
-- `input`: 要验证的输入数据
-- `size`: 输入数据大小
-**返回值**: 有效返回1，无效返回0
-**使用示例**:
+**Function**: Validate input data validity
+**Parameters**: 
+- `input`: Input data to validate
+- `size`: Size of input data
+**Return Value**: Returns 1 if valid, 0 if invalid
+**Usage Example**:
 ```c
 const char *input = "test data";
 if (mock_validate_input(input, strlen(input))) {
-    printf("输入数据有效\n");
+    printf("Input data is valid\n");
 }
 ```
 
 #### `const char* mock_get_version(void)`
-**功能**: 获取库的版本信息
-**参数**: 无
-**返回值**: 返回版本字符串
-**使用示例**:
+**Function**: Get library version information
+**Parameters**: None
+**Return Value**: Returns version string
+**Usage Example**:
 ```c
-printf("MockLib版本: %s\n", mock_get_version());
+printf("MockLib version: %s\n", mock_get_version());
 ```
 
-## API调用关系
+## API Call Relationships
 
-本库中存在以下调用关系：
+The following call relationships exist in this library:
 - `mock_parser_parse()` → `mock_buffer_append()`
 
-当调用`mock_parser_parse`时，它会内部调用`mock_buffer_append`来将解析的数据存储到解析器的内部缓冲区中。
+When `mock_parser_parse` is called, it internally calls `mock_buffer_append` to store the parsed data in the parser's internal buffer.
 
-## 构建说明
+## Build Instructions
 
-使用CMake构建库：
+Build the library using CMake:
 
 ```bash
 mkdir build
@@ -174,35 +174,35 @@ cmake ..
 make
 ```
 
-这将生成：
-- `libmocklib.a` (静态库)
-- `libmocklib.so` (动态库)
+This will generate:
+- `libmocklib.a` (static library)
+- `libmocklib.so` (dynamic library)
 
-## 测试说明
+## Testing Instructions
 
-### 运行单元测试
+### Running Unit Tests
 ```bash
-# 编译并运行buffer测试
+# Compile and run buffer tests
 gcc -o test_buffer test/test_buffer.c mocklib.c
 ./test_buffer
 
-# 编译并运行parser测试
+# Compile and run parser tests
 gcc -o test_parser test/test_parser.c mocklib.c
 ./test_parser
 ```
 
-### 运行模糊测试
+### Running Fuzzing Tests
 ```bash
-# 使用libFuzzer编译模糊测试
+# Compile fuzzing tests with libFuzzer
 clang -fsanitize=fuzzer -o fuzz_buffer fuzz/fuzz_buffer.c mocklib.c
 clang -fsanitize=fuzzer -o fuzz_parser fuzz/fuzz_parser.c mocklib.c
 
-# 运行模糊测试
+# Run fuzzing tests
 ./fuzz_buffer
 ./fuzz_parser
 ```
 
-## 使用示例
+## Usage Example
 
 ```c
 #include "mocklib.h"
@@ -210,37 +210,37 @@ clang -fsanitize=fuzzer -o fuzz_parser fuzz/fuzz_parser.c mocklib.c
 #include <string.h>
 
 int main() {
-    // 创建解析器
+    // Create parser
     mock_parser_t *parser = mock_parser_create();
     if (!parser) {
-        printf("创建解析器失败\n");
+        printf("Failed to create parser\n");
         return 1;
     }
     
-    // 验证输入
+    // Validate input
     const char *input = "Hello MockLib";
     if (mock_validate_input(input, strlen(input))) {
-        // 解析数据（内部会调用buffer_append）
+        // Parse data (internally calls buffer_append)
         if (mock_parser_parse(parser, input, strlen(input)) == 0) {
-            printf("解析成功\n");
+            printf("Parsing successful\n");
             
-            // 获取解析后的数据
+            // Get parsed data
             const char *data = mock_buffer_get_data(parser->buffer);
-            printf("解析结果: %s\n", data);
+            printf("Parse result: %s\n", data);
         }
     }
     
-    // 清理资源
+    // Clean up resources
     mock_parser_destroy(parser);
     
-    printf("库版本: %s\n", mock_get_version());
+    printf("Library version: %s\n", mock_get_version());
     return 0;
 }
 ```
 
-## 注意事项
+## Important Notes
 
-1. 所有返回指针的函数在失败时返回NULL
-2. 使用完毕后必须调用相应的destroy函数释放内存
-3. `mock_parser_parse`函数展示了API间的调用关系
-4. 本库专为测试目的设计，不适用于生产环境
+1. All functions returning pointers return NULL on failure
+2. Must call corresponding destroy functions to free memory after use
+3. The `mock_parser_parse` function demonstrates inter-API call relationships
+4. This library is designed specifically for testing purposes and is not suitable for production environments

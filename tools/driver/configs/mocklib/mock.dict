@@ -1,0 +1,63 @@
+# MockLib Fuzzing Dictionary
+
+# API function prefixes
+"mock_"
+"mock_buffer_"
+"mock_parser_"
+
+# Common keywords
+"MOCKLIB_API"
+"buffer"
+"parser"
+"data"
+"size"
+"capacity"
+
+# Object types
+"mock_buffer_t"
+"mock_parser_t"
+
+# Common data patterns
+"Hello"
+"World"
+"Test"
+"MockLib"
+"MOCK"
+
+# Version and debug strings
+"1.0.0"
+"debug"
+"error"
+"success"
+
+# Error messages
+"Invalid input"
+"Buffer overflow"
+"Parse error"
+"Memory allocation failed"
+
+# Test strings
+"test_data"
+"sample_input"
+"valid_string"
+"invalid_input"
+
+# Binary patterns
+"\x00\x01\x02\x03"
+"\xFF\xFE\xFD\xFC"
+"\x41\x42\x43\x44"
+
+# JSON-like patterns
+"{"
+"}"
+":"
+","
+"\""
+
+# Numbers
+"0"
+"1"
+"10"
+"100"
+"1024"
+"-1"

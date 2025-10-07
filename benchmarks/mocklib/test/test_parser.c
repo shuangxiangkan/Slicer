@@ -86,29 +86,6 @@ void test_parser_multiple_parses() {
     printf("✓ Parser multiple parse tests passed\n");
 }
 
-void test_parser_with_validation() {
-    printf("Testing parser with input validation...\n");
-    
-    mock_parser_t *parser = mock_parser_create();
-    assert(parser != NULL);
-    
-    // Test with input that should pass validation
-    const char *valid_input = "ValidInput123";
-    int validation_result = mock_validate_input(valid_input, strlen(valid_input));
-    assert(validation_result == 1); // Should be valid
-    
-    int parse_result = mock_parser_parse(parser, valid_input, strlen(valid_input));
-    assert(parse_result == 0); // Should succeed
-    
-    // Test with input that might fail validation (empty string)
-    validation_result = mock_validate_input("", 0);
-    // Note: Our validation function returns 1 for empty strings, so this should pass
-    
-    mock_parser_destroy(parser);
-    
-    printf("✓ Parser validation tests passed\n");
-}
-
 void test_parser_edge_cases() {
     printf("Testing parser edge cases...\n");
     

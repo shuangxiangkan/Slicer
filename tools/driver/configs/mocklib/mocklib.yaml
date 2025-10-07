@@ -1,0 +1,72 @@
+library:
+  name: "mocklib"
+  version: "1.0.0"
+  repo_url: "/home/kansx/SVF-Tools/Slicer/benchmarks/mocklib"  # Local path to source folder
+  language: "c"
+
+# compiler & sanitizer 
+compiler:
+  CC_FUZZ: "afl-clang-fast"
+  CXX_FUZZ: "afl-clang-fast++"
+  CFLAGS_ASAN: "-fsanitize=address,undefined"
+  CXXFLAGS_ASAN: "-fsanitize=address,undefined"
+
+headers:           # required, header file name, do not include path
+  - "mocklib.h"
+
+source_dirs:       # required，folder or files
+  - "mocklib.h"
+  - "mocklib.c"
+
+exclude_dirs:      # optional
+  - ""
+
+static_build:      # required
+  static_lib_name: "libmocklib.a"
+  output: "build/{static_lib_name}"
+  command: |
+    rm -rf mocklib && \
+    mkdir -p mocklib && \
+    cp -r {repo_url}/* mocklib/ && \
+    cd mocklib && \
+    mkdir -p build && cd build && \
+    CC={CC_FUZZ} cmake .. -DBUILD_SHARED_LIBS=OFF && \
+    make -j$(nproc) mocklib_static
+
+shared_build:     # optional
+  shared_lib_name: "libmocklib.so"
+  output: "build/{shared_lib_name}"
+  command: |
+    rm -rf mocklib && \
+    mkdir -p mocklib && \
+    cp -r {repo_url}/* mocklib/ && \
+    cd mocklib && \
+    mkdir -p build && cd build && \
+    CC={CC_FUZZ} cmake .. -DBUILD_SHARED_LIBS=ON && \
+    make -j$(nproc) mocklib_shared
+
+# driver_build: 配置harness编译参数
+driver_build:
+  compiler:             # 编译器配置
+    - "{CC_FUZZ}"        
+  dependencies:         # 额外依赖库
+    - ""                 
+  extra_flags:          # 库特定的编译标志
+    - "-I."              
+
+api_selection:
+  include_prefix:      # required - Mock API functions start with mock_
+    - "mock_"
+  keywords:           # required - Look for Mock API patterns
+    - "MOCKLIB_API"     # Mock library public API marker
+  exclude:            # optional - Exclude internal/private functions
+    - "mock_internal_"  # Internal functions (if any)
+
+documentation:       # optional
+  target_files:      # optional, specific documentation files to analyze
+    - "README.md"
+
+# fuzzing configuration
+fuzzing:
+  seeds_dir: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/mocklib/seeds"  # required, absolute path to seeds directory
+  dictionary_file: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/mocklib/mock.dict"  # optional, absolute path to dictionary file
