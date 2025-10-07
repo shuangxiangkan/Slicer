@@ -1,0 +1,11 @@
+{
+  "library_path": "benchmarks/mocklib",
+   "header_files": [
+    "mocklib.h"
+  ],
+  "include_files": [
+    "mocklib.h",
+    "mocklib.c"
+  ],
+  "exclude_files": []
+}

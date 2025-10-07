@@ -1,0 +1,11 @@
+{
+  "library_path": "benchmarks/libucl",
+   "header_files": [
+    "include/ucl.h"
+  ],
+  "include_files": [
+    "include/",
+    "src/"
+  ],
+  "exclude_files": []
+}
