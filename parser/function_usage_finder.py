@@ -95,6 +95,10 @@ class FunctionUsageFinder:
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 source_code = f.read()
             
+            # 读取字节内容用于tree-sitter解析
+            with open(file_path, 'rb') as f:
+                source_bytes = f.read()
+            
             # 使用tree-sitter管理器解析源代码
             tree = self.tree_sitter_manager.parse_content(source_code, file_path)
             if not tree:
@@ -102,8 +106,8 @@ class FunctionUsageFinder:
                 return callers
             
             # 查找函数定义和函数调用
-            function_definitions = self._find_function_definitions(tree.root_node, source_code)
-            function_calls = self._find_function_calls(tree.root_node, source_code, function_name)
+            function_definitions = self._find_function_definitions(tree.root_node, source_code, source_bytes)
+            function_calls = self._find_function_calls(tree.root_node, source_code, source_bytes, function_name)
             
             # 确定每个函数调用属于哪个函数定义
             source_lines = source_code.split('\n')
@@ -125,13 +129,14 @@ class FunctionUsageFinder:
         
         return callers
     
-    def _find_function_definitions(self, node, source_code: str) -> List[tuple]:
+    def _find_function_definitions(self, node, source_code: str, source_bytes: bytes) -> List[tuple]:
         """
         查找函数定义
         
         Args:
             node: tree-sitter节点
-            source_code: 源代码
+            source_code: 源代码字符串
+            source_bytes: 源代码字节
         
         Returns:
             List[tuple]: (函数名, 开始行, 结束行) 的列表
@@ -156,7 +161,7 @@ class FunctionUsageFinder:
                             break
                     
                     if identifier:
-                        func_name = source_code[identifier.start_byte:identifier.end_byte]
+                        func_name = source_bytes[identifier.start_byte:identifier.end_byte].decode('utf-8', errors='ignore')
                         start_line = node.start_point[0] + 1
                         end_line = node.end_point[0] + 1
                         function_definitions.append((func_name, start_line, end_line))
@@ -168,13 +173,14 @@ class FunctionUsageFinder:
         traverse(node)
         return function_definitions
     
-    def _find_function_calls(self, node, source_code: str, function_name: str) -> List[int]:
+    def _find_function_calls(self, node, source_code: str, source_bytes: bytes, function_name: str) -> List[int]:
         """
         查找函数调用
         
         Args:
             node: tree-sitter节点
-            source_code: 源代码
+            source_code: 源代码字符串
+            source_bytes: 源代码字节
             function_name: 要查找的函数名
         
         Returns:
@@ -187,7 +193,7 @@ class FunctionUsageFinder:
                 # 检查是否是目标函数的调用
                 function_node = node.children[0] if node.children else None
                 if function_node and function_node.type == 'identifier':
-                    called_func_name = source_code[function_node.start_byte:function_node.end_byte]
+                    called_func_name = source_bytes[function_node.start_byte:function_node.end_byte].decode('utf-8', errors='ignore')
                     if called_func_name == function_name:
                         call_line = node.start_point[0] + 1
                         function_calls.append(call_line)
