@@ -4,11 +4,12 @@ Library compilation utility
 """
 
 import sys
+import time
 from pathlib import Path
 from library_handler import LibraryHandler
 from config_parser import ConfigParser
 from log import *
-from utils import verify_fuzzing_environment
+from utils import verify_fuzzing_environment, generate_final_summary, print_final_summary
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -53,6 +54,9 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
     Returns:
         True if harness generation is successful, False otherwise.
     """
+    # Record start time
+    start_time = time.time()
+    
     try:
         # Parse configuration
         config_parser = ConfigParser(config_path)
@@ -113,12 +117,32 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
         if not harness_success:
             log_warning("Harness generation过程中出现问题，但分析结果已保存")
         
+        # Calculate total execution time
+        end_time = time.time()
+        total_time = end_time - start_time
+        
         log_success("Harness generation completed successfully.")
+        
+        # Generate and print final summary
+        summary = generate_final_summary(library_output_dir, total_time)
+        print_final_summary(summary, library_output_dir)
             
         return True
         
     except Exception as e:
         log_error(f"Error during harness generation: {e}")
+        
+        # Calculate total execution time even on error
+        end_time = time.time()
+        total_time = end_time - start_time
+        
+        # Try to print summary even if there was an error
+        try:
+            summary = generate_final_summary(library_output_dir, total_time)
+            print_final_summary(summary, library_output_dir)
+        except:
+            log_error("无法生成最终汇总报告")
+        
         return False
 
 if __name__ == "__main__":
