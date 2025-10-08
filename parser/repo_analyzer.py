@@ -498,9 +498,12 @@ class RepoAnalyzer:
             files_to_search = [f for f in self.processed_files if f.endswith(('.h', '.hpp', '.hxx'))]
         
         # Pattern to match function declarations/definitions
-        # This pattern looks for: [keywords] [return_type] [*] function_name(parameters)
-        # Updated to handle cases like "MOCKLIB_API mock_parser_t* mock_parser_create(void);"
-        function_pattern = r'(?:' + '|'.join(re.escape(kw) for kw in keywords) + r')\s+(?:[^(]*?\*?\s*)?(\w+)\s*\('
+        # This pattern looks for: [keywords] [optional_space] [return_type] [*] function_name(parameters)
+        # Updated to handle cases like:
+        # - "MOCKLIB_API mock_parser_t* mock_parser_create(void);" (keyword + space)
+        # - "CJSON_PUBLIC(cJSON *) cJSON_DetachItemViaPointer(...);" (keyword + parentheses)
+        # More flexible pattern that allows keywords followed by either space or parentheses
+        function_pattern = r'(?:' + '|'.join(re.escape(kw) for kw in keywords) + r')(?:\s+[^(]*?\*?\s*|(?:\([^)]*\)\s*))(\w+)\s*\('
         
         for file_path in files_to_search:
             try:
