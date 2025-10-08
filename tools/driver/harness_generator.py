@@ -8,10 +8,12 @@ import os
 import json
 import shutil
 import subprocess
+import threading
 from typing import Dict, List, Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from log import log_info, log_success, log_warning, log_error
-from utils import save_prompt_to_file, save_llm_response_to_file, extract_code_from_response, get_file_extension
+from utils import (save_prompt_to_file, save_llm_response_to_file, extract_code_from_response, 
+                   get_file_extension, save_api_generation_log)
 from libfuzzer2afl import convert_harness_file
 from step1_compile_filter import create_compile_utils
 from step2_execution_filter import execution_filter
@@ -42,6 +44,9 @@ class HarnessGenerator:
         except Exception as e:
             log_warning(f"Failed to initialize LLM client: {e}")
             self.llm_client = None
+        
+        # Initialize thread lock for shared data
+        self.log_data_lock = threading.Lock()
         
         # Initialize cost tracking
         self.harness_generation_stats = {
@@ -320,7 +325,7 @@ class HarnessGenerator:
 
     def _generate_single_harness(self, api_info: Dict[str, Any], harness_index: int, 
                                 harness_libfuzzer_dir: str, harness_afl_dir: str, 
-                                library_output_dir: str, max_retries: int = 3) -> bool:
+                                library_output_dir: str, log_data: Dict[str, Any], max_retries: int = 3) -> bool:
         """Generate a single harness for an API with compilation verification and retry mechanism"""
         api_name = api_info.get('api_name', 'unknown_api')
         file_ext = get_file_extension(self.config_parser)
@@ -328,9 +333,28 @@ class HarnessGenerator:
         # Import compile utils for verification
         compile_utils = create_compile_utils(self.config_parser)
         
+        # Initialize harness detail data structure
+        harness_detail = {
+            'harness_index': harness_index,
+            'attempts': [],
+            'final_status': 'failed',
+            'total_attempts': 0
+        }
+        
         for attempt in range(max_retries):
             try:
                 log_info(f"Generating harness {harness_index} for {api_name} (attempt {attempt + 1}/{max_retries})")
+                
+                # Initialize attempt data
+                attempt_data = {
+                    'attempt_number': attempt + 1,
+                    'prompt_type': 'initial' if attempt == 0 else 'fix',
+                    'status': 'failed',
+                    'error_type': None,
+                    'error_message': None,
+                    'compile_cmd': None,
+                    'harness_code': None
+                }
                 
                 # Generate prompt (either initial or fix prompt)
                 if attempt == 0:
@@ -340,6 +364,10 @@ class HarnessGenerator:
                     # Use fix prompt with previous code and error
                     prompt = self.prompt_generator.generate_fix_harness_prompt(api_info, failed_code, compile_error)
                     prompt_type = "fix"
+                    with self.log_data_lock:
+                        log_data['summary']['total_fix_attempts'] += 1
+                
+                attempt_data['prompt_type'] = prompt_type
                 
                 # Save prompt to file for each attempt
                 prompt_file = save_prompt_to_file(prompt, library_output_dir, 
@@ -351,6 +379,8 @@ class HarnessGenerator:
                 
                 # Update LLM call statistics
                 self.harness_generation_stats['total_llm_calls'] += 1
+                with self.log_data_lock:
+                    log_data['summary']['total_llm_calls'] += 1
                 
                 # Save LLM response to file
                 response_filepath = save_llm_response_to_file(response, library_output_dir, 
@@ -423,6 +453,17 @@ class HarnessGenerator:
                     self.harness_generation_stats['successful_harnesses'] += 1
                     self.harness_generation_stats['total_harnesses_generated'] += 1
                     
+                    # Update attempt data for success
+                    attempt_data['status'] = 'success'
+                    attempt_data['harness_code'] = harness_code
+                    harness_detail['attempts'].append(attempt_data)
+                    harness_detail['final_status'] = 'success'
+                    harness_detail['total_attempts'] = attempt + 1
+                    
+                    with self.log_data_lock:
+                        log_data['summary']['successful_harnesses'] += 1
+                        log_data['harness_details'].append(harness_detail)
+                    
                     return True
                 else:
                     # Compilation failed, prepare for retry
@@ -441,6 +482,7 @@ class HarnessGenerator:
                             
                     except Exception as e:
                         compile_error = f"Failed to capture compilation error: {str(e)}"
+                        compile_cmd = "Unknown"
                     
                     failed_code = harness_code
                     
@@ -453,18 +495,52 @@ class HarnessGenerator:
                     
                     log_error(f"Compilation error for harness {harness_index} attempt {attempt + 1}: {compile_error}")
                     
+                    # Update attempt data for compilation error
+                    attempt_data['status'] = 'compilation_error'
+                    attempt_data['error_type'] = 'compilation_error'
+                    attempt_data['error_message'] = compile_error
+                    attempt_data['compile_cmd'] = compile_cmd
+                    attempt_data['harness_code'] = failed_code
+                    harness_detail['attempts'].append(attempt_data)
+                    
                     if attempt == max_retries - 1:
                         log_error(f"Failed to generate compilable harness {harness_index} for {api_name} after {max_retries} attempts")
                         # Update failed harness statistics
                         self.harness_generation_stats['failed_harnesses'] += 1
                         self.harness_generation_stats['total_harnesses_generated'] += 1
+                        
+                        # Finalize harness detail
+                        harness_detail['final_status'] = 'failed'
+                        harness_detail['total_attempts'] = max_retries
+                        
+                        with self.log_data_lock:
+                            log_data['summary']['failed_harnesses'] += 1
+                            log_data['harness_details'].append(harness_detail)
                         return False
                     
                     # Continue to next attempt with fix prompt
                     
             except Exception as e:
                 log_error(f"Exception during harness {harness_index} generation attempt {attempt + 1} for {api_name}: {e}")
+                
+                # Update attempt data for exception
+                attempt_data['status'] = 'other_error'
+                attempt_data['error_type'] = 'other_error'
+                attempt_data['error_message'] = str(e)
+                harness_detail['attempts'].append(attempt_data)
+                
                 if attempt == max_retries - 1:
+                    # Update failed harness statistics
+                    self.harness_generation_stats['failed_harnesses'] += 1
+                    self.harness_generation_stats['total_harnesses_generated'] += 1
+                    
+                    # Finalize harness detail
+                    harness_detail['final_status'] = 'failed'
+                    harness_detail['total_attempts'] = max_retries
+                    
+                    with self.log_data_lock:
+                        log_data['summary']['failed_harnesses'] += 1
+                        log_data['harness_details'].append(harness_detail)
                     return False
                 continue
         
@@ -484,6 +560,19 @@ class HarnessGenerator:
         os.makedirs(harness_libfuzzer_dir, exist_ok=True)
         os.makedirs(harness_afl_dir, exist_ok=True)
         
+        # Initialize log data collection structure
+        self.api_log_data = {
+            'api_name': api_name,
+            'summary': {
+                'total_harnesses_attempted': 3,
+                'successful_harnesses': 0,
+                'failed_harnesses': 0,
+                'total_llm_calls': 0,
+                'total_fix_attempts': 0
+            },
+            'harness_details': []
+        }
+        
         success_count = 0
         log_info(f"Generating 3 harnesses for {api_name} with compilation verification...")
         
@@ -491,7 +580,7 @@ class HarnessGenerator:
             # Submit tasks for parallel execution with retry mechanism
             future_to_index = {
                 executor.submit(self._generate_single_harness, api_info, i, 
-                              harness_libfuzzer_dir, harness_afl_dir, library_output_dir): i 
+                              harness_libfuzzer_dir, harness_afl_dir, library_output_dir, self.api_log_data): i 
                 for i in range(1, 4)
             }
             
@@ -616,6 +705,13 @@ class HarnessGenerator:
                     
             except Exception as e:
                 log_error(f"Pre-verified harness processing failed for {api_name}: {e}")
+        
+        # 保存API级别的完整日志到单个JSON文件
+        try:
+            save_api_generation_log(library_output_dir, api_name, self.api_log_data)
+            log_info(f"Saved complete API generation log for {api_name}")
+        except Exception as e:
+            log_warning(f"Failed to save API generation log for {api_name}: {e}")
         
         return success_count > 0
     

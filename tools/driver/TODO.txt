@@ -12,8 +12,8 @@
 需要检查的：
 1. hdf5的hdf5.yaml没检查对不对
 
-以及harness生成的时候需要多少次LLM调用才能成功生成harness
-以及整个库对应每个API：（1）成功和失败的生成了多少个harness;(2) 成功和失败的执行了多少个harness; （3）成功和失败的fuzz了多少个harness（这个可能不需要）;
+比如harness生成的时候需要多少次LLM调用才能成功生成harness，用了多少次fix
+以及整个库对应每个API：（1）成功和失败的生成了多少个harness;(2) 成功和失败的执行了多少个harness; （3）成功和失败的fuzz了多少个harness;
 还要记录一下 execution 和 covearage 中有哪些出现bug了，这样便于后面查看
 
 所有的编译命令都要保留，方便复现

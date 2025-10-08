@@ -7,7 +7,9 @@ import shutil
 import subprocess
 import os
 import re
-from typing import List, Tuple
+import json
+from datetime import datetime
+from typing import List, Tuple, Dict, Any
 
 
 def verify_fuzzing_environment() -> Tuple[bool, List[str]]:
@@ -163,6 +165,41 @@ def get_file_extension(config_parser) -> str:
     library_info = config_parser.get_library_info()
     language = library_info.get('language', 'C').upper()
     return '.cpp' if language == 'C++' else '.c'
+
+
+def save_api_generation_log(library_output_dir: str, api_name: str, generation_data: Dict[str, Any]) -> str:
+    """
+    Save complete API generation log to a single JSON file
+    
+    Args:
+        library_output_dir: Library output directory
+        api_name: API name
+        generation_data: Complete generation data including summary and errors
+        
+    Returns:
+        Saved file path
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Create API-specific directory and harness_generation_logs subdirectory
+    api_dir = os.path.join(library_output_dir, api_name)
+    logs_dir = os.path.join(api_dir, 'harness_generation_logs')
+    os.makedirs(logs_dir, exist_ok=True)
+    
+    # Create complete log data
+    log_data = {
+        "timestamp": timestamp,
+        "api_name": api_name,
+        "summary": generation_data.get("summary", {}),
+        "harness_details": generation_data.get("harness_details", [])
+    }
+    
+    # Save to single JSON file
+    log_file = os.path.join(logs_dir, f"{api_name}_generation_log.json")
+    with open(log_file, 'w', encoding='utf-8') as f:
+        json.dump(log_data, f, indent=2, ensure_ascii=False)
+    
+    return log_file
 
 
 if __name__ == "__main__":
