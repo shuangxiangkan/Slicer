@@ -147,9 +147,9 @@ def harness_generation(config_path: str, library_type: str = "static") -> bool:
 
 if __name__ == "__main__":
     # Manually modify these parameters
-    # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cJSON/cJSON.yaml"
+    config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cJSON/cJSON.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/libucl/libucl.yaml"
-    config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/mocklib/mocklib.yaml"
+    # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/mocklib/mocklib.yaml"
     library_type = "static"  # "static", "shared"
     
     success = harness_generation(config_path, library_type)
