@@ -266,7 +266,11 @@ class ExecutionFilter:
                     'error': output
                 })
         
-        # 判断整体执行是否成功
+        # 判断整体执行是否成功 - 只有所有种子都成功才算执行成功
+        failed_seeds = [r for r in test_result['valid_seed_results'] if not r['success']]
+        successful_seeds = [r for r in test_result['valid_seed_results'] if r['success']]
+        total_seeds = len(test_result['valid_seed_results'])
+        
         if test_result['crashed']:
             test_result['execution_success'] = False
             self.execution_stats['crashed_harnesses'].append(harness_name)
@@ -275,8 +279,22 @@ class ExecutionFilter:
             test_result['execution_success'] = False
             self.execution_stats['timeout_harnesses'].append(harness_name)
             log_error(f"Harness整体执行失败(超时) - {harness_name}, 超时种子数: {len([r for r in test_result['valid_seed_results'] if not r['success'] and 'timeout' in r['output'].lower()])}")
+        elif len(failed_seeds) > 0:
+            # 如果有任何种子失败（包括AddressSanitizer错误），则标记为执行失败
+            test_result['execution_success'] = False
+            log_error(f"Harness整体执行失败(种子失败) - {harness_name}, 失败种子数: {len(failed_seeds)}/{total_seeds}")
+            # 详细记录失败原因
+            for failed_seed in failed_seeds:
+                if 'addresssanitizer' in failed_seed['output'].lower() or 'asan' in failed_seed['output'].lower():
+                    log_error(f"  - 种子 {Path(failed_seed['seed_file']).name}: AddressSanitizer内存错误")
+                elif failed_seed['return_code'] < 0:
+                    log_error(f"  - 种子 {Path(failed_seed['seed_file']).name}: 程序崩溃 (返回码: {failed_seed['return_code']})")
+                else:
+                    log_error(f"  - 种子 {Path(failed_seed['seed_file']).name}: 执行失败 (返回码: {failed_seed['return_code']})")
         else:
-            log_info(f"Harness执行成功 - {harness_name}, 成功种子数: {len([r for r in test_result['valid_seed_results'] if r['success']])}/{len(test_result['valid_seed_results'])}")
+            # 只有所有种子都成功才标记为执行成功
+            test_result['execution_success'] = True
+            log_success(f"Harness执行成功 - {harness_name}, 所有种子都成功: {len(successful_seeds)}/{total_seeds}")
         
         # 清理临时目录
         try:
@@ -409,7 +427,11 @@ def main():
     log_dir = sys.argv[1]
     seeds_valid_dir = sys.argv[2]
     
-    execution_filter(log_dir, seeds_valid_dir)
+    # 从log_dir推断compiled_harness_dir路径
+    log_dir_path = Path(log_dir)
+    compiled_harness_dir = log_dir_path.parent / "harness_compilation_logs"
+    
+    execution_filter(log_dir, seeds_valid_dir, str(compiled_harness_dir))
 
 if __name__ == "__main__":
     main()
