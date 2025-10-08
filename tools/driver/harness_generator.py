@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Harness Generator Module
-
 为API函数生成按优先级排序的完整信息
 """
 
@@ -79,6 +77,9 @@ class HarnessGenerator:
             bool: 生成是否成功
         """
         try:
+            # 重新初始化PromptGenerator以传递library_output_dir
+            self.prompt_generator = PromptGenerator(self.config_parser, library_output_dir)
+            
             log_info("使用API similarity 依赖图生成API harness...")
             success = self.dependency_graph.build_generation_order(
                 api_functions, api_categories, usage_results, library_output_dir
@@ -228,6 +229,12 @@ class HarnessGenerator:
         # 从dependency_graph获取当前API的参考信息
         current_node = self.dependency_graph.get_node(api_name)
         
+        # 添加API category信息
+        if current_node:
+            base_info["api_category"] = current_node.category
+        else:
+            base_info["api_category"] = "unknown"
+        
         if current_node and current_node.similar_references:
             # 如果当前API有参考API列表，添加所有相似API到列表
             for ref_info in current_node.similar_references:
@@ -249,20 +256,20 @@ class HarnessGenerator:
         """
         查找指定API的已生成harness文件
         """
-        # 检查libfuzzer目录
-        libfuzzer_dir = os.path.join(library_output_dir, "harnesses", "libfuzzer")
+        # 检查final_harness_libfuzzer目录
+        libfuzzer_dir = os.path.join(library_output_dir, "final_harness_libfuzzer")
         if os.path.exists(libfuzzer_dir):
             for file in os.listdir(libfuzzer_dir):
-                if file.startswith(f"{api_name}_harness") and file.endswith(".cpp"):
+                if file.startswith(f"{api_name}_harness") and (file.endswith(".cpp") or file.endswith(".c")):
                     harness_path = os.path.join(libfuzzer_dir, file)
                     if os.path.isfile(harness_path):
                         return harness_path
         
-        # 检查afl目录
-        afl_dir = os.path.join(library_output_dir, "harnesses", "afl")
+        # 检查final_harness_afl目录
+        afl_dir = os.path.join(library_output_dir, "final_harness_afl")
         if os.path.exists(afl_dir):
             for file in os.listdir(afl_dir):
-                if file.startswith(f"{api_name}_harness") and file.endswith(".cpp"):
+                if file.startswith(f"{api_name}_harness") and (file.endswith(".cpp") or file.endswith(".c")):
                     harness_path = os.path.join(afl_dir, file)
                     if os.path.isfile(harness_path):
                         return harness_path
@@ -478,9 +485,6 @@ class HarnessGenerator:
         os.makedirs(harness_libfuzzer_dir, exist_ok=True)
         os.makedirs(harness_afl_dir, exist_ok=True)
         
-        # Initial prompt will be generated and saved within each harness generation attempt
-        
-        # Generate 3 harnesses in parallel with compilation verification
         success_count = 0
         log_info(f"Generating 3 harnesses for {api_name} with compilation verification...")
         

@@ -243,7 +243,7 @@ class ExecutionFilter:
             result_info = {
                 'seed_file': str(seed_file),
                 'success': success,
-                'output': output[:200],  # 限制输出长度
+                'output': output[:3000],  # 限制输出长度
                 'return_code': return_code
             }
             
