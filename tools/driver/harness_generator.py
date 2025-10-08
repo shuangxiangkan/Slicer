@@ -77,7 +77,6 @@ class HarnessGenerator:
             bool: 生成是否成功
         """
         try:
-            # 重新初始化PromptGenerator以传递library_output_dir
             self.prompt_generator = PromptGenerator(self.config_parser, library_output_dir)
             
             log_info("使用API similarity 依赖图生成API harness...")
