@@ -423,3 +423,63 @@ class CFG(BaseAnalyzer):
             print()
         
         print(f"总计: {len(sorted_nodes)} 个语句节点")
+
+
+def main():
+    """主函数 - 演示CFG的使用"""
+    # 示例C代码
+    sample_code = """
+    int factorial(int n) {
+        int result = 1;
+        if (n <= 1) {
+            return result;
+        } else {
+            for (int i = 2; i <= n; i++) {
+                result = result * i;
+            }
+            return result;
+        }
+    }
+    """
+    
+    print("=== CFG构建器演示 ===")
+    print("示例代码:")
+    print(sample_code)
+    print("\n" + "="*50)
+    
+    # 创建CFG构建器
+    cfg_builder = CFG(language="c")
+    
+    # 构建CFG
+    print("\n1. 构建控制流图...")
+    cfg = cfg_builder.construct_cfg(sample_code)
+    
+    if cfg:
+        print("✅ CFG构建成功!")
+        print(f"   节点数量: {len(cfg.nodes)}")
+        print(f"   边数量: {len(cfg.edges)}")
+        
+        # 打印CFG边信息
+        print("\n2. CFG边信息:")
+        cfg_builder.print_cfg_edges()
+        
+        # 打印语句的defs和uses信息
+        print("\n3. 语句的Defs/Uses信息:")
+        cfg_builder.print_statement_defs_uses()
+        
+        # 生成可视化文件
+        print("\n4. 生成可视化文件...")
+        try:
+            cfg_builder.see_cfg(sample_code, filename="example_cfg", pdf=True, dot_format=True, view=False)
+            print("✅ 可视化文件已生成: example_cfg.pdf 和 example_cfg.dot")
+        except Exception as e:
+            print(f"⚠️  可视化生成失败: {e}")
+    else:
+        print("❌ CFG构建失败")
+    
+    print("\n" + "="*50)
+    print("演示完成!")
+
+
+if __name__ == "__main__":
+    main()
