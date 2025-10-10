@@ -151,7 +151,8 @@ if __name__ == "__main__":
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/libucl/libucl.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/mocklib/mocklib.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/libpcap/libpcap.yaml"
-    config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/zlib/zlib.yaml"
+    # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/zlib/zlib.yaml"
+    config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/c-ares/c-ares.yaml"
     
     library_type = "static"  # "static", "shared"
     

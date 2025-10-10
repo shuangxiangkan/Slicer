@@ -1,0 +1,72 @@
+library:
+  name: "c-ares"
+  version: "1.34.5"
+  repo_url: "https://github.com/c-ares/c-ares.git"
+  language: "c"
+
+# compiler & sanitizer 
+compiler:
+  CC_FUZZ: "afl-clang-fast"
+  CXX_FUZZ: "afl-clang-fast++"
+  CFLAGS_ASAN: "-fsanitize=address,undefined"
+  CXXFLAGS_ASAN: "-fsanitize=address,undefined"
+
+headers:           # required, header file name, do not include path
+  - "include/ares.h"
+
+source_dirs:       # required，folder or files
+  - "include/ares.h"
+  - "src/lib"
+
+exclude_dirs:      # optional
+  - ""
+
+static_build:      # required
+  static_lib_name: "libcares.a"
+  output: "src/lib/.libs/{static_lib_name}"
+  command: |
+    rm -rf c-ares && \
+    git clone {repo_url} c-ares && \
+    cd c-ares && \
+    ./buildconf && \
+    CC={CC_FUZZ} ./configure --enable-debug --enable-tests && \
+    make clean && \
+    make -j$(nproc) V=1 all
+
+shared_build:     # optional
+  shared_lib_name: "libcares.so"
+  output: "src/lib/.libs/{shared_lib_name}"
+  command: |
+    rm -rf c-ares && \
+    git clone {repo_url} c-ares && \
+    cd c-ares && \
+    ./buildconf && \
+    CC={CC_FUZZ} ./configure --enable-debug --enable-tests --enable-shared && \
+    make clean && \
+    make -j$(nproc) V=1 all
+
+
+driver_build:
+  compiler:             # 编译器配置 (通常使用AFL++的插桩编译器)
+    - "{CC_FUZZ}"        # 示例: afl-clang-fast, afl-gcc
+  dependencies:         # 额外依赖库 (链接时需要的库文件)
+    - ""             # 示例: -lm, -lpthred
+  extra_flags:          # 库特定的编译标志 (预处理器定义、优化选项等)
+    - ""   
+
+api_selection:
+  include_prefix:      # required
+    - "ares_"
+  keywords:           # required
+    - "CARES_EXTERN"
+  exclude: []         # optional
+
+documentation:       # optional
+  target_files:      # optional, specific documentation files to analyze
+    - "README.md"
+    - "INSTALL.md"
+
+# fuzzing configuration
+fuzzing:
+  seeds_dir: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/c-ares/seeds"  # required, absolute path to seeds directory
+  dictionary_file: ""  # optional, absolute path to dictionary file
