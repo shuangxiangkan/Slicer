@@ -465,24 +465,6 @@ class RepoAnalyzer:
     
     def _extract_api_function_names_from_headers(self, keywords: List[str], prefixes: List[str] = None, 
                                                header_files: List[str] = None) -> set:
-        """
-        Extract API function names from header files using text-based pattern matching.
-        
-        This method uses regular expressions to find function declarations with specific
-        keywords (like CJSON_PUBLIC, etc.) and optional prefixes.
-        
-        This text-based approach is used instead of tree-sitter parsing because tree-sitter
-        has known issues with parsing complex function declarations that include macro
-        prefixes, often splitting them into multiple nodes incorrectly.
-        
-        Args:
-            keywords: List of API keywords to search for
-            prefixes: List of function name prefixes to filter by (optional)
-            header_files: List of header files to search (if None, searches all header files)
-            
-        Returns:
-            Set of function names that match the criteria
-        """
         
         api_function_names = set()
         
@@ -494,36 +476,37 @@ class RepoAnalyzer:
                     raise FileNotFoundError(f"Header file not found: {file_path}")
             files_to_search = header_files
         else:
-            # Search all header files in the project
+            # 搜索项目中所有头文件
             files_to_search = [f for f in self.processed_files if f.endswith(('.h', '.hpp', '.hxx'))]
-        
-        # Pattern to match function declarations/definitions
-        # This pattern looks for: [keywords] [optional_space] [return_type] [*] function_name(parameters)
-        # Updated to handle cases like:
-        # - "MOCKLIB_API mock_parser_t* mock_parser_create(void);" (keyword + space)
-        # - "CJSON_PUBLIC(cJSON *) cJSON_DetachItemViaPointer(...);" (keyword + parentheses)
-        # More flexible pattern that allows keywords followed by either space or parentheses
-        function_pattern = r'(?:' + '|'.join(re.escape(kw) for kw in keywords) + r')(?:\s+[^(]*?\*?\s*|(?:\([^)]*\)\s*))(\w+)\s*\('
         
         for file_path in files_to_search:
             try:
                 with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                     content = f.read()
                 
-                # Remove comments to avoid false matches
+                # 移除注释避免误匹配
                 content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
                 content = re.sub(r'//.*?$', '', content, flags=re.MULTILINE)
                 
-                # Find all potential function names
-                matches = re.findall(function_pattern, content, re.MULTILINE)
+                # 检查文件是否包含关键字
+                has_keyword = any(keyword in content for keyword in keywords)
                 
-                for func_name in matches:
-                    # Apply prefix filtering if specified
-                    if prefixes:
-                        if any(func_name.startswith(prefix) for prefix in prefixes):
+                if has_keyword:
+                    # 提取所有函数名：标识符后跟(
+                    function_pattern = r'(\w+)\s*\('
+                    all_matches = re.findall(function_pattern, content)
+                    
+                    # 过滤控制流关键字
+                    excluded_patterns = ['if', 'while', 'for', 'switch', 'sizeof', 'typeof', 'defined', 'assert']
+                    potential_functions = [m for m in all_matches if m not in excluded_patterns]
+                    
+                    for func_name in potential_functions:
+                        # 按前缀过滤
+                        if prefixes:
+                            if any(prefix in func_name for prefix in prefixes):
+                                api_function_names.add(func_name)
+                        else:
                             api_function_names.add(func_name)
-                    else:
-                        api_function_names.add(func_name)
                         
             except Exception as e:
                 logger.warning(f"Failed to read header file {file_path}: {e}")
