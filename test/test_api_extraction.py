@@ -85,7 +85,7 @@ def test_api_extraction():
                 if api_prefix:
                     print(f"🏷️  限制函数前缀: '{api_prefix}'")
                     
-                api_functions = analyzer.get_api_functions(keyword, header_files=header_files, api_prefix=api_prefix)
+                api_functions = analyzer.get_api_functions(keyword, api_prefix=api_prefix, header_files=header_files)
                 
                 if api_functions:
                     print(f"找到 {len(api_functions)} 个API函数:")

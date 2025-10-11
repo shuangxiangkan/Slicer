@@ -200,7 +200,7 @@ class RepoAnalyzer:
         return filtered_files, ""
     
 
-    def _extract_functions(self, files: List[str]) -> List[FunctionInfo]:
+    def _extract_functions(self, files: List[str], api_macros: List[str] = None) -> List[FunctionInfo]:
         """Extract function definitions"""
         all_functions = []
         failed_files = []
@@ -211,7 +211,7 @@ class RepoAnalyzer:
                 
                 logger.debug(f"Processing file {i}/{len(files)}: {rel_path}")
                 
-                functions = self.function_extractor.extract_from_file(file_path)
+                functions = self.function_extractor.extract_from_file(file_path, api_macros=api_macros)
                 all_functions.extend(functions)
                 
             except Exception as e:
@@ -397,51 +397,40 @@ class RepoAnalyzer:
         
         return matches
     
-    def get_api_functions(self, api_keyword, header_files: List[str] = None,
-                         api_prefix = None) -> List[FunctionInfo]:
+    def get_api_functions(self, api_macros = None, api_prefix = None, 
+                         header_files: List[str] = None,) -> List[FunctionInfo]:
         """
         Get API function definitions based on keyword and prefix filtering.
         
         This method returns only function definitions (not declarations) that match the API criteria.
-        It uses a text-based approach instead of tree-sitter's direct parsing to avoid parsing 
-        issues with complex function declarations.
-        
-        Why not use tree-sitter directly?
-        ================================
-        Tree-sitter has known parsing issues with certain function declarations, particularly
-        those with complex macro prefixes. For example, a declaration like:
-        
-            MOCKLIB_API mock_parser_t* mock_parser_create(void);
-        
-        May be incorrectly parsed by tree-sitter as two separate nodes:
-        1. A 'declaration' node containing only "MOCKLIB_API mock_parser_t"
-        2. An 'expression_statement' node containing "* mock_parser_create(void);"
-        
-        This fragmentation prevents the FunctionExtractor from correctly identifying
-        the complete function declaration. The text-based approach used here:
-        
-        1. First extracts potential API function names from header files using regex
-        2. Then matches these names against parsed function definitions
-        3. Returns only the function definitions that match the API criteria
-        
-        This hybrid approach is more reliable and avoids tree-sitter's parsing limitations
-        while still leveraging its capabilities for function body analysis.
+        When api_macros is provided, it re-extracts functions with macro preprocessing
+        to ensure correct parsing of function signatures that contain API macros.
         
         Args:
-            api_keyword: API keyword (str) or list of keywords (e.g., "MOCKLIB_API", ["CJSON_PUBLIC", "TIFFAPI"])
-            header_files: List of specific header files to search (if None, searches all header files)
+            api_macros: API macros (str) or list of macros (e.g., "MOCKLIB_API", ["CJSON_PUBLIC", "TIFFAPI"]), can be None
             api_prefix: API function name prefix (str) or list of prefixes (e.g., "TIFF", ["cJSON", "json"]), if None then no prefix check
+            header_files: List of specific header files to search (if None, searches all header files)
             
         Returns:
             A list of FunctionInfo objects containing only function definitions that match the API criteria
         """
-        if not self.all_functions:
-            logger.warning("No function analysis has been performed yet. Please call the analyze() method first.")
-            return []
-        
         # Convert single keyword/prefix to list for uniform processing
-        keywords = [api_keyword] if isinstance(api_keyword, str) else api_keyword
+        keywords = [api_macros] if isinstance(api_macros, str) else (api_macros if api_macros else [])
         prefixes = [api_prefix] if isinstance(api_prefix, str) else (api_prefix if api_prefix else None)
+        
+        # If api_macros is provided, re-extract functions with macro preprocessing
+        if api_macros:
+            logger.info(f"Re-extracting functions with API macro preprocessing: {keywords}")
+            # Get all source files for re-extraction
+            files, _ = self._collect_files()
+            # Re-extract functions with macro preprocessing
+            all_function_definitions = self._extract_functions(files, api_macros=keywords)
+        else:
+            # Use cached functions if no API macros specified
+            if not self.all_functions:
+                logger.warning("No function analysis has been performed yet. Please call the analyze() method first.")
+                return []
+            all_function_definitions = self.all_functions
         
         # Step 1: Extract potential API function names from header files using text matching
         api_function_names = self._extract_api_function_names_from_headers(keywords, prefixes, header_files)
@@ -450,7 +439,7 @@ class RepoAnalyzer:
         api_functions = []
         seen_functions = set()  # To avoid duplicates
         
-        for func in self.all_functions:
+        for func in all_function_definitions:
             # Only include function definitions, skip declarations
             if func.is_declaration:
                 continue

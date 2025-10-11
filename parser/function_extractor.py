@@ -28,11 +28,16 @@ class FunctionExtractor:
             logger.error("Tree-sitter解析器不可用")
             raise RuntimeError("Tree-sitter解析器初始化失败")
     
-    def extract_from_file(self, file_path: str) -> List[FunctionInfo]:
+    def extract_from_file(self, file_path: str, api_macros: List[str] = None) -> List[FunctionInfo]:
         """从文件中提取函数"""
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
+            
+            # 如果提供了api_macros，则预处理内容去除这些宏
+            if api_macros:
+                content = self._preprocess_content_remove_macros(content, api_macros)
+            
             return self.extract_from_content(content, file_path)
         except Exception as e:
             logger.warning(f"无法读取文件 {file_path}: {e}")
@@ -346,3 +351,32 @@ class FunctionExtractor:
             return "unknown_namespace"
         except:
             return "unknown_namespace"
+    
+    def _preprocess_content_remove_macros(self, content: str, api_macros: List[str]) -> str:
+        """
+        预处理内容，去除指定的API宏
+        
+        Args:
+            content: 原始文件内容
+            api_macros: 需要去除的宏列表，如 ['CMSAPI', 'CMSEXPORT']
+            
+        Returns:
+            处理后的内容，宏被替换为空格以保持行号不变
+        """
+        import re
+        
+        processed_content = content
+        
+        for macro in api_macros:
+            # 创建正则表达式匹配宏
+            # 匹配独立的宏名（前后是空白字符或行首行尾）
+            pattern = r'\b' + re.escape(macro) + r'\b'
+            
+            # 将宏替换为等长的空格，保持行号和列位置不变
+            def replace_with_spaces(match):
+                return ' ' * len(match.group(0))
+            
+            processed_content = re.sub(pattern, replace_with_spaces, processed_content)
+        
+        logger.debug(f"Preprocessed content to remove macros: {api_macros}")
+        return processed_content

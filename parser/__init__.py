@@ -72,7 +72,7 @@ Parser包提供了强大的C/C++代码分析功能：
    analyzer.analyze()
    
    # 提取包含特定关键字的API函数
-   api_functions = analyzer.get_api_functions("CJSON_PUBLIC")
+   api_functions = analyzer.get_api_functions("CJSON_PUBLIC", ["cJSON"], header_files=["cJSON.h"])
    
    # 显示API函数信息
    print(f"找到 {len(api_functions)} 个API函数")
