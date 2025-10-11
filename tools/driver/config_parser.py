@@ -182,8 +182,8 @@ class ConfigParser:
         """Get API selection configuration"""
         api_data = self._config_data['api_selection']
         return {
-            'include_prefix': api_data.get('include_prefix', []),
-            'keywords': api_data.get('keywords', []),
+            'api_prefix': api_data.get('api_prefix', []),
+            'api_macros': api_data.get('api_macros', []),
             'exclude': api_data.get('exclude', [])
         }
     
@@ -420,8 +420,8 @@ if __name__ == "__main__":
         # Display API selection
         api_selection = parser.get_api_selection()
         print(f"\n=== API Selection ===")
-        print(f"Include Prefix: {api_selection['include_prefix']}")
-        print(f"Keywords: {api_selection['keywords']}")
+        print(f"API Prefix: {api_selection['api_prefix']}")
+        print(f"API Macros: {api_selection['api_macros']}")
         print(f"Exclude: {api_selection['exclude']}")
         
         # Display documentation configuration
