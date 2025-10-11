@@ -55,9 +55,9 @@ driver_build:
     - ""             # 示例: 优化级别, -O2
 
 api_selection:
-  include_prefix:      # required
+  api_prefix:      # required
     - "cJSON_"
-  keywords:           # required
+  api_macros:           # required
     - "CJSON_PUBLIC"
   exclude: []         # optional
 

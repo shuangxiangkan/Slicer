@@ -69,9 +69,9 @@ driver_build:
     - ""                 # 示例: 优化级别, -O2
 
 api_selection:
-  include_prefix:      # required
+  api_prefix:      # required
     - ""
-  keywords:           # required
+  api_macros:           # required
     - "ZEXTERN"
   exclude:            # optional
     - ""

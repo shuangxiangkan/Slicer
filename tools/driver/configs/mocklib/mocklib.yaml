@@ -55,9 +55,9 @@ driver_build:
     - "-I."              
 
 api_selection:
-  include_prefix:      # required - Mock API functions start with mock_
+  api_prefix:      # required - Mock API functions start with mock_
     - "mock_"
-  keywords:           # required - Look for Mock API patterns
+  api_macros:           # required - Look for Mock API patterns
     - "MOCKLIB_API"     # Mock library public API marker
   exclude:            # optional - Exclude internal/private functions
     - "mock_internal_"  # Internal functions (if any)

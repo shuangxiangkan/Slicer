@@ -55,9 +55,9 @@ driver_build:
     - ""   
 
 api_selection:
-  include_prefix:      # required
+  api_prefix:      # required
     - "ares_"
-  keywords:           # required
+  api_macros:           # required
     - "CARES_EXTERN"
   exclude: []         # optional
 

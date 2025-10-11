@@ -67,9 +67,9 @@ driver_build:
     - "-I."              # 包含当前目录
 
 api_selection:
-  include_prefix:      # required - UCL API functions typically start with ucl_
+  api_prefix:      # required - UCL API functions typically start with ucl_
     - "ucl_"
-  keywords:           # required - Look for UCL API patterns
+  api_macros:           # required - Look for UCL API patterns
     - "UCL_EXTERN"      # UCL public API marker
   exclude:            # optional - Exclude internal/private functions
     - "ucl_hash_"       # Internal hash functions

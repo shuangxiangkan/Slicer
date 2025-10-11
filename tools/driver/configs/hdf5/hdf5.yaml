@@ -82,16 +82,14 @@ driver_build:
     - "-I."              # 包含当前目录
 
 api_selection:
-  include_prefix:      # required - HDF5 API functions typically start with H5
+  api_prefix:      # required - HDF5 API functions typically start with H5
     - "H5"
-  keywords:           # required - Look for HDF5 API patterns
+  api_macros:           # required - Look for HDF5 API patterns
     - "H5_DLL"         # HDF5 public API marker
     - "HDFAPI"         # Alternative API marker
     - "H5TOOLS_DLL"    # Tools API marker
   exclude:            # optional - Exclude internal/private functions
-    - "H5_"            # Private functions usually start with H5_
-    - "H5*_term_package"  # Internal package termination functions
-    - "H5*_init_package"  # Internal package initialization functions
+    - ""            # Private functions usually start with H5_
 
 documentation:       # optional
   target_files:      # optional, specific documentation files to analyze
