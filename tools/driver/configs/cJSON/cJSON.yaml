@@ -14,11 +14,11 @@ compiler:
 headers:           # required, header file name, do not include path
   - "cJSON.h"
 
-source_dirs:       # required，folder or files
+source_dirs:       # required，folder or files, 
   - "cJSON.h"            
   - "cJSON.c"       
 
-exclude_dirs:      # optional
+exclude_dirs:      # optional, `source_dirs` and `exclude_dirs` can only be specified one at a time; they cannot be used simultaneously.
   - ""
 
 static_build:      # required
