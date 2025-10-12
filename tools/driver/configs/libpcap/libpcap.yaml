@@ -51,8 +51,6 @@ shared_build:     # optional
 driver_build:
   compiler:             # 编译器配置 (通常使用AFL++的插桩编译器)
     - "{CC_FUZZ}"        # 示例: afl-clang-fast, afl-gcc
-  dependencies:         # 额外依赖库 (链接时需要的库文件)
-    - ""             # libpcap通常不需要额外依赖
   extra_flags:          # 库特定的编译标志 (预处理器定义、优化选项等)
     - ""
 

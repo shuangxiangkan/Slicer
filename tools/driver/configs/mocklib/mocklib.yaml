@@ -49,10 +49,8 @@ shared_build:     # optional
 driver_build:
   compiler:             # 编译器配置
     - "{CC_FUZZ}"        
-  dependencies:         # 额外依赖库
-    - ""                 
   extra_flags:          # 库特定的编译标志
-    - "-I."              
+    - ""              
 
 api_selection:
   api_prefix:      # required - Mock API functions start with mock_
