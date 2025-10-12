@@ -80,13 +80,11 @@ class LibraryHandler:
             # 获取API关键字和前缀
             api_config = self.config_parser.get_api_selection()
             api_macros = api_config.get('api_macros', [])
-            api_prefix = api_config.get('include_prefix')
-            if isinstance(api_prefix, list) and api_prefix:
-                api_prefix = api_prefix[0]  # 取第一个前缀
+            api_prefixes = api_config.get('api_prefix', [])
             
             log_info(f"搜索API宏: {', '.join(api_macros)}")
-            if api_prefix:
-                log_info(f"限制函数前缀: '{api_prefix}'")
+            if api_prefixes:
+                log_info(f"限制函数前缀: {', '.join(api_prefixes)}")
             
             # 获取头文件配置
             header_files = analyzer.config_parser.get_header_files() if analyzer.config_parser else None
@@ -94,7 +92,7 @@ class LibraryHandler:
             # 直接使用RepoAnalyzer的get_api_functions方法获取API函数
             api_functions = analyzer.get_api_functions(
                 api_macros=api_macros,
-                api_prefix=api_prefix,
+                api_prefix=api_prefixes,
                 header_files=header_files
             )
             

@@ -67,7 +67,7 @@ class ConfigParser:
         # Validate driver_build configuration (optional but if present, must have required fields)
         if 'driver_build' in self._config_data:
             driver_build = self._config_data['driver_build']
-            driver_required = ['compiler', 'dependencies', 'extra_flags']
+            driver_required = ['compiler', 'extra_flags']
             for field in driver_required:
                 if field not in driver_build:
                     raise ValueError(f"Missing required driver_build field: {field}")
@@ -143,7 +143,7 @@ class ConfigParser:
         """Get driver build configuration
         
         Returns:
-            Dictionary containing compiler, dependencies, and extra_flags lists
+            Dictionary containing compiler and extra_flags lists
             Returns None if driver_build section is not found
         """
         if 'driver_build' not in self._config_data:
@@ -158,13 +158,6 @@ class ConfigParser:
             if compiler.strip():  # Skip empty strings
                 formatted_compilers.append(self.format_command(compiler))
         
-        # Format dependencies to replace placeholders
-        dependencies_list = driver_data.get('dependencies', [])
-        formatted_dependencies = []
-        for dep in dependencies_list:
-            if dep.strip():  # Skip empty strings
-                formatted_dependencies.append(self.format_command(dep))
-        
         # Format extra_flags to replace placeholders
         extra_flags_list = driver_data.get('extra_flags', [])
         formatted_extra_flags = []
@@ -174,7 +167,6 @@ class ConfigParser:
         
         return {
              'compiler': formatted_compilers,
-             'dependencies': formatted_dependencies,
              'extra_flags': formatted_extra_flags
          }
     
@@ -269,8 +261,6 @@ class ConfigParser:
         if build_config is None:
             return None
         return self.format_command(build_config['command'])
-    
-
     
     def get_libraries_dir(self) -> str:
         """Get Libraries directory path (where all libraries are downloaded)
@@ -435,7 +425,6 @@ if __name__ == "__main__":
         driver_config = parser.get_driver_build_config()
         if driver_config:
             print(f"Compiler: {driver_config['compiler']}")
-            print(f"Dependencies: {driver_config['dependencies']}")
             print(f"Extra Flags: {driver_config['extra_flags']}")
         
     except Exception as e:
