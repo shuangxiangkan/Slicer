@@ -415,16 +415,16 @@ class RepoAnalyzer:
             A list of FunctionInfo objects containing only function definitions that match the API criteria
         """
         # Convert single keyword/prefix to list for uniform processing
-        keywords = [api_macros] if isinstance(api_macros, str) else (api_macros if api_macros else [])
+        macros = [api_macros] if isinstance(api_macros, str) else (api_macros if api_macros else [])
         prefixes = [api_prefix] if isinstance(api_prefix, str) else (api_prefix if api_prefix else None)
         
         # If api_macros is provided, re-extract functions with macro preprocessing
-        if api_macros:
-            logger.info(f"Re-extracting functions with API macro preprocessing: {keywords}")
+        if macros:
+            logger.info(f"Re-extracting functions with API macro preprocessing: {macros}")
             # Get all source files for re-extraction
             files, _ = self._collect_files()
             # Re-extract functions with macro preprocessing
-            all_function_definitions = self._extract_functions(files, api_macros=keywords)
+            all_function_definitions = self._extract_functions(files, api_macros=macros)
         else:
             # Use cached functions if no API macros specified
             if not self.all_functions:
@@ -433,7 +433,7 @@ class RepoAnalyzer:
             all_function_definitions = self.all_functions
         
         # Step 1: Extract potential API function names from header files using text matching
-        api_function_names = self._extract_api_function_names_from_headers(keywords, prefixes, header_files)
+        api_function_names = self._extract_api_function_names_from_headers(macros, prefixes, header_files)
         
         # Step 2: Find matching function definitions in our parsed function list
         api_functions = []
@@ -452,7 +452,7 @@ class RepoAnalyzer:
         
         return api_functions
     
-    def _extract_api_function_names_from_headers(self, keywords: List[str], prefixes: List[str] = None, 
+    def _extract_api_function_names_from_headers(self, macros: List[str], prefixes: List[str] = None, 
                                                header_files: List[str] = None) -> set:
         
         api_function_names = set()
@@ -477,10 +477,10 @@ class RepoAnalyzer:
                 content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
                 content = re.sub(r'//.*?$', '', content, flags=re.MULTILINE)
                 
-                # 检查文件是否包含关键字
-                has_keyword = any(keyword in content for keyword in keywords)
+                # 检查文件是否包含宏
+                has_macro = any(macro in content for macro in macros)
                 
-                if has_keyword:
+                if has_macro:
                     # 提取所有函数名：标识符后跟(
                     function_pattern = r'(\w+)\s*\('
                     all_matches = re.findall(function_pattern, content)
