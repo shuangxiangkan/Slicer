@@ -414,11 +414,26 @@ class RepoAnalyzer:
         Returns:
             A list of FunctionInfo objects containing only function definitions that match the API criteria
         """
-        # Convert single keyword/prefix to list for uniform processing
-        macros = [api_macros] if isinstance(api_macros, str) else (api_macros if api_macros else [])
-        prefixes = [api_prefix] if isinstance(api_prefix, str) else (api_prefix if api_prefix else None)
+        # Convert single keyword/prefix to list and filter out empty strings
+        if isinstance(api_macros, str):
+            macros = [api_macros] if api_macros and api_macros.strip() else []
+        else:
+            macros = [m for m in (api_macros or []) if m and m.strip()]
         
-        # If api_macros is provided, re-extract functions with macro preprocessing
+        if isinstance(api_prefix, str):
+            prefixes = [api_prefix] if api_prefix and api_prefix.strip() else None
+        else:
+            prefixes = [p for p in (api_prefix or []) if p and p.strip()] if api_prefix else None
+        
+        # Step 1: Extract potential API function names from header files using text matching
+        api_function_names = self._extract_api_function_names_from_headers(macros, prefixes, header_files)
+        
+        # Early return if no API function names found
+        if not api_function_names:
+            logger.info("No API function names found in header files, returning empty list")
+            return []
+        
+        # If api_macros is provided and contains valid non-empty macros, re-extract functions with macro preprocessing
         if macros:
             logger.info(f"Re-extracting functions with API macro preprocessing: {macros}")
             # Get all source files for re-extraction
@@ -431,9 +446,6 @@ class RepoAnalyzer:
                 logger.warning("No function analysis has been performed yet. Please call the analyze() method first.")
                 return []
             all_function_definitions = self.all_functions
-        
-        # Step 1: Extract potential API function names from header files using text matching
-        api_function_names = self._extract_api_function_names_from_headers(macros, prefixes, header_files)
         
         # Step 2: Find matching function definitions in our parsed function list
         api_functions = []
@@ -477,25 +489,49 @@ class RepoAnalyzer:
                 content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
                 content = re.sub(r'//.*?$', '', content, flags=re.MULTILINE)
                 
-                # 检查文件是否包含宏
-                has_macro = any(macro in content for macro in macros)
-                
-                if has_macro:
-                    # 提取所有函数名：标识符后跟(
-                    function_pattern = r'(\w+)\s*\('
-                    all_matches = re.findall(function_pattern, content)
-                    
-                    # 过滤控制流关键字
-                    excluded_patterns = ['if', 'while', 'for', 'switch', 'sizeof', 'typeof', 'defined', 'assert']
-                    potential_functions = [m for m in all_matches if m not in excluded_patterns]
-                    
-                    for func_name in potential_functions:
-                        # 按前缀过滤
-                        if prefixes:
-                            if any(prefix in func_name for prefix in prefixes):
-                                api_function_names.add(func_name)
-                        else:
-                            api_function_names.add(func_name)
+                # 修正逻辑：检查函数是否同时包含宏和前缀
+                if macros and prefixes:
+                    # 有宏有前缀：查找同时包含宏和前缀的函数
+                    for macro in macros:
+                        for prefix in prefixes:
+                            # 匹配包含宏和前缀的函数声明/定义
+                            # 模式：宏...前缀函数名( 或 前缀函数名...宏(
+                            # 宏和前缀之间允许任意内容
+                            pattern1 = rf'{re.escape(macro)}.*?(\w*{re.escape(prefix)}\w*)\s*\('
+                            pattern2 = rf'(\w*{re.escape(prefix)}\w*).*?{re.escape(macro)}.*?\('
+                            
+                            matches1 = re.findall(pattern1, content)
+                            matches2 = re.findall(pattern2, content)
+                            
+                            api_function_names.update(matches1)
+                            api_function_names.update(matches2)
+                elif macros and not prefixes:
+                    # 有宏无前缀：查找包含宏的函数
+                    for macro in macros:
+                        # 匹配包含宏的函数声明/定义
+                        # 模式：宏...函数名( 或 函数名...宏(
+                        # 宏和函数名之间允许任意内容
+                        pattern1 = rf'{re.escape(macro)}.*?(\w+)\s*\('
+                        pattern2 = rf'(\w+).*?{re.escape(macro)}.*?\('
+                        
+                        matches1 = re.findall(pattern1, content)
+                        matches2 = re.findall(pattern2, content)
+                        
+                        excluded = {'if', 'while', 'for', 'switch', 'sizeof', 'typeof', 'defined', 'assert'}
+                        api_function_names.update(m for m in matches1 if m not in excluded)
+                        api_function_names.update(m for m in matches2 if m not in excluded)
+                elif not macros and prefixes:
+                    # 无宏有前缀：直接提取符合前缀的函数
+                    for prefix in prefixes:
+                        pattern = rf'(\w*{re.escape(prefix)}\w*)\s*\('
+                        matches = re.findall(pattern, content)
+                        api_function_names.update(matches)
+                else:
+                    # 无宏无前缀：提取所有函数
+                    pattern = r'(\w+)\s*\('
+                    matches = re.findall(pattern, content)
+                    excluded = {'if', 'while', 'for', 'switch', 'sizeof', 'typeof', 'defined', 'assert'}
+                    api_function_names.update(m for m in matches if m not in excluded)
                         
             except Exception as e:
                 logger.warning(f"Failed to read header file {file_path}: {e}")
