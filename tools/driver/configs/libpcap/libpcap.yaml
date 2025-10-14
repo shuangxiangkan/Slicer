@@ -13,6 +13,7 @@ compiler:
 
 headers:           # required, header file name, do not include path
   - "pcap/pcap.h"
+  - "pcap.h"
 
 source_dirs:       # required，folder or files
   - "pcap/"
@@ -52,7 +53,11 @@ driver_build:
   compiler:             # 编译器配置 (通常使用AFL++的插桩编译器)
     - "{CC_FUZZ}"        # 示例: afl-clang-fast, afl-gcc
   extra_flags:          # 库特定的编译标志 (预处理器定义、优化选项等)
-    - ""
+    - "-libverbs"
+    - "-lnl-3"
+    - "-lnl-genl-3"
+    - "-lnl-route-3"
+    - "-ldbus-1"
 
 api_selection:
   api_prefix:      # required
@@ -65,7 +70,6 @@ api_selection:
 documentation:       # optional
   target_files:      # optional, specific documentation files to analyze
     - "README.md"
-    - "doc/"
 
 # fuzzing configuration
 fuzzing:
