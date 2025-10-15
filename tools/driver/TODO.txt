@@ -9,4 +9,15 @@
 
 需要检查的：
 1. hdf5的hdf5.yaml没检查对不对
-2. libpcap的生成好像有点问题
+
+
+
+Crach Check:
+
+1. cJSON已完成
+2. libmagic已完成
+3. libucl已完成 🪲
+4. c-ares已完成 🪲
+5. zlib已完成
+6. libpcap已完成
+7. lcms已完成 🪲
