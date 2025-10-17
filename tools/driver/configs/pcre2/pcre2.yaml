@@ -1,0 +1,73 @@
+library:
+  name: "pcre2"
+  version: "10.44"
+  repo_url: "https://github.com/PCRE2Project/pcre2.git"
+  language: "c"
+
+# compiler & sanitizer 
+compiler:
+  CC_FUZZ: "afl-clang-fast"
+  CXX_FUZZ: "afl-clang-fast++"
+  CFLAGS_ASAN: "-fsanitize=address,undefined"
+  CXXFLAGS_ASAN: "-fsanitize=address,undefined"
+
+headers:           # required, header file name, do not include path
+  - "build/interface/pcre2.h"
+
+source_dirs:       # required，folder or files, 
+  - "src/"            
+
+exclude_dirs:      # optional, `source_dirs` and `exclude_dirs` can only be specified one at a time; they cannot be used simultaneously.
+  - ""
+
+static_build:      # required
+  static_lib_name: "libpcre2-8.a"
+  output: "build/{static_lib_name}"
+  command: |
+    rm -rf pcre2 && \
+    git clone {repo_url} pcre2 && \
+    cd pcre2 && \
+    git submodule update --init && \
+    mkdir -p build && cd build && \
+    CC={CC_FUZZ} cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DPCRE2_SUPPORT_JIT=ON -DPCRE2_BUILD_TESTS=OFF -DPCRE2_BUILD_PCRE2GREP=OFF && \
+    make -j$(nproc)
+
+shared_build:     # optional
+  shared_lib_name: "libpcre2-8.so"
+  output: "build/{shared_lib_name}"
+  command: |
+    rm -rf pcre2 && \
+    git clone {repo_url} pcre2 && \
+    cd pcre2 && \
+    git submodule update --init && \
+    mkdir -p build && cd build && \
+    CC={CC_FUZZ} cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DPCRE2_SUPPORT_JIT=ON -DPCRE2_BUILD_TESTS=OFF -DPCRE2_BUILD_PCRE2GREP=OFF && \
+    make -j$(nproc)
+
+# driver_build: 配置harness编译参数
+# 用于指定编译API harness时需要的编译器、依赖库和特殊标志
+# config_parser.py会读取这些配置并动态构建完整的编译命令
+driver_build:
+  compiler:             # 编译器配置 (通常使用AFL++的插桩编译器)
+    - "{CC_FUZZ}"        # 示例: afl-clang-fast, afl-gcc
+  extra_flags:          # 库特定的编译标志 (预处理器定义、优化选项等)
+    - "-DPCRE2_CODE_UNIT_WIDTH=8"  # 使用8位字符编码
+
+api_selection:
+  api_prefix:      # required
+    - "pcre2_"
+  api_macros:           # required
+    - "PCRE2_EXP_DECL"
+    - "PCRE2_CALL_CONVENTION"
+  exclude:         # optional, 排除一些不适合模糊测试的函数
+    - ""
+
+documentation:       # optional
+  target_files:      # optional, specific documentation files to analyze
+    - "README.md"
+    - "doc/*.txt"
+
+# fuzzing configuration
+fuzzing:
+  seeds_dir: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/pcre2/seeds"  # required, absolute path to seeds directory
+  dictionary_file: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/pcre2/pcre2.dict"  # optional, absolute path to dictionary file

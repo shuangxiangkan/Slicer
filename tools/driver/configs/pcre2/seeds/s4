@@ -1,0 +1,3 @@
+([A-Z]\w+) contains two different elements of the regular 
+expression combined together. This expression will match any pattern 
+containing uppercase letter followed by any character.
