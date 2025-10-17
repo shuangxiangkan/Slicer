@@ -489,6 +489,9 @@ class RepoAnalyzer:
                 content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
                 content = re.sub(r'//.*?$', '', content, flags=re.MULTILINE)
                 
+                # 合并续行符，处理宏定义跨行
+                content = re.sub(r'\\\s*\n', ' ', content)
+                
                 # 修正逻辑：检查函数是否同时包含宏和前缀
                 if macros and prefixes:
                     # 有宏有前缀：查找同时包含宏和前缀的函数
@@ -500,8 +503,8 @@ class RepoAnalyzer:
                             pattern1 = rf'{re.escape(macro)}.*?(\w*{re.escape(prefix)}\w*)\s*\('
                             pattern2 = rf'(\w*{re.escape(prefix)}\w*).*?{re.escape(macro)}.*?\('
                             
-                            matches1 = re.findall(pattern1, content)
-                            matches2 = re.findall(pattern2, content)
+                            matches1 = re.findall(pattern1, content, flags=re.DOTALL)
+                            matches2 = re.findall(pattern2, content, flags=re.DOTALL)
                             
                             api_function_names.update(matches1)
                             api_function_names.update(matches2)
@@ -514,8 +517,8 @@ class RepoAnalyzer:
                         pattern1 = rf'{re.escape(macro)}.*?(\w+)\s*\('
                         pattern2 = rf'(\w+).*?{re.escape(macro)}.*?\('
                         
-                        matches1 = re.findall(pattern1, content)
-                        matches2 = re.findall(pattern2, content)
+                        matches1 = re.findall(pattern1, content, flags=re.DOTALL)
+                        matches2 = re.findall(pattern2, content, flags=re.DOTALL)
                         
                         excluded = {'if', 'while', 'for', 'switch', 'sizeof', 'typeof', 'defined', 'assert'}
                         api_function_names.update(m for m in matches1 if m not in excluded)
@@ -524,12 +527,12 @@ class RepoAnalyzer:
                     # 无宏有前缀：直接提取符合前缀的函数
                     for prefix in prefixes:
                         pattern = rf'(\w*{re.escape(prefix)}\w*)\s*\('
-                        matches = re.findall(pattern, content)
+                        matches = re.findall(pattern, content, flags=re.DOTALL)
                         api_function_names.update(matches)
                 else:
                     # 无宏无前缀：提取所有函数
                     pattern = r'(\w+)\s*\('
-                    matches = re.findall(pattern, content)
+                    matches = re.findall(pattern, content, flags=re.DOTALL)
                     excluded = {'if', 'while', 'for', 'switch', 'sizeof', 'typeof', 'defined', 'assert'}
                     api_function_names.update(m for m in matches if m not in excluded)
                         
