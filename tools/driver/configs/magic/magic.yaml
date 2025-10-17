@@ -54,7 +54,6 @@ driver_build:
     - "-lz"              # zlib压缩库
     - "-lbz2"            # bzip2压缩库
     - "-llzma"           # lzma压缩库
-    - "-lzstd"           # zstd压缩库
 
 api_selection:
   api_prefix:      # required
