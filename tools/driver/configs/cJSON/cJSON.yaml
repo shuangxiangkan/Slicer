@@ -9,8 +9,14 @@ compiler:
   CC_FUZZ: "afl-clang-fast"
   CXX_FUZZ: "afl-clang-fast++"
 
-headers:           # required, header file name, do not include path
+headers:           # required, header and source files for API extraction, relative to library root
   - "cJSON.h"
+
+header_include:    # required, header file name for #include in harness prompts
+  - "cJSON.h"
+
+header_folder:     # required, header directories for compilation include paths, relative to library root
+  - "."            # cJSON.h is in the root directory
 
 source_dirs:       # required，folder or files, 
   - "cJSON.h"            

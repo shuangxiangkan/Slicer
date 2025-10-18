@@ -9,8 +9,12 @@ compiler:
   CC_FUZZ: "afl-clang-fast"
   CXX_FUZZ: "afl-clang-fast++"
 
-headers:           # required, header file name, do not include path
+headers:           # required, header and source files for API extraction, relative to library root
   - "include/lcms2.h"
+header_include:    # required, header file name for #include in harness prompts
+  - "lcms2.h"
+header_folder:     # required, directory containing header files for compilation, relative to library root
+  - "include"
 
 source_dirs:       # required，folder or files
   - "include/lcms2.h"            

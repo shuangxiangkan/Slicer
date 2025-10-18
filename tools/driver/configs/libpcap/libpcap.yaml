@@ -9,9 +9,12 @@ compiler:
   CC_FUZZ: "afl-clang-fast"
   CXX_FUZZ: "afl-clang-fast++"
 
-headers:           # required, header file name, do not include path
+headers:           # required, header and source files for API extraction, relative to library root
   - "pcap/pcap.h"
+header_include:    # required, header file name for #include in harness prompts
   - "pcap.h"
+header_folder:     # required, directory containing header files for compilation, relative to library root
+  - "."
 
 source_dirs:       # required，folder or files
   - "pcap/"

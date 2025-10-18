@@ -9,8 +9,12 @@ compiler:
   CC_FUZZ: "afl-clang-fast"
   CXX_FUZZ: "afl-clang-fast++"
 
-headers:           # required, header file name, do not include path
-  - "src/hdf5.h"
+headers:           # required, header and source files for API extraction, relative to library root
+  - "src/*.h"
+header_include:    # required, header file name for #include in harness prompts
+  - "hdf5.h"
+header_folder:     # required, directory containing header files for compilation, relative to library root
+  - "src/"
 
 source_dirs:       # required，folder or files
   - "src/"
@@ -20,7 +24,7 @@ exclude_dirs:      # optional
 
 static_build:      # required
   static_lib_name: "libhdf5.a"
-  output: "build/{static_lib_name}"
+  output: "build/bin/{static_lib_name}"
   command: |
     rm -rf hdf5 && \
     git clone {repo_url} hdf5 && \
@@ -40,7 +44,7 @@ static_build:      # required
 
 shared_build:     # optional
   shared_lib_name: "libhdf5.so"
-  output: "build/{shared_lib_name}"
+  output: "build/bin/{shared_lib_name}"
   command: |
     rm -rf hdf5 && \
     git clone {repo_url} hdf5 && \
