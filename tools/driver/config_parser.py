@@ -6,6 +6,7 @@ For parsing YAML configuration files of fuzzing libraries
 
 import yaml
 import os
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
@@ -59,7 +60,7 @@ class ConfigParser:
                 raise ValueError(f"Missing required library information field: {field}")
         
         # Validate compiler configuration
-        compiler_required = ['CC_FUZZ', 'CXX_FUZZ', 'CFLAGS_ASAN', 'CXXFLAGS_ASAN']
+        compiler_required = ['CC_FUZZ', 'CXX_FUZZ']
         for field in compiler_required:
             if field not in self._config_data['compiler']:
                 raise ValueError(f"Missing required compiler configuration field: {field}")
@@ -91,9 +92,7 @@ class ConfigParser:
         comp_data = self._config_data['compiler']
         return {
             'cc_fuzz': comp_data['CC_FUZZ'],
-            'cxx_fuzz': comp_data['CXX_FUZZ'],
-            'cflags_asan': comp_data['CFLAGS_ASAN'],
-            'cxxflags_asan': comp_data['CXXFLAGS_ASAN']
+            'cxx_fuzz': comp_data['CXX_FUZZ']
         }
     
     def get_headers(self) -> List[str]:
@@ -236,8 +235,6 @@ class ConfigParser:
             'repo_url': lib_info['repo_url'],
             'CC_FUZZ': compiler_config['cc_fuzz'],
             'CXX_FUZZ': compiler_config['cxx_fuzz'],
-            'CFLAGS_ASAN': compiler_config['cflags_asan'],
-            'CXXFLAGS_ASAN': compiler_config['cxxflags_asan'],
             'static_lib_name': static_build['static_lib_name'],
             'shared_lib_name': shared_build['shared_lib_name'] if shared_build else '',
         }
@@ -365,7 +362,7 @@ def load_config(config_path: str) -> ConfigParser:
 
 if __name__ == "__main__":
     
-    config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cJSON.yaml"
+    config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cJSON/cJSON.yaml"
     
     try:
         # Load configuration
@@ -384,8 +381,6 @@ if __name__ == "__main__":
         print(f"\n=== Compiler Configuration ===")
         print(f"C Compiler: {compiler['cc_fuzz']}")
         print(f"C++ Compiler: {compiler['cxx_fuzz']}")
-        print(f"C Flags: {compiler['cflags_asan']}")
-        print(f"C++ Flags: {compiler['cxxflags_asan']}")
         
         # Display file configuration
         print(f"\n=== File Configuration ===")
