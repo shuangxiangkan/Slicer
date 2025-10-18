@@ -8,6 +8,7 @@ import subprocess
 import os
 import re
 import json
+import glob
 from datetime import datetime
 from typing import List, Tuple, Dict, Any
 
@@ -492,6 +493,60 @@ def generate_final_summary(library_output_dir: str, total_time_seconds: float = 
     
     return summary
 
+def resolve_target_files(target_files: List[str], base_dir: str) -> List[str]:
+    """
+    解析目标文件列表，支持通配符和目录路径
+    
+    Args:
+        target_files: 目标文件列表，可能包含通配符或目录路径
+        base_dir: 基础目录
+        
+    Returns:
+        解析后的文件路径列表
+    """
+    # 导入文件扩展名检查函数
+    import sys
+    from pathlib import Path
+    
+    # 添加parser路径到sys.path
+    current_dir = Path(__file__).parent
+    parser_dir = current_dir.parent.parent / "parser"
+    if str(parser_dir) not in sys.path:
+        sys.path.insert(0, str(parser_dir))
+    
+    from file_extensions import is_document_file
+    
+    resolved_files = []
+    
+    for target_file in target_files:
+        # 构建完整路径
+        if os.path.isabs(target_file):
+            full_path = target_file
+        else:
+            full_path = os.path.join(base_dir, target_file)
+        
+        # 检查是否包含通配符
+        if '*' in target_file or '?' in target_file:
+            # 使用glob解析通配符
+            matched_files = glob.glob(full_path, recursive=True)
+            for matched_file in matched_files:
+                if os.path.isfile(matched_file) and is_document_file(matched_file):
+                    resolved_files.append(matched_file)
+        elif os.path.isdir(full_path):
+            # 如果是目录，查找其中的所有文档文件
+            for root, dirs, files in os.walk(full_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    if is_document_file(file_path):
+                        resolved_files.append(file_path)
+        elif os.path.isfile(full_path):
+            # 如果是单个文件且是文档文件
+            if is_document_file(full_path):
+                resolved_files.append(full_path)
+        else:
+            print(f"警告: 目标文件或目录不存在: {full_path}")
+    
+    return resolved_files
 
 def print_final_summary(summary: Dict[str, Any], library_output_dir: str = None) -> None:
     """

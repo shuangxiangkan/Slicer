@@ -18,7 +18,7 @@ sys.path.insert(0, str(project_root))
 
 from config_parser import ConfigParser
 from log import *
-from utils import check_afl_instrumentation
+from utils import check_afl_instrumentation, resolve_target_files
 
 from prompt import PromptGenerator
 
@@ -565,16 +565,21 @@ class LibraryHandler:
             if target_files:
                 # 处理指定文件 - 获取具体的库目录
                 target_library_dir = self.config_parser.get_target_library_dir()
-                for target_file in target_files:
-                    file_path = target_file if os.path.isabs(target_file) else os.path.join(target_library_dir, target_file)
-                    if os.path.exists(file_path):
-                        with open(file_path, 'r', encoding='utf-8') as f:
-                            content = f.read().strip()
-                            if content:
-                                document_contents[file_path] = content
+                resolved_files = resolve_target_files(target_files, target_library_dir)
+                
+                for file_path in resolved_files:
+                    if os.path.exists(file_path) and os.path.isfile(file_path):
+                        try:
+                            with open(file_path, 'r', encoding='utf-8') as f:
+                                content = f.read().strip()
+                                if content:
+                                    document_contents[file_path] = content
+                        except Exception as e:
+                            log_warning(f"读取文件 {file_path} 失败: {e}")
             else:
                 # 获取所有文档文件
-                all_doc_files = analyzer.get_all_document_files()
+                search_path = analyzer.get_analysis_target_path()
+                all_doc_files = analyzer.doc_api_searcher._find_document_files(search_path, recursive=True)
                 for file_path in all_doc_files:
                     try:
                         with open(file_path, 'r', encoding='utf-8') as f:
@@ -588,6 +593,8 @@ class LibraryHandler:
         except Exception as e:
             log_error(f"获取文档内容失败: {e}")
             return {}
+    
+
 
     async def _parallel_analyze_documents(self, document_contents: Dict[str, str]) -> Dict[str, Any]:
         """并行分析所有文档"""
@@ -625,8 +632,77 @@ class LibraryHandler:
             log_error(f"并行分析文档失败: {e}")
             return {}
 
+    def _split_document_into_chunks(self, content: str, max_tokens: int = 40000) -> List[str]:
+        """将大文档分割成小块"""
+        # 估算当前内容的token数（粗略估算：1 token ≈ 4 字符）
+        estimated_tokens = len(content) // 4
+        
+        if estimated_tokens <= max_tokens:
+            return [content]
+        
+        chunks = []
+        lines = content.split('\n')
+        current_chunk = []
+        current_tokens = 0
+        
+        for line in lines:
+            line_tokens = len(line) // 4  # 直接计算，不需要单独函数
+            
+            # 如果添加这一行会超过限制，保存当前块并开始新块
+            if current_tokens + line_tokens > max_tokens and current_chunk:
+                chunks.append('\n'.join(current_chunk))
+                current_chunk = [line]
+                current_tokens = line_tokens
+            else:
+                current_chunk.append(line)
+                current_tokens += line_tokens
+        
+        # 添加最后一块
+        if current_chunk:
+            chunks.append('\n'.join(current_chunk))
+        
+        return chunks
+    
     def _analyze_single_document(self, content: str) -> Dict[str, Any]:
-        """分析单个文档"""
+        """分析单个文档（支持大文档分块处理）"""
+        try:
+            # 检查文档大小，如果太大则分块处理
+            estimated_tokens = len(content) // 4  # 粗略估算：1 token ≈ 4 字符
+            max_safe_tokens = 40000  # 保守估计，留出提示词和响应的空间
+            
+            if estimated_tokens > max_safe_tokens:
+                log_info(f"文档过大 ({estimated_tokens} tokens)，将分块处理")
+                chunks = self._split_document_into_chunks(content, max_safe_tokens)
+                
+                # 分别分析每个块并合并结果
+                all_apis = {}
+                for i, chunk in enumerate(chunks):
+                    log_info(f"分析文档块 {i+1}/{len(chunks)}")
+                    chunk_result = self._analyze_document_chunk(chunk)
+                    
+                    # 合并API结果
+                    for api_name, api_info in chunk_result.items():
+                        if api_name not in all_apis:
+                            all_apis[api_name] = api_info
+                        else:
+                            # 合并描述
+                            existing_desc = all_apis[api_name].get('description', '')
+                            new_desc = api_info.get('description', '')
+                            if new_desc and new_desc not in existing_desc:
+                                all_apis[api_name]['description'] = f"{existing_desc} {new_desc}".strip()
+                
+                return all_apis
+            else:
+                # 文档不大，直接处理
+                return self._analyze_document_chunk(content)
+                
+        except Exception as e:
+            log_warning(f"分析文档失败: {e}")
+            self.doc_analysis_stats['failed_analyses'] += 1
+            return {}
+    
+    def _analyze_document_chunk(self, content: str) -> Dict[str, Any]:
+        """分析单个文档块"""
         try:
             # 生成提示
             prompt = self.prompt_generator.generate_api_documentation_extraction_prompt(content, [])
@@ -648,7 +724,7 @@ class LibraryHandler:
             self.doc_analysis_stats['failed_analyses'] += 1
             return {}
         except Exception as e:
-            log_warning(f"分析文档失败: {e}")
+            log_warning(f"分析文档块失败: {e}")
             self.doc_analysis_stats['failed_analyses'] += 1
             return {}
 
