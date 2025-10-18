@@ -4,12 +4,10 @@ library:
   repo_url: "https://github.com/vstakhov/libucl.git"
   language: "c"
 
-# compiler & sanitizer 
+# compiler configuration
 compiler:
   CC_FUZZ: "afl-clang-fast"
   CXX_FUZZ: "afl-clang-fast++"
-  CFLAGS_ASAN: "-fsanitize=address,undefined"
-  CXXFLAGS_ASAN: "-fsanitize=address,undefined"
 
 headers:           # required, header file name, do not include path
   - "include/ucl.h"

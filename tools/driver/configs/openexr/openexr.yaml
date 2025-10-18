@@ -1,0 +1,104 @@
+library:
+  name: "openexr"
+  version: "3.2.4"
+  repo_url: "https://github.com/AcademySoftwareFoundation/openexr.git"
+  language: "cpp"
+
+# compiler configuration
+compiler:
+  CC_FUZZ: "afl-clang-fast"
+  CXX_FUZZ: "afl-clang-fast++"
+
+headers:           # required, header file name, do not include path
+  - "src/lib/OpenEXR/ImfCRgbaFile.h"
+
+source_dirs:       # required，folder or files
+  - "src/lib/OpenEXR/"
+  - "src/lib/OpenEXRCore/"
+  - "src/lib/Imath/"
+
+exclude_dirs:      # optional
+  - ""
+
+static_build:      # required
+  static_lib_name: "libOpenEXR.a"
+  output: "build/lib/libOpenEXR-4_0.a"
+  command: |
+    rm -rf openexr && \
+    git clone --depth=1 {repo_url} openexr && \
+    cd openexr && \
+    mkdir -p build && cd build && \
+    CC={CC_FUZZ} CXX={CXX_FUZZ} \
+    CFLAGS="-std=c11 -D_GNU_SOURCE -D_DEFAULT_SOURCE" \
+    CXXFLAGS="-std=c++17 -stdlib=libstdc++ -D_GNU_SOURCE" \
+    cmake .. \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_SHARED_LIBS=OFF \
+      -DOPENEXR_BUILD_TOOLS=OFF \
+      -DOPENEXR_BUILD_EXAMPLES=OFF \
+      -DBUILD_TESTING=OFF \
+      -DOPENEXR_INSTALL=OFF \
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+      -DCMAKE_CXX_STANDARD=17 \
+      -DCMAKE_CXX_STANDARD_REQUIRED=ON \
+      -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY="$(pwd)/lib" \
+      -DCMAKE_LIBRARY_OUTPUT_DIRECTORY="$(pwd)/lib" \
+      -DCMAKE_RUNTIME_OUTPUT_DIRECTORY="$(pwd)/bin" && \
+    make -j$(nproc)
+
+
+shared_build:
+  shared_lib_name: "libOpenEXR.so"
+  output: "build/lib/libOpenEXR-4_0.so"
+  command: |
+    rm -rf openexr && \
+    git clone --depth=1 {repo_url} openexr && \
+    cd openexr && \
+    mkdir -p build && cd build && \
+    CC={CC_FUZZ} CXX={CXX_FUZZ} \
+    CFLAGS="-std=c11 -D_GNU_SOURCE -D_DEFAULT_SOURCE" \
+    CXXFLAGS="-std=c++17 -stdlib=libstdc++ -D_GNU_SOURCE" \
+    cmake .. \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_SHARED_LIBS=ON \
+      -DOPENEXR_BUILD_TOOLS=OFF \
+      -DOPENEXR_BUILD_EXAMPLES=OFF \
+      -DBUILD_TESTING=OFF \
+      -DOPENEXR_INSTALL=OFF \
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+      -DCMAKE_CXX_STANDARD=17 \
+      -DCMAKE_CXX_STANDARD_REQUIRED=ON \
+      -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY="$(pwd)/lib" \
+      -DCMAKE_LIBRARY_OUTPUT_DIRECTORY="$(pwd)/lib" \
+      -DCMAKE_RUNTIME_OUTPUT_DIRECTORY="$(pwd)/bin" && \
+    make -j$(nproc)
+
+
+# driver_build: 配置harness编译参数
+driver_build:
+  compiler:             # 编译器配置
+    - "{CXX_FUZZ}"       # 使用C++编译器
+  extra_flags:          # 库特定的编译标志
+    - "-std=c++17"
+    - "-stdlib=libstdc++"
+    - "-lOpenEXRCore"
+    - "-lImath"
+    - "-lz"
+    - "-lpthread"
+
+api_selection:
+  api_prefix:      # required - OpenEXR主要API前缀
+    - "Imf"        # Image File format classes
+  api_macros:      # required - OpenEXR导出宏
+    - "IMF_EXPORT"
+  exclude:         # optional - 排除内部或测试相关的API
+    - ""
+
+documentation:       # optional
+  target_files:      # optional, specific documentation files to analyze
+    - "README.md"
+
+# fuzzing configuration - 暂时留空，用户后续补充
+fuzzing:
+  seeds_dir: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/openexr/seeds"  # required, absolute path to seeds directory
+  dictionary_file: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/openexr/openexr.dict"  # optional, absolute path to dictionary file

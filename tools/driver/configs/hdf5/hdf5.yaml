@@ -4,29 +4,19 @@ library:
   repo_url: "https://github.com/HDFGroup/hdf5.git"
   language: "c"
 
-# compiler & sanitizer 
+# compiler configuration
 compiler:
   CC_FUZZ: "afl-clang-fast"
   CXX_FUZZ: "afl-clang-fast++"
-  CFLAGS_ASAN: "-fsanitize=address,undefined"
-  CXXFLAGS_ASAN: "-fsanitize=address,undefined"
 
 headers:           # required, header file name, do not include path
-  - "hdf5.h"
-  - "H5public.h"
+  - "src/hdf5.h"
 
 source_dirs:       # required，folder or files
   - "src/"
-  - "hl/src/"
 
 exclude_dirs:      # optional
-  - "test/"
-  - "testpar/"
-  - "tools/"
-  - "utils/"
-  - "fortran/"
-  - "java/"
-  - "c++/"
+  - ""
 
 static_build:      # required
   static_lib_name: "libhdf5.a"
