@@ -358,7 +358,7 @@ class FunctionExtractor:
         
         Args:
             content: 原始文件内容
-            api_macros: 需要去除的宏列表，如 ['CMSAPI', 'CMSEXPORT']
+            api_macros: 需要去除的宏列表，如 ['CMSAPI', 'CMSEXPORT', 'CJSON_PUBLIC']
             
         Returns:
             处理后的内容，宏被替换为空格以保持行号不变
@@ -368,15 +368,35 @@ class FunctionExtractor:
         processed_content = content
         
         for macro in api_macros:
-            # 创建正则表达式匹配宏
-            # 匹配独立的宏名（前后是空白字符或行首行尾）
-            pattern = r'\b' + re.escape(macro) + r'\b'
+            # 创建正则表达式匹配宏，支持两种情况：
+            # 1. 简单宏：MACRO_NAME
+            # 2. 带参数的宏：MACRO_NAME(参数) - 保留括号内的内容
+            escaped_macro = re.escape(macro)
             
-            # 将宏替换为等长的空格，保持行号和列位置不变
+            # 匹配带参数的宏：MACRO_NAME(...)
+            # 使用捕获组来保留括号内的内容
+            pattern_with_params = r'\b' + escaped_macro + r'\s*\(([^)]*)\)'
+            
+            # 匹配简单宏：MACRO_NAME（不跟括号）
+            pattern_simple = r'\b' + escaped_macro + r'\b(?!\s*\()'
+            
+            # 对于带参数的宏，保留括号内的内容，用空格替换宏名和括号
+            def replace_with_params(match):
+                macro_part = match.group(0)
+                param_part = match.group(1)  # 括号内的内容
+                # 计算需要替换的部分长度（宏名 + 括号，但保留参数）
+                macro_and_parens_len = len(macro_part) - len(param_part)
+                return ' ' * macro_and_parens_len + param_part
+            
+            # 将简单宏替换为等长的空格
             def replace_with_spaces(match):
                 return ' ' * len(match.group(0))
             
-            processed_content = re.sub(pattern, replace_with_spaces, processed_content)
+            # 先处理带参数的宏（优先级更高）
+            processed_content = re.sub(pattern_with_params, replace_with_params, processed_content)
+            
+            # 再处理简单宏
+            processed_content = re.sub(pattern_simple, replace_with_spaces, processed_content)
         
         logger.debug(f"Preprocessed content to remove macros: {api_macros}")
         return processed_content
