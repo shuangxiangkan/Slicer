@@ -157,7 +157,9 @@ if __name__ == "__main__":
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/magic/magic.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/pcre2/pcre2.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/openexr/openexr.yaml"
-    config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/hdf5/hdf5.yaml"
+    # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/hdf5/hdf5.yaml"
+    # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cgltf/cgltf.yaml"
+    config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/StormLib/StormLib.yaml"
     
     library_type = "static"  # "static", "shared"
     

@@ -1,0 +1,107 @@
+# MPQ Archive Dictionary for Fuzzing
+
+# MPQ Header Magic
+"MPQ\x1A"
+"MPQ\x1B"
+
+# Common MPQ signatures
+"\x4D\x50\x51\x1A"
+"\x4D\x50\x51\x1B"
+
+# File extensions commonly found in MPQ archives
+".wav"
+".mp3"
+".txt"
+".ini"
+".exe"
+".dll"
+".bmp"
+".tga"
+".pcx"
+".smk"
+".bik"
+
+# Common MPQ file names
+"(listfile)"
+"(attributes)"
+"(signature)"
+"(user data)"
+
+# Compression types
+"PKWARE"
+"HUFFMAN"
+"ZLIB"
+"BZIP2"
+"LZMA"
+"SPARSE"
+"ADPCM"
+
+# Common values
+"\x00\x00\x00\x00"
+"\xFF\xFF\xFF\xFF"
+"\x01\x00\x00\x00"
+"\x02\x00\x00\x00"
+"\x04\x00\x00\x00"
+"\x08\x00\x00\x00"
+"\x10\x00\x00\x00"
+"\x20\x00\x00\x00"
+"\x40\x00\x00\x00"
+"\x80\x00\x00\x00"
+
+# Block sizes
+"\x00\x02\x00\x00"
+"\x00\x04\x00\x00"
+"\x00\x08\x00\x00"
+"\x00\x10\x00\x00"
+"\x00\x20\x00\x00"
+
+# Hash table sizes
+"\x00\x01\x00\x00"
+"\x00\x02\x00\x00"
+"\x00\x04\x00\x00"
+"\x00\x08\x00\x00"
+"\x00\x10\x00\x00"
+
+# Locale IDs
+"\x00\x00"
+"\x09\x04"
+"\x07\x04"
+"\x0C\x04"
+"\x16\x04"
+
+# Platform IDs
+"\x00\x00\x00\x00"
+"\x01\x00\x00\x00"
+"\x02\x00\x00\x00"
+
+# Archive flags
+"MPQ_FILE_IMPLODE"
+"MPQ_FILE_COMPRESS"
+"MPQ_FILE_ENCRYPTED"
+"MPQ_FILE_FIX_KEY"
+"MPQ_FILE_PATCH_FILE"
+"MPQ_FILE_SINGLE_UNIT"
+"MPQ_FILE_DELETE_MARKER"
+"MPQ_FILE_SECTOR_CRC"
+"MPQ_FILE_EXISTS"
+
+# Search scopes
+"MPQ_SEARCH_CURRENT_ONLY"
+"MPQ_SEARCH_ALL_SUBARCHIVES"
+
+# Open flags
+"MPQ_OPEN_NO_LISTFILE"
+"MPQ_OPEN_NO_ATTRIBUTES"
+"MPQ_OPEN_NO_HEADER_SEARCH"
+"MPQ_OPEN_FORCE_MPQ_V1"
+"MPQ_OPEN_CHECK_SECTOR_CRC"
+"MPQ_OPEN_READ_ONLY"
+
+# Create flags
+"MPQ_CREATE_LISTFILE"
+"MPQ_CREATE_ATTRIBUTES"
+"MPQ_CREATE_SIGNATURE"
+"MPQ_CREATE_ARCHIVE_V1"
+"MPQ_CREATE_ARCHIVE_V2"
+"MPQ_CREATE_ARCHIVE_V3"
+"MPQ_CREATE_ARCHIVE_V4"

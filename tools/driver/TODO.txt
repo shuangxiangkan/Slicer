@@ -10,6 +10,11 @@
 需要检查的：
 1. hdf5的hdf5.yaml没检查对不对
 
+yaml的头文件设置需要区分：
+1. 库解析是的所有头文件
+2. harness中包含的头文件
+
+文档是不是可以用doc/或者dock/*的形式来处理
 
 
 Crach Check:
@@ -17,7 +22,7 @@ Crach Check:
 1. cJSON已完成
 2. libmagic已完成
 3. libucl已完成 🪲
-4. c-ares已完成 🪲
+4. c-ares已完成 
 5. zlib已完成
 6. libpcap已完成
 7. lcms已完成 🪲
