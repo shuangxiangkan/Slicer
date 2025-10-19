@@ -10,7 +10,10 @@ compiler:
   CXX_FUZZ: "afl-clang-fast++"
 
 headers:           # required, header and source files for API extraction, relative to library root
-  - "src/*.h"
+  # 只包含公共API头文件，确保只提取真正的公共API
+  - "src/H5Dpublic.h"     # 数据集API
+  - "src/H5Fpublic.h"     # 错误处理API
+
 header_include:    # required, header file name for #include in harness prompts
   - "hdf5.h"
 header_folder:     # required, directory containing header files for compilation, relative to library root
@@ -69,18 +72,17 @@ driver_build:
   compiler:             # 编译器配置 (通常使用AFL++的插桩编译器)
     - "{CC_FUZZ}"        # 示例: afl-clang-fast, afl-gcc
   extra_flags:          # 库特定的编译标志 (预处理器定义、优化选项等)
+    - "-I/home/kansx/SVF-Tools/Slicer/tools/driver/Libraries/hdf5/src"
+    - "-I/home/kansx/SVF-Tools/Slicer/tools/driver/Libraries/hdf5/build/src"  # For H5pubconf.h
+    - "-I/home/kansx/SVF-Tools/Slicer/tools/driver/Libraries/hdf5/src/H5FDsubfiling"  # For H5FDsubfiling.h
     - "-lz"              # HDF5 requires zlib
     - "-lm"              # Math library
 
 api_selection:
   api_prefix:      # required - HDF5 API functions typically start with H5
     - "H5"
-  api_macros:           # required - Look for HDF5 API patterns
-    - "H5_DLL"         # HDF5 public API marker
-    - "HDFAPI"         # Alternative API marker
-    - "H5TOOLS_DLL"    # Tools API marker
-  exclude:            # optional - Exclude internal/private functions
-    - ""            # Private functions usually start with H5_
+  api_macros:           # required - API标记宏，用于识别导出的API函数
+    - "H5_DLL"        # HDF5核心库的API导出标记
 
 documentation:       # optional
   target_files:      # optional, specific documentation files to analyze
