@@ -96,16 +96,47 @@ class ConfigParser:
         }
     
     def get_headers(self) -> List[str]:
-        """Get header files list"""
+        """Get header files list (for API extraction and source analysis)
+        
+        Returns:
+            List of header file paths relative to library directory
+        """
         return self._config_data.get('headers', [])
+    
+    def get_header_include(self) -> List[str]:
+        """Get header file names for #include statements in harness
+        
+        Returns:
+            List of header file names (without path) for #include directives
+        """
+        return self._config_data.get('header_include', [])
+    
+    def get_header_folder(self) -> List[str]:
+        """Get header folder paths for compilation
+        
+        Returns:
+            List of header folder paths relative to library directory for -I flags
+        """
+        return self._config_data.get('header_folder', [])
     
     def get_library_name(self) -> str:
         """Get library name"""
         return self._config_data['library']['name']
     
     def get_include_headers(self) -> List[str]:
-        """Get include headers for fuzz harness"""
-        return self.get_headers()
+        """Get include headers for fuzz harness (backward compatibility)
+        
+        Returns:
+            List of header file names for #include directives
+        """
+        # 优先使用新的header_include字段，如果不存在则回退到headers字段
+        header_include = self.get_header_include()
+        if header_include:
+            return header_include
+        
+        # 向后兼容：从headers字段提取文件名
+        headers = self.get_headers()
+        return [header.split('/')[-1] if '/' in header else header for header in headers]
     
     def get_source_dirs(self) -> List[str]:
         """Get source directories list"""
@@ -291,7 +322,7 @@ class ConfigParser:
         return str(output_dir)
     
     def get_header_file_paths(self) -> List[str]:
-        """Get absolute paths of header files
+        """Get absolute paths of header files (backward compatibility)
         
         Returns:
             List of absolute paths to header files
@@ -309,6 +340,99 @@ class ConfigParser:
                 header_paths.append(os.path.abspath(header_path))
         
         return header_paths
+
+    def get_compilation_header_file_paths(self) -> List[str]:
+        """Get absolute paths of header files for compilation verification
+        
+        This method correctly uses header_include + header_folder fields
+        instead of the headers field which is used for API extraction.
+        
+        Returns:
+            List of absolute paths to header files that should exist for compilation
+        """
+        header_includes = self.get_header_include()
+        header_folders = self.get_header_folder()
+        library_dir = self.get_target_library_dir()
+        
+        header_paths = []
+        
+        # Combine each header_include with each header_folder
+        for header_folder in header_folders:
+            for header_include in header_includes:
+                if os.path.isabs(header_folder):
+                    folder_path = header_folder
+                else:
+                    # Relative to library directory
+                    folder_path = os.path.join(library_dir, header_folder)
+                
+                # Combine folder path with header file name
+                header_path = os.path.join(folder_path, header_include)
+                header_paths.append(os.path.abspath(header_path))
+        
+        return header_paths
+    
+    def get_header_folder_paths(self) -> List[str]:
+        """Get absolute paths of header folders for compilation
+        
+        Returns:
+            List of absolute paths to header folders for -I flags
+        """
+        header_folders = self.get_header_folder()
+        library_dir = self.get_target_library_dir()
+        
+        folder_paths = []
+        for folder in header_folders:
+            if os.path.isabs(folder):
+                folder_paths.append(folder)
+            else:
+                # 相对于库目录的路径
+                folder_path = os.path.join(library_dir, folder)
+                folder_paths.append(os.path.abspath(folder_path))
+        
+        return folder_paths
+    
+    def get_expanded_header_file_paths(self) -> List[str]:
+        """Get expanded absolute paths of header files for API extraction
+        
+        This method expands wildcard patterns in the headers field to actual file paths.
+        
+        Returns:
+            List of absolute paths to header files (expanded from wildcards)
+        """
+        import glob
+        
+        header_files = self.get_headers()
+        library_dir = self.get_target_library_dir()
+        
+        expanded_paths = []
+        
+        for header_file in header_files:
+            # 构建完整路径
+            if os.path.isabs(header_file):
+                full_path = header_file
+            else:
+                full_path = os.path.join(library_dir, header_file)
+            
+            # 检查是否包含通配符
+            if '*' in header_file or '?' in header_file:
+                # 使用glob解析通配符
+                matched_files = glob.glob(full_path, recursive=True)
+                for matched_file in matched_files:
+                    if os.path.isfile(matched_file) and matched_file.endswith('.h'):
+                        expanded_paths.append(os.path.abspath(matched_file))
+            elif os.path.isdir(full_path):
+                # 如果是目录，查找其中的所有头文件
+                for root, dirs, files in os.walk(full_path):
+                    for file in files:
+                        if file.endswith('.h'):
+                            file_path = os.path.join(root, file)
+                            expanded_paths.append(os.path.abspath(file_path))
+            elif os.path.isfile(full_path):
+                # 如果是单个文件且是头文件
+                if full_path.endswith('.h'):
+                    expanded_paths.append(os.path.abspath(full_path))
+        
+        return expanded_paths
     
     def get_library_file_path(self, library_type: str = "static") -> str:
         """Get absolute path of compiled library file

@@ -24,7 +24,8 @@ class CompileUtils:
         # 获取编译配置
         if self.config_parser:
             self.driver_config = self.config_parser.get_driver_build_config()
-            self.header_paths = self.config_parser.get_header_file_paths()
+            # 使用新的header_folder字段获取头文件目录路径用于编译
+            self.header_paths = self.config_parser.get_header_folder_paths()
             self.library_path = self.config_parser.get_library_file_path("static")
         else:
             self.driver_config = None
@@ -55,11 +56,11 @@ class CompileUtils:
             str(harness_file)
         ]
         
-        # 添加头文件路径
-        for header_path in self.header_paths:
-            header_dir = str(Path(header_path).parent)
-            if header_dir not in ['-I' + arg for arg in compile_cmd if arg.startswith('-I')]:
-                compile_cmd.extend(['-I', header_dir])
+        # 添加头文件目录路径 - 现在header_paths直接包含目录路径
+        for header_dir in self.header_paths:
+            header_dir_str = str(header_dir)
+            if header_dir_str not in [arg for i, arg in enumerate(compile_cmd) if i > 0 and compile_cmd[i-1] == '-I']:
+                compile_cmd.extend(['-I', header_dir_str])
         
         # 添加库文件路径
         if self.library_path:

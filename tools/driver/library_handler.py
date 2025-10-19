@@ -86,8 +86,8 @@ class LibraryHandler:
             if api_prefixes:
                 log_info(f"限制函数前缀: {', '.join(api_prefixes)}")
             
-            # 获取头文件配置
-            header_files = analyzer.config_parser.get_header_files() if analyzer.config_parser else None
+            # 获取头文件配置 - 使用展开的headers字段用于API提取
+            header_files = self.config_parser.get_expanded_header_file_paths() if self.config_parser else None
             
             # 直接使用RepoAnalyzer的get_api_functions方法获取API函数
             api_functions = analyzer.get_api_functions(
@@ -982,26 +982,26 @@ class LibraryHandler:
         
         log_success(f"Library file verified: {library_abs_path}")
         
-        # 验证头文件路径
+        # 验证头文件路径 (使用编译时需要的头文件路径)
         try:
-            header_file_paths = self.config_parser.get_header_file_paths()
+            header_file_paths = self.config_parser.get_compilation_header_file_paths()
             if header_file_paths:
                 for header_abs_path in header_file_paths:
                     if not os.path.exists(header_abs_path):
                         if is_precheck:
-                            log_info(f"Header file not found (will compile): {header_abs_path}")
+                            log_info(f"Compilation header file not found (will compile): {header_abs_path}")
                         else:
-                            log_error(f"Header file not found: {header_abs_path}")
-                            log_error("Please check your configuration file - the header file path may be incorrect")
+                            log_error(f"Compilation header file not found: {header_abs_path}")
+                            log_error("Please check your configuration file - the header_include and header_folder paths may be incorrect")
                         return False
                     
-                    log_success(f"Header file verified: {header_abs_path}")
+                    log_success(f"Compilation header file verified: {header_abs_path}")
         except Exception as e:
             if is_precheck:
-                log_info(f"Failed to get header file paths from configuration: {e}")
+                log_info(f"Failed to get compilation header file paths from configuration: {e}")
             else:
-                log_error(f"Failed to get header file paths from configuration: {e}")
-                log_error("Please check your configuration file for correct header file settings")
+                log_error(f"Failed to get compilation header file paths from configuration: {e}")
+                log_error("Please check your configuration file for correct header_include and header_folder settings")
             return False
         
         log_success(f"All build outputs verified successfully for {library_type} library")
