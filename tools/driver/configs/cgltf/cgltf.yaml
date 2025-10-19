@@ -1,0 +1,118 @@
+library:
+  name: "cgltf"
+  version: "1.4"
+  repo_url: "https://github.com/jkuhlmann/cgltf.git"
+  language: "c"
+
+# compiler configuration
+compiler:
+  CC_FUZZ: "afl-clang-fast"
+  CXX_FUZZ: "afl-clang-fast++"
+
+headers:           # required, header and source files for API extraction, relative to library root
+  - "cgltf.h"
+
+header_include:    # required, header file name for #include in harness prompts
+  - "cgltf.h"
+  - "cgltf_write.h"
+
+header_folder:     # required, header directories for compilation include paths, relative to library root
+  - "."            # cgltf.h is in the root directory
+
+source_dirs:       # required，folder or files, 
+  - "cgltf.h"            
+  - "cgltf_write.h"       
+
+exclude_dirs:      # optional, `source_dirs` and `exclude_dirs` can only be specified one at a time; they cannot be used simultaneously.
+  - ""
+
+static_build:      # required
+  static_lib_name: "libcgltf.a"
+  output: "build/{static_lib_name}"
+  command: |
+    rm -rf cgltf && \
+    git clone --depth=1 {repo_url} cgltf && \
+    cd cgltf && \
+    echo '/* jsmn is embedded in cgltf.h */' > jsmn.h && \
+    mkdir -p build && \
+    cd build && \
+    echo '#define CGLTF_IMPLEMENTATION' > cgltf_impl.c && \
+    echo '#define CGLTF_WRITE_IMPLEMENTATION' >> cgltf_impl.c && \
+    echo '#include "../cgltf_write.h"' >> cgltf_impl.c && \
+    {CC_FUZZ} -c cgltf_impl.c -o cgltf_impl.o -I.. && \
+    ar rcs {static_lib_name} cgltf_impl.o
+
+shared_build:     # optional
+  shared_lib_name: "libcgltf.so"
+  output: "build/{shared_lib_name}"
+  command: |
+    rm -rf cgltf && \
+    git clone --depth=1 {repo_url} cgltf && \
+    cd cgltf && \
+    echo '/* jsmn is embedded in cgltf.h */' > jsmn.h && \
+    mkdir -p build && \
+    cd build && \
+    echo '#define CGLTF_IMPLEMENTATION' > cgltf_impl.c && \
+    echo '#define CGLTF_WRITE_IMPLEMENTATION' >> cgltf_impl.c && \
+    echo '#include "../cgltf_write.h"' >> cgltf_impl.c && \
+    {CC_FUZZ} -shared -fPIC cgltf_impl.c -o {shared_lib_name} -I..
+
+# driver_build: 配置harness编译参数
+# 用于指定编译API harness时需要的编译器、依赖库和特殊标志
+# config_parser.py会读取这些配置并动态构建完整的编译命令
+driver_build:
+  compiler:             # 编译器配置 (通常使用AFL++的插桩编译器)
+    - "{CC_FUZZ}"        # 示例: afl-clang-fast, afl-gcc
+  extra_flags:          # 库特定的编译标志 (预处理器定义、优化选项等)
+    - ""
+
+api_selection:
+  api_prefix:      # required
+    - "cgltf_load_buffer_base64"
+    - "cgltf_decode_string"
+    - "cgltf_decode_uri"
+    - "cgltf_validate"
+    - "cgltf_free"
+    - "cgltf_node_transform_local"
+    - "cgltf_node_transform_world"
+    - "cgltf_buffer_view_data"
+    - "cgltf_find_accessor"
+    - "cgltf_accessor_read_float"
+    - "cgltf_accessor_read_uint"
+    - "cgltf_accessor_read_index"
+    - "cgltf_num_components"
+    - "cgltf_component_size"
+    - "cgltf_calc_size"
+    - "cgltf_accessor_unpack_floats"
+    - "cgltf_accessor_unpack_indices"
+    - "cgltf_copy_extras_json"
+    - "cgltf_mesh_index"
+    - "cgltf_material_index"
+    - "cgltf_accessor_index"
+    - "cgltf_buffer_view_index"
+    - "cgltf_buffer_index"
+    - "cgltf_image_index"
+    - "cgltf_texture_index"
+    - "cgltf_sampler_index"
+    - "cgltf_skin_index"
+    - "cgltf_camera_index"
+    - "cgltf_light_index"
+    - "cgltf_node_index"
+    - "cgltf_scene_index"
+    - "cgltf_animation_index"
+    - "cgltf_animation_sampler_index"
+    - "cgltf_animation_channel_index"
+
+  api_macros:           # required
+    - ""              # cgltf doesn't use specific API macros
+  exclude:              # optional, exclude internal or problematic functions
+    - ""  # validation functions might be complex for fuzzing
+
+documentation:       # optional
+  target_files:      # optional, specific documentation files to analyze
+    - "README.md"
+
+# fuzzing configuration
+fuzzing:
+  seeds_dir: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cgltf/seeds"  # required, absolute path to seeds directory
+  dictionary_file: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cgltf/gltf.dict"  # optional, absolute path to dictionary file
