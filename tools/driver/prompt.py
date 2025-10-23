@@ -76,6 +76,10 @@ class PromptGenerator:
 {language_requirements}
 
 Please use the standard Libfuzzer entry function: `{entry_function}` to generate 1 complete {code_style} fuzz harness, including all necessary header files, function implementations, and error handling. The code should be directly usable for Libfuzzer fuzzing tests.
+
+## IMPORTANT: String Input Handling
+
+**Critical**: C library functions expect null-terminated strings, but fuzzer's raw input data is NOT null-terminated. Always ensure string parameters (char*, const char*) are properly null-terminated to avoid false-positive crashes that aren't real bugs.
 """
         
         return prompt
@@ -340,6 +344,11 @@ Please analyze the compilation error carefully and generate a CORRECTED {code_st
 3. Handle any missing function declarations or definitions
 4. Correct any syntax or linking issues
 5. Make sure the harness is compatible with the target library
+6. **CRITICAL**: If the API involves string parameters, ensure proper null-termination of input data (see string handling practices below)
+
+## IMPORTANT: String Input Handling
+
+**Critical**: C library functions expect null-terminated strings, but fuzzer's raw input data is NOT null-terminated. Always ensure string parameters (char*, const char*) are properly null-terminated to avoid false-positive crashes that aren't real bugs.
 
 Generate ONLY the corrected complete {code_style} code that will compile successfully.
 """
