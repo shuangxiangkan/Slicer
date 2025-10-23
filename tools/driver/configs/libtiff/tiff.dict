@@ -1,0 +1,73 @@
+# TIFF format dictionary for fuzzing
+# TIFF magic numbers
+"II*\x00"
+"MM\x00*"
+
+# TIFF tags (common ones)
+"\x00\xfe"  # NewSubfileType
+"\x01\x00"  # ImageWidth
+"\x01\x01"  # ImageLength
+"\x01\x02"  # BitsPerSample
+"\x01\x03"  # Compression
+"\x01\x06"  # PhotometricInterpretation
+"\x01\x11"  # StripOffsets
+"\x01\x15"  # SamplesPerPixel
+"\x01\x16"  # RowsPerStrip
+"\x01\x17"  # StripByteCounts
+"\x01\x1a"  # XResolution
+"\x01\x1b"  # YResolution
+"\x01\x1c"  # PlanarConfiguration
+"\x01\x28"  # ResolutionUnit
+
+# TIFF data types
+"\x01\x00"  # BYTE
+"\x02\x00"  # ASCII
+"\x03\x00"  # SHORT
+"\x04\x00"  # LONG
+"\x05\x00"  # RATIONAL
+
+# Common compression values
+"\x01\x00"  # No compression
+"\x02\x00"  # CCITT Group 3
+"\x03\x00"  # CCITT Group 4
+"\x05\x00"  # LZW
+"\x06\x00"  # JPEG (old)
+"\x07\x00"  # JPEG
+"\x08\x00"  # Deflate
+
+# Photometric interpretation values
+"\x00\x00"  # WhiteIsZero
+"\x01\x00"  # BlackIsZero
+"\x02\x00"  # RGB
+"\x03\x00"  # Palette
+"\x04\x00"  # Transparency mask
+
+# Common strings
+"TIFF"
+"tiff"
+"image"
+"width"
+"height"
+"compression"
+"photometric"
+"resolution"
+
+# File extensions
+".tif"
+".tiff"
+".TIF"
+".TIFF"
+
+# Error strings
+"error"
+"warning"
+"invalid"
+"corrupt"
+"truncated"
+
+# Memory-related
+"malloc"
+"free"
+"buffer"
+"overflow"
+"underflow"
