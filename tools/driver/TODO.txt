@@ -16,12 +16,12 @@ prompt 中需要加上如果输入的是字符串，需要保证以null结尾的
 Crach Check:
 
 1. cJSON已完成 | fuzz 一小时check完成
-2. libmagic已完成
+2. libmagic已完成 | fuzz 一小时check完成
 3. libucl已完成 🪲
-4. c-ares已完成 
+4. c-ares已完成 | fuzz 一小时check完成
 5. zlib已完成 | fuzz 一小时check完成
-6. libpcap已完成
-7. lcms已完成 🪲
+6. libpcap已完成 | fuzz 一小时check完成
+7. lcms已完成 | fuzz 一小时check完成, 有2个很大概率的🪲，但是还没有检查
 8. pcre2已完成
 9. hdf5已完成，但是感觉有问题，是不是需要重新generation一下
 10. cgltf已完成
