@@ -16,7 +16,7 @@ try:
     # 获取当前文件所在目录的.env文件
     env_path = Path(__file__).parent / '.env'
     if env_path.exists():
-        load_dotenv(env_path)
+        load_dotenv(env_path, override=True)  # override=True 让.env文件中的值覆盖环境变量
     else:
         raise FileNotFoundError(f".env文件不存在: {env_path}")
 except ImportError:
@@ -55,6 +55,10 @@ class LLMConfig:
         env_path = Path(__file__).parent / '.env'
         if not env_path.exists():
             raise FileNotFoundError(f".env文件不存在: {env_path}")
+        
+        # 重新加载.env文件，覆盖环境变量
+        from dotenv import load_dotenv
+        load_dotenv(env_path, override=True)
         
         # 从.env文件读取配置，不提供默认值，确保所有配置都在.env中定义
         config = cls()
