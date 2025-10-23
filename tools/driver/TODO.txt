@@ -10,19 +10,19 @@
 需要检查的：
 1. hdf5的hdf5.yaml没检查对不对
 
-yaml的头文件设置需要区分：
-1. 库解析是的所有头文件
-2. harness中包含的头文件
-
-文档是不是可以用doc/或者dock/*的形式来处理
+prompt 中需要加上如果输入的是字符串，需要保证以null结尾的字符串
 
 
 Crach Check:
 
-1. cJSON已完成
+1. cJSON已完成 | fuzz 一小时check完成
 2. libmagic已完成
 3. libucl已完成 🪲
 4. c-ares已完成 
-5. zlib已完成
+5. zlib已完成 | fuzz 一小时check完成
 6. libpcap已完成
 7. lcms已完成 🪲
+8. pcre2已完成
+9. hdf5已完成，但是感觉有问题，是不是需要重新generation一下
+10. cgltf已完成
+11. StormLib 已完成
