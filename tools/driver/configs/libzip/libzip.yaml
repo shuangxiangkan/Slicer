@@ -1,0 +1,104 @@
+library:
+  name: "libzip"
+  version: "1.11.4"
+  repo_url: "https://github.com/nih-at/libzip.git"
+  language: "c"
+
+# compiler configuration
+compiler:
+  CC_FUZZ: "afl-clang-fast"
+  CXX_FUZZ: "afl-clang-fast++"
+
+headers:           # required, header and source files for API extraction, relative to library root
+  - "lib/zip.h"
+
+header_include:    # required, header file name for #include in harness prompts
+  - "zip.h"
+
+header_folder:     # required, header directories for compilation include paths, relative to library root
+  - "lib"          # zip.h is in the lib directory
+
+source_dirs:       # required，folder or files, 
+  - "lib"          # All source files are in lib directory
+
+exclude_dirs:      # optional, `source_dirs` and `exclude_dirs` can only be specified one at a time; they cannot be used simultaneously.
+  - ""
+
+static_build:      # required
+  static_lib_name: "libzip.a"
+  output: "build/lib/{static_lib_name}"
+  command: |
+    rm -rf libzip && \
+    git clone {repo_url} libzip && \
+    cd libzip && \
+    mkdir -p build && cd build && \
+    CC={CC_FUZZ} cmake .. \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_SHARED_LIBS=OFF \
+      -DBUILD_TOOLS=OFF \
+      -DBUILD_REGRESS=OFF \
+      -DBUILD_OSSFUZZ=OFF \
+      -DBUILD_EXAMPLES=OFF \
+      -DBUILD_DOC=OFF \
+      -DENABLE_COMMONCRYPTO=OFF \
+      -DENABLE_GNUTLS=OFF \
+      -DENABLE_MBEDTLS=OFF \
+      -DENABLE_OPENSSL=OFF \
+      -DENABLE_WINDOWS_CRYPTO=OFF \
+      -DENABLE_BZIP2=OFF \
+      -DENABLE_LZMA=OFF \
+      -DENABLE_ZSTD=OFF && \
+    make -j$(nproc)
+
+shared_build:     # optional
+  shared_lib_name: "libzip.so"
+  output: "build/lib/{shared_lib_name}"
+  command: |
+    rm -rf libzip && \
+    git clone {repo_url} libzip && \
+    cd libzip && \
+    mkdir -p build && cd build && \
+    CC={CC_FUZZ} cmake .. \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_SHARED_LIBS=ON \
+      -DBUILD_TOOLS=OFF \
+      -DBUILD_REGRESS=OFF \
+      -DBUILD_OSSFUZZ=OFF \
+      -DBUILD_EXAMPLES=OFF \
+      -DBUILD_DOC=OFF \
+      -DENABLE_COMMONCRYPTO=OFF \
+      -DENABLE_GNUTLS=OFF \
+      -DENABLE_MBEDTLS=OFF \
+      -DENABLE_OPENSSL=OFF \
+      -DENABLE_WINDOWS_CRYPTO=OFF \
+      -DENABLE_BZIP2=OFF \
+      -DENABLE_LZMA=OFF \
+      -DENABLE_ZSTD=OFF && \
+    make -j$(nproc)
+
+# driver_build: 配置harness编译参数
+# 用于指定编译API harness时需要的编译器、依赖库和特殊标志
+# config_parser.py会读取这些配置并动态构建完整的编译命令
+driver_build:
+  compiler:             # 编译器配置 (通常使用AFL++的插桩编译器)
+    - "{CC_FUZZ}"        # 示例: afl-clang-fast, afl-gcc
+  extra_flags:          # 库特定的编译标志 (预处理器定义、优化选项等)
+    - "-lz"              # 链接zlib库
+
+api_selection:
+  api_prefix:      # required
+    - "zip_"
+  api_macros:           # required
+    - "ZIP_EXTERN"
+  exclude:         # optional, exclude internal/error functions
+    - ""
+
+documentation:       # optional
+  target_files:      # optional, specific documentation files to analyze
+    - "README.md"
+    - "API-CHANGES.md"
+
+# fuzzing configuration
+fuzzing:
+  seeds_dir: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/libzip/seeds"  # required, absolute path to seeds directory
+  dictionary_file: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/libzip/zip.dict"  # optional, absolute path to dictionary file

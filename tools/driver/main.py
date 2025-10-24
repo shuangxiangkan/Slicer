@@ -160,7 +160,8 @@ if __name__ == "__main__":
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/hdf5/hdf5.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cgltf/cgltf.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/StormLib/StormLib.yaml"
-    config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/libtiff/libtiff.yaml"
+    # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/libtiff/libtiff.yaml"
+    config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/libzip/libzip.yaml"
     
     library_type = "static"  # "static", "shared"
     

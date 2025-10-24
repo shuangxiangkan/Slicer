@@ -1,0 +1,94 @@
+# ZIP format magic numbers and signatures
+"PK"
+"PK\x03\x04"
+"PK\x01\x02"
+"PK\x05\x06"
+"PK\x06\x06"
+"PK\x06\x07"
+"PK\x07\x08"
+
+# ZIP version numbers
+"\x14\x00"
+"\x0a\x00"
+"\x2d\x00"
+
+# Compression methods
+"\x00\x00"  # stored
+"\x08\x00"  # deflated
+"\x09\x00"  # deflate64
+"\x0c\x00"  # bzip2
+"\x0e\x00"  # lzma
+
+# General purpose bit flags
+"\x00\x00"
+"\x01\x00"  # encrypted
+"\x02\x00"
+"\x04\x00"
+"\x08\x00"  # data descriptor
+
+# Common file extensions
+".txt"
+".zip"
+".jar"
+".war"
+".ear"
+".apk"
+".docx"
+".xlsx"
+".pptx"
+
+# Common directory names
+"/"
+"META-INF/"
+"WEB-INF/"
+"classes/"
+"lib/"
+"res/"
+
+# Common file names
+"README"
+"LICENSE"
+"MANIFEST.MF"
+"index.html"
+"config.xml"
+
+# ZIP extra field IDs
+"\x01\x00"  # Zip64 extended information
+"\x0a\x00"  # NTFS extra field
+"\x54\x55"  # extended timestamp
+"\x75\x78"  # Unix extra field
+
+# Error strings and constants
+"zip_error"
+"zip_source"
+"zip_file"
+"zip_stat"
+
+# Common passwords for testing
+"password"
+"123456"
+"admin"
+"test"
+
+# File attributes
+"\x00\x00\x00\x00"
+"\x20\x00\x00\x00"  # archive bit
+"\x10\x00\x00\x00"  # directory bit
+
+# CRC32 values (common)
+"\x00\x00\x00\x00"
+"\xff\xff\xff\xff"
+
+# Size values
+"\x00\x00\x00\x00"
+"\xff\xff\xff\xff"
+
+# Date/time values
+"\x00\x00"
+"\xff\xff"
+
+# Memory-related
+"malloc"
+"free"
+"realloc"
+"calloc"
