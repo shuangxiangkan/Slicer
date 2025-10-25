@@ -1,0 +1,110 @@
+library:
+  name: "exiv2"
+  version: "1.00.0.9"
+  repo_url: "https://github.com/Exiv2/exiv2.git"
+  language: "cpp"
+
+# compiler configuration
+compiler:
+  CC_FUZZ: "afl-clang-fast"
+  CXX_FUZZ: "afl-clang-fast++"
+
+headers:           # required, header and source files for API extraction, relative to library root
+  - "include/exiv2/exiv2.hpp"
+  - "include/exiv2/image.hpp"
+  - "include/exiv2/exif.hpp"
+  - "include/exiv2/iptc.hpp"
+  - "include/exiv2/xmp_exiv2.hpp"
+  - "include/exiv2/basicio.hpp"
+
+header_include:    # required, header file name for #include in harness prompts
+  - "exiv2/exiv2.hpp"
+
+header_folder:     # required, header directories for compilation include paths, relative to library root
+  - "include"
+
+source_dirs:       # required，folder or files, 
+  - "include/exiv2"
+  - "src"
+
+exclude_dirs:      # optional, `source_dirs` and `exclude_dirs` can only be specified one at a time; they cannot be used simultaneously.
+  - ""
+
+static_build:      # required
+  static_lib_name: "libexiv2.a"
+  output: "build/{static_lib_name}"
+  command: |
+    rm -rf exiv2 && \
+    git clone {repo_url} exiv2 && \
+    cd exiv2 && \
+    mkdir -p build && cd build && \
+    CC={CC_FUZZ} CXX={CXX_FUZZ} cmake .. \
+      -DBUILD_SHARED_LIBS=OFF \
+      -DEXIV2_BUILD_SAMPLES=OFF \
+      -DEXIV2_BUILD_EXIV2_COMMAND=OFF \
+      -DEXIV2_BUILD_UNIT_TESTS=OFF \
+      -DEXIV2_BUILD_FUZZ_TESTS=OFF \
+      -DEXIV2_BUILD_DOC=OFF \
+      -DEXIV2_ENABLE_PNG=ON \
+      -DEXIV2_ENABLE_XMP=ON \
+      -DEXIV2_ENABLE_WEBREADY=OFF \
+      -DEXIV2_ENABLE_CURL=OFF \
+      -DEXIV2_ENABLE_NLS=OFF \
+      -DEXIV2_ENABLE_VIDEO=ON \
+      -DEXIV2_ENABLE_BMFF=ON \
+      -DEXIV2_ENABLE_BROTLI=OFF \
+      -DEXIV2_ENABLE_INIH=OFF && \
+    make -j$(nproc)
+
+shared_build:     # optional
+  shared_lib_name: "libexiv2.so"
+  output: "build/{shared_lib_name}"
+  command: |
+    rm -rf exiv2 && \
+    git clone {repo_url} exiv2 && \
+    cd exiv2 && \
+    mkdir -p build && cd build && \
+    CC={CC_FUZZ} CXX={CXX_FUZZ} cmake .. \
+      -DBUILD_SHARED_LIBS=ON \
+      -DEXIV2_BUILD_SAMPLES=OFF \
+      -DEXIV2_BUILD_EXIV2_COMMAND=OFF \
+      -DEXIV2_BUILD_UNIT_TESTS=OFF \
+      -DEXIV2_BUILD_FUZZ_TESTS=OFF \
+      -DEXIV2_BUILD_DOC=OFF \
+      -DEXIV2_ENABLE_PNG=ON \
+      -DEXIV2_ENABLE_XMP=ON \
+      -DEXIV2_ENABLE_WEBREADY=OFF \
+      -DEXIV2_ENABLE_CURL=OFF \
+      -DEXIV2_ENABLE_NLS=OFF \
+      -DEXIV2_ENABLE_VIDEO=ON \
+      -DEXIV2_ENABLE_BMFF=ON \
+      -DEXIV2_ENABLE_BROTLI=OFF \
+      -DEXIV2_ENABLE_INIH=OFF && \
+    make -j$(nproc)
+
+# driver_build: 配置harness编译参数
+# 用于指定编译API harness时需要的编译器、依赖库和特殊标志
+# config_parser.py会读取这些配置并动态构建完整的编译命令
+driver_build:
+  compiler:             # 编译器配置 (通常使用AFL++的插桩编译器)
+    - "{CXX_FUZZ}"       # 使用C++编译器
+  extra_flags:          # 库特定的编译标志 (预处理器定义、优化选项等)
+    - "-lz"             # 链接zlib库 (PNG支持需要)
+    - "-lexpat"         # 链接expat库 (XMP支持需要)
+
+api_selection:
+  api_prefix:      # required
+    - "Exiv2::"
+    - "EXIV2API"
+  api_macros:           # required
+    - "EXIV2API"
+  exclude: []         # optional
+
+documentation:       # optional
+  target_files:      # optional, specific documentation files to analyze
+    - "README.md"
+
+# fuzzing configuration
+fuzzing:
+  seeds_dir: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/exiv2/seeds"  # required, absolute path to seeds directory
+  dictionary_file: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/exiv2/exiv2.dict"  # optional, absolute path to dictionary file

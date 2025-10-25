@@ -1,0 +1,191 @@
+# Image format magic numbers
+"\xff\xd8\xff"
+"\x89PNG\r\n\x1a\n"
+"GIF87a"
+"GIF89a"
+"BM"
+"II*\x00"
+"MM\x00*"
+"RIFF"
+"WEBP"
+"VP8 "
+"VP8L"
+"VP8X"
+
+# TIFF/EXIF tags
+"\x01\x00"
+"\x0e\x01"
+"\x0f\x01"
+"\x10\x01"
+"\x11\x01"
+"\x12\x01"
+"\x1a\x01"
+"\x1b\x01"
+
+# JPEG markers
+"\xff\xe0"
+"\xff\xe1"
+"\xff\xe2"
+"\xff\xed"
+"\xff\xee"
+"\xff\xdb"
+"\xff\xc0"
+"\xff\xc4"
+"\xff\xda"
+"\xff\xd9"
+
+# EXIF strings
+"Exif\x00\x00"
+"JFIF\x00"
+"Adobe"
+
+# XMP namespace
+"http://ns.adobe.com/xap/1.0/"
+"http://ns.adobe.com/xmp/note/"
+"http://ns.adobe.com/exif/1.0/"
+"http://ns.adobe.com/tiff/1.0/"
+"http://purl.org/dc/elements/1.1/"
+
+# IPTC strings
+"Photoshop 3.0"
+"8BIM"
+
+# Camera manufacturers
+"Canon"
+"Nikon"
+"Sony"
+"Olympus"
+"Panasonic"
+"Fujifilm"
+"Pentax"
+"Leica"
+"Hasselblad"
+"Mamiya"
+
+# Common EXIF values
+"sRGB"
+"Adobe RGB"
+"ProPhoto RGB"
+"Normal"
+"Fine"
+"RAW"
+"JPEG"
+
+# Date/time formats
+"YYYY:MM:DD HH:MM:SS"
+"2023:01:01 12:00:00"
+
+# GPS coordinates
+"GPS"
+"North"
+"South"
+"East"
+"West"
+
+# File extensions
+".jpg"
+".jpeg"
+".tiff"
+".tif"
+".png"
+".gif"
+".bmp"
+".webp"
+".cr2"
+".nef"
+".arw"
+".orf"
+".rw2"
+".dng"
+".xmp"
+
+# Error strings
+"Error"
+"Invalid"
+"Corrupted"
+"Unknown"
+"Not found"
+
+# Memory-related keywords
+"malloc"
+"free"
+"realloc"
+"calloc"
+"new"
+"delete"
+
+# Common sizes
+"1024"
+"2048"
+"4096"
+"8192"
+"65536"
+
+# Byte order marks
+"\xff\xfe"
+"\xfe\xff"
+"\xef\xbb\xbf"
+
+# XML/XMP elements
+"<?xml"
+"<x:xmpmeta"
+"<rdf:RDF"
+"<rdf:Description"
+"xmlns:"
+"rdf:about"
+
+# Video formats (for video support)
+"ftyp"
+"moov"
+"mdat"
+"uuid"
+"AVI "
+"RIFF"
+
+# Common metadata fields
+"Make"
+"Model"
+"DateTime"
+"Orientation"
+"XResolution"
+"YResolution"
+"Software"
+"Artist"
+"Copyright"
+"ImageWidth"
+"ImageLength"
+"BitsPerSample"
+"Compression"
+"PhotometricInterpretation"
+"StripOffsets"
+"SamplesPerPixel"
+"RowsPerStrip"
+"StripByteCounts"
+"PlanarConfiguration"
+
+# Color spaces
+"Uncalibrated"
+"sRGB"
+"AdobeRGB"
+
+# Flash modes
+"No Flash"
+"Flash"
+"Auto"
+"Red-eye"
+
+# Exposure modes
+"Manual"
+"Auto"
+"Aperture Priority"
+"Shutter Priority"
+"Program"
+
+# White balance
+"Auto"
+"Daylight"
+"Fluorescent"
+"Tungsten"
+"Flash"
+"Cloudy"
+"Shade"
