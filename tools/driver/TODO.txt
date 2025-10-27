@@ -9,8 +9,11 @@
 
 需要检查的：
 1. hdf5的hdf5.yaml没检查对不对
+2. exiv2没检查对不对也没有生成harness
+3. libical没检查对不对也没有生成harness
 
-prompt 中需要加上如果输入的是字符串，需要保证以null结尾的字符串
+prompt 中加上要避免API misuse
+而且模型是不是可以改成claude，这是虽然速度慢了一点，但是可以减少很多误报
 
 
 Crach Check:
@@ -21,8 +24,9 @@ Crach Check:
 4. c-ares已完成 | fuzz 一小时check完成
 5. zlib已完成 | fuzz 一小时check完成
 6. libpcap已完成 | fuzz 一小时check完成
-7. lcms已完成 | fuzz 一小时check完成, 有2个很大概率的🪲，但是还没有检查
-8. pcre2已完成
+7. lcms已完成 | fuzz 一小时check完成
+8. pcre2已完成 | fuzz 一小时check完成
 9. hdf5已完成，但是感觉有问题，是不是需要重新generation一下
 10. cgltf已完成
 11. StormLib 已完成
+12. libtiff harness没检查 | fuzz 一小时check完成
