@@ -150,12 +150,12 @@ def create_llm_client(provider: str = None, config: LLMConfig = None) -> BaseLLM
     if config is None:
         config = LLMConfig.from_env()
     
-    # 如果没有指定provider，自动选择可用的
+    # 如果没有指定provider，自动选择可用的（优先使用Claude）
     if provider is None:
-        if config.openai_api_key:
-            provider = 'openai'
-        elif config.claude_api_key:
+        if config.claude_api_key:
             provider = 'claude'
+        elif config.openai_api_key:
+            provider = 'openai'
         else:
             raise ValueError("No valid API key found. Please set OPENAI_API_KEY or CLAUDE_API_KEY.")
     
