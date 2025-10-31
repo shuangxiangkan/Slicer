@@ -1,0 +1,3357 @@
+{
+  "program_name": "11_many_branches",
+  "program_file": "11_many_branches.c",
+  "code_lines": 40,
+  "code": "int many_branches_test(int op, int a, int b, int c) {\n    int result = 0;\n    int temp = a;\n    \n    if (op == 1) {\n        result = temp + b;\n    } else if (op == 2) {\n        result = temp - b;\n    } else if (op == 3) {\n        result = temp * b;\n    } else if (op == 4) {\n        result = temp / b;\n    } else if (op == 5) {\n        result = temp % b;\n    } else if (op == 6) {\n        result = temp & b;\n    } else if (op == 7) {\n        result = temp | b;\n    } else if (op == 8) {\n        result = temp ^ b;\n    } else if (op == 9) {\n        result = temp << b;\n    } else if (op == 10) {\n        result = temp >> b;\n    } else {\n        result = 0;\n    }\n    \n    if (result > 0) {\n        if (c > 0) {\n            result = result + c;\n        } else {\n            result = result - c;\n        }\n    }\n    \n    return result;\n}\n\n",
+  "timestamp": "2025-10-31 22:56:34",
+  "graphs": {
+    "cfg": {
+      "graph": {
+        "graph_type": "CFG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 597100,
+            "type": "declaration",
+            "text": "int temp = a;",
+            "line": 3,
+            "defs": [
+              "temp"
+            ],
+            "uses": [
+              "a"
+            ]
+          },
+          {
+            "id": 480629,
+            "type": "if_statement",
+            "text": "if(op == 1)",
+            "line": 5,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 768579,
+            "type": "expression_statement",
+            "text": "result = temp + b;",
+            "line": 6,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 104648,
+            "type": "if_statement",
+            "text": "if(op == 2)",
+            "line": 7,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 441513,
+            "type": "expression_statement",
+            "text": "result = temp - b;",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 761773,
+            "type": "if_statement",
+            "text": "if(op == 3)",
+            "line": 9,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 385533,
+            "type": "expression_statement",
+            "text": "result = temp * b;",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 928567,
+            "type": "if_statement",
+            "text": "if(op == 4)",
+            "line": 11,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 23013,
+            "type": "expression_statement",
+            "text": "result = temp / b;",
+            "line": 12,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 192164,
+            "type": "if_statement",
+            "text": "if(op == 5)",
+            "line": 13,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 289340,
+            "type": "expression_statement",
+            "text": "result = temp % b;",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 358958,
+            "type": "if_statement",
+            "text": "if(op == 6)",
+            "line": 15,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 294948,
+            "type": "expression_statement",
+            "text": "result = temp & b;",
+            "line": 16,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 102049,
+            "type": "if_statement",
+            "text": "if(op == 7)",
+            "line": 17,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 416266,
+            "type": "expression_statement",
+            "text": "result = temp | b;",
+            "line": 18,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 255625,
+            "type": "if_statement",
+            "text": "if(op == 8)",
+            "line": 19,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 142065,
+            "type": "expression_statement",
+            "text": "result = temp ^ b;",
+            "line": 20,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 490597,
+            "type": "if_statement",
+            "text": "if(op == 9)",
+            "line": 21,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 395803,
+            "type": "expression_statement",
+            "text": "result = temp << b;",
+            "line": 22,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 575262,
+            "type": "if_statement",
+            "text": "if(op == 10)",
+            "line": 23,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 902161,
+            "type": "expression_statement",
+            "text": "result = temp >> b;",
+            "line": 24,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 663575,
+            "type": "expression_statement",
+            "text": "result = 0;",
+            "line": 26,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 195933,
+            "type": "if_statement",
+            "text": "if(result > 0)",
+            "line": 29,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 998256,
+            "type": "if_statement",
+            "text": "if(c > 0)",
+            "line": 30,
+            "defs": [],
+            "uses": [
+              "c"
+            ]
+          },
+          {
+            "id": 330519,
+            "type": "expression_statement",
+            "text": "result = result + c;",
+            "line": 31,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "c",
+              "result"
+            ]
+          },
+          {
+            "id": 683821,
+            "type": "expression_statement",
+            "text": "result = result - c;",
+            "line": 33,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "c",
+              "result"
+            ]
+          },
+          {
+            "id": 413696,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 37,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 118963,
+            "type": "function_definition",
+            "text": "int many_branches_test(int op, int a, int b, int c)",
+            "line": 1,
+            "defs": [
+              "c",
+              "a",
+              "b",
+              "op"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 118963,
+            "target_id": 908520,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 908520,
+            "target_id": 597100,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 597100,
+            "target_id": 480629,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 480629,
+            "target_id": 768579,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 480629,
+            "target_id": 104648,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 104648,
+            "target_id": 441513,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 104648,
+            "target_id": 761773,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 761773,
+            "target_id": 385533,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 761773,
+            "target_id": 928567,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 928567,
+            "target_id": 23013,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 928567,
+            "target_id": 192164,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 192164,
+            "target_id": 289340,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 192164,
+            "target_id": 358958,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 358958,
+            "target_id": 294948,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 358958,
+            "target_id": 102049,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 102049,
+            "target_id": 416266,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 102049,
+            "target_id": 255625,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 255625,
+            "target_id": 142065,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 255625,
+            "target_id": 490597,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 490597,
+            "target_id": 395803,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 490597,
+            "target_id": 575262,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 575262,
+            "target_id": 902161,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 575262,
+            "target_id": 663575,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 768579,
+            "target_id": 195933,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 441513,
+            "target_id": 195933,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 385533,
+            "target_id": 195933,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 23013,
+            "target_id": 195933,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 289340,
+            "target_id": 195933,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 294948,
+            "target_id": 195933,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 416266,
+            "target_id": 195933,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 142065,
+            "target_id": 195933,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 395803,
+            "target_id": 195933,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 902161,
+            "target_id": 195933,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 663575,
+            "target_id": 195933,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 195933,
+            "target_id": 998256,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 998256,
+            "target_id": 330519,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 998256,
+            "target_id": 683821,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 330519,
+            "target_id": 413696,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 683821,
+            "target_id": 413696,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 195933,
+            "target_id": 413696,
+            "label": "N",
+            "type": "CFG"
+          }
+        ],
+        "node_count": 29,
+        "edge_count": 40
+      },
+      "time": 0.0007863044738769531,
+      "success": true
+    },
+    "cdg": {
+      "graph": {
+        "graph_type": "CDG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 597100,
+            "type": "declaration",
+            "text": "int temp = a;",
+            "line": 3,
+            "defs": [
+              "temp"
+            ],
+            "uses": [
+              "a"
+            ]
+          },
+          {
+            "id": 480629,
+            "type": "if_statement",
+            "text": "if(op == 1)",
+            "line": 5,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 768579,
+            "type": "expression_statement",
+            "text": "result = temp + b;",
+            "line": 6,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 104648,
+            "type": "if_statement",
+            "text": "if(op == 2)",
+            "line": 7,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 441513,
+            "type": "expression_statement",
+            "text": "result = temp - b;",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 761773,
+            "type": "if_statement",
+            "text": "if(op == 3)",
+            "line": 9,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 385533,
+            "type": "expression_statement",
+            "text": "result = temp * b;",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 928567,
+            "type": "if_statement",
+            "text": "if(op == 4)",
+            "line": 11,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 23013,
+            "type": "expression_statement",
+            "text": "result = temp / b;",
+            "line": 12,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 192164,
+            "type": "if_statement",
+            "text": "if(op == 5)",
+            "line": 13,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 289340,
+            "type": "expression_statement",
+            "text": "result = temp % b;",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 358958,
+            "type": "if_statement",
+            "text": "if(op == 6)",
+            "line": 15,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 294948,
+            "type": "expression_statement",
+            "text": "result = temp & b;",
+            "line": 16,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 102049,
+            "type": "if_statement",
+            "text": "if(op == 7)",
+            "line": 17,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 416266,
+            "type": "expression_statement",
+            "text": "result = temp | b;",
+            "line": 18,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 255625,
+            "type": "if_statement",
+            "text": "if(op == 8)",
+            "line": 19,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 142065,
+            "type": "expression_statement",
+            "text": "result = temp ^ b;",
+            "line": 20,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 490597,
+            "type": "if_statement",
+            "text": "if(op == 9)",
+            "line": 21,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 395803,
+            "type": "expression_statement",
+            "text": "result = temp << b;",
+            "line": 22,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 575262,
+            "type": "if_statement",
+            "text": "if(op == 10)",
+            "line": 23,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 902161,
+            "type": "expression_statement",
+            "text": "result = temp >> b;",
+            "line": 24,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 663575,
+            "type": "expression_statement",
+            "text": "result = 0;",
+            "line": 26,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 195933,
+            "type": "if_statement",
+            "text": "if(result > 0)",
+            "line": 29,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 998256,
+            "type": "if_statement",
+            "text": "if(c > 0)",
+            "line": 30,
+            "defs": [],
+            "uses": [
+              "c"
+            ]
+          },
+          {
+            "id": 330519,
+            "type": "expression_statement",
+            "text": "result = result + c;",
+            "line": 31,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "c",
+              "result"
+            ]
+          },
+          {
+            "id": 683821,
+            "type": "expression_statement",
+            "text": "result = result - c;",
+            "line": 33,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "c",
+              "result"
+            ]
+          },
+          {
+            "id": 413696,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 37,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 118963,
+            "type": "function_definition",
+            "text": "int many_branches_test(int op, int a, int b, int c)",
+            "line": 1,
+            "defs": [
+              "c",
+              "a",
+              "b",
+              "op"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 102049,
+            "target_id": 255625,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 102049,
+            "target_id": 416266,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 575262,
+            "target_id": 902161,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 575262,
+            "target_id": 663575,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 998256,
+            "target_id": 330519,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 490597,
+            "target_id": 395803,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 490597,
+            "target_id": 575262,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 358958,
+            "target_id": 102049,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 928567,
+            "target_id": 192164,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 358958,
+            "target_id": 294948,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 104648,
+            "target_id": 441513,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 104648,
+            "target_id": 761773,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 192164,
+            "target_id": 358958,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 998256,
+            "target_id": 683821,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 761773,
+            "target_id": 928567,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 192164,
+            "target_id": 289340,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 480629,
+            "target_id": 768579,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 480629,
+            "target_id": 104648,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 928567,
+            "target_id": 23013,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 255625,
+            "target_id": 490597,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 195933,
+            "target_id": 998256,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 255625,
+            "target_id": 142065,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 761773,
+            "target_id": 385533,
+            "label": "",
+            "type": "CDG"
+          }
+        ],
+        "node_count": 30,
+        "edge_count": 23
+      },
+      "time": 0.0008614063262939453,
+      "success": true
+    },
+    "ddg": {
+      "graph": {
+        "graph_type": "DDG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 597100,
+            "type": "declaration",
+            "text": "int temp = a;",
+            "line": 3,
+            "defs": [
+              "temp"
+            ],
+            "uses": [
+              "a"
+            ]
+          },
+          {
+            "id": 480629,
+            "type": "if_statement",
+            "text": "if(op == 1)",
+            "line": 5,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 768579,
+            "type": "expression_statement",
+            "text": "result = temp + b;",
+            "line": 6,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 104648,
+            "type": "if_statement",
+            "text": "if(op == 2)",
+            "line": 7,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 441513,
+            "type": "expression_statement",
+            "text": "result = temp - b;",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 761773,
+            "type": "if_statement",
+            "text": "if(op == 3)",
+            "line": 9,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 385533,
+            "type": "expression_statement",
+            "text": "result = temp * b;",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 928567,
+            "type": "if_statement",
+            "text": "if(op == 4)",
+            "line": 11,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 23013,
+            "type": "expression_statement",
+            "text": "result = temp / b;",
+            "line": 12,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 192164,
+            "type": "if_statement",
+            "text": "if(op == 5)",
+            "line": 13,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 289340,
+            "type": "expression_statement",
+            "text": "result = temp % b;",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 358958,
+            "type": "if_statement",
+            "text": "if(op == 6)",
+            "line": 15,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 294948,
+            "type": "expression_statement",
+            "text": "result = temp & b;",
+            "line": 16,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 102049,
+            "type": "if_statement",
+            "text": "if(op == 7)",
+            "line": 17,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 416266,
+            "type": "expression_statement",
+            "text": "result = temp | b;",
+            "line": 18,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 255625,
+            "type": "if_statement",
+            "text": "if(op == 8)",
+            "line": 19,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 142065,
+            "type": "expression_statement",
+            "text": "result = temp ^ b;",
+            "line": 20,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 490597,
+            "type": "if_statement",
+            "text": "if(op == 9)",
+            "line": 21,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 395803,
+            "type": "expression_statement",
+            "text": "result = temp << b;",
+            "line": 22,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 575262,
+            "type": "if_statement",
+            "text": "if(op == 10)",
+            "line": 23,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 902161,
+            "type": "expression_statement",
+            "text": "result = temp >> b;",
+            "line": 24,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 663575,
+            "type": "expression_statement",
+            "text": "result = 0;",
+            "line": 26,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 195933,
+            "type": "if_statement",
+            "text": "if(result > 0)",
+            "line": 29,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 998256,
+            "type": "if_statement",
+            "text": "if(c > 0)",
+            "line": 30,
+            "defs": [],
+            "uses": [
+              "c"
+            ]
+          },
+          {
+            "id": 330519,
+            "type": "expression_statement",
+            "text": "result = result + c;",
+            "line": 31,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "c",
+              "result"
+            ]
+          },
+          {
+            "id": 683821,
+            "type": "expression_statement",
+            "text": "result = result - c;",
+            "line": 33,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "c",
+              "result"
+            ]
+          },
+          {
+            "id": 413696,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 37,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 118963,
+            "type": "function_definition",
+            "text": "int many_branches_test(int op, int a, int b, int c)",
+            "line": 1,
+            "defs": [
+              "c",
+              "a",
+              "b",
+              "op"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 768579,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 768579,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 768579,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 768579,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 441513,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 441513,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 441513,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 441513,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 385533,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 385533,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 385533,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 385533,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 23013,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 23013,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 23013,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 23013,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 289340,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 289340,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 289340,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 289340,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 294948,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 294948,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 294948,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 294948,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 416266,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 416266,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 416266,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 416266,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 142065,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 142065,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 142065,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 142065,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 395803,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 395803,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 395803,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 395803,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 902161,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 902161,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 902161,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 902161,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 663575,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 663575,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 663575,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 663575,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 330519,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 683821,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 768579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 441513,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 385533,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 23013,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 289340,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 294948,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 416266,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 142065,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 395803,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 902161,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 998256,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "c"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "c"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "c"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 597100,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "a"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 768579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 441513,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 385533,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 23013,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 289340,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 294948,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 416266,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 142065,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 395803,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 902161,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 480629,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 104648,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 761773,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 928567,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 192164,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 358958,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 102049,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 255625,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 490597,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 575262,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          }
+        ],
+        "node_count": 29,
+        "edge_count": 80
+      },
+      "time": 0.0022144317626953125,
+      "success": true
+    },
+    "pdg": {
+      "graph": {
+        "graph_type": "PDG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 597100,
+            "type": "declaration",
+            "text": "int temp = a;",
+            "line": 3,
+            "defs": [
+              "temp"
+            ],
+            "uses": [
+              "a"
+            ]
+          },
+          {
+            "id": 480629,
+            "type": "if_statement",
+            "text": "if(op == 1)",
+            "line": 5,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 768579,
+            "type": "expression_statement",
+            "text": "result = temp + b;",
+            "line": 6,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 104648,
+            "type": "if_statement",
+            "text": "if(op == 2)",
+            "line": 7,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 441513,
+            "type": "expression_statement",
+            "text": "result = temp - b;",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 761773,
+            "type": "if_statement",
+            "text": "if(op == 3)",
+            "line": 9,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 385533,
+            "type": "expression_statement",
+            "text": "result = temp * b;",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 928567,
+            "type": "if_statement",
+            "text": "if(op == 4)",
+            "line": 11,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 23013,
+            "type": "expression_statement",
+            "text": "result = temp / b;",
+            "line": 12,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 192164,
+            "type": "if_statement",
+            "text": "if(op == 5)",
+            "line": 13,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 289340,
+            "type": "expression_statement",
+            "text": "result = temp % b;",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 358958,
+            "type": "if_statement",
+            "text": "if(op == 6)",
+            "line": 15,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 294948,
+            "type": "expression_statement",
+            "text": "result = temp & b;",
+            "line": 16,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 102049,
+            "type": "if_statement",
+            "text": "if(op == 7)",
+            "line": 17,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 416266,
+            "type": "expression_statement",
+            "text": "result = temp | b;",
+            "line": 18,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 255625,
+            "type": "if_statement",
+            "text": "if(op == 8)",
+            "line": 19,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 142065,
+            "type": "expression_statement",
+            "text": "result = temp ^ b;",
+            "line": 20,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 490597,
+            "type": "if_statement",
+            "text": "if(op == 9)",
+            "line": 21,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 395803,
+            "type": "expression_statement",
+            "text": "result = temp << b;",
+            "line": 22,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 575262,
+            "type": "if_statement",
+            "text": "if(op == 10)",
+            "line": 23,
+            "defs": [],
+            "uses": [
+              "op"
+            ]
+          },
+          {
+            "id": 902161,
+            "type": "expression_statement",
+            "text": "result = temp >> b;",
+            "line": 24,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "b"
+            ]
+          },
+          {
+            "id": 663575,
+            "type": "expression_statement",
+            "text": "result = 0;",
+            "line": 26,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 195933,
+            "type": "if_statement",
+            "text": "if(result > 0)",
+            "line": 29,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 998256,
+            "type": "if_statement",
+            "text": "if(c > 0)",
+            "line": 30,
+            "defs": [],
+            "uses": [
+              "c"
+            ]
+          },
+          {
+            "id": 330519,
+            "type": "expression_statement",
+            "text": "result = result + c;",
+            "line": 31,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "c",
+              "result"
+            ]
+          },
+          {
+            "id": 683821,
+            "type": "expression_statement",
+            "text": "result = result - c;",
+            "line": 33,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "c",
+              "result"
+            ]
+          },
+          {
+            "id": 413696,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 37,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 118963,
+            "type": "function_definition",
+            "text": "int many_branches_test(int op, int a, int b, int c)",
+            "line": 1,
+            "defs": [
+              "c",
+              "a",
+              "b",
+              "op"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 102049,
+            "target_id": 255625,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 102049,
+            "target_id": 416266,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 575262,
+            "target_id": 902161,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 575262,
+            "target_id": 663575,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 998256,
+            "target_id": 330519,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 490597,
+            "target_id": 395803,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 490597,
+            "target_id": 575262,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 358958,
+            "target_id": 102049,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 928567,
+            "target_id": 192164,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 358958,
+            "target_id": 294948,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 104648,
+            "target_id": 441513,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 104648,
+            "target_id": 761773,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 192164,
+            "target_id": 358958,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 998256,
+            "target_id": 683821,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 761773,
+            "target_id": 928567,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 192164,
+            "target_id": 289340,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 480629,
+            "target_id": 768579,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 480629,
+            "target_id": 104648,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 928567,
+            "target_id": 23013,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 255625,
+            "target_id": 490597,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 195933,
+            "target_id": 998256,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 255625,
+            "target_id": 142065,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 761773,
+            "target_id": 385533,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 768579,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 768579,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 768579,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 768579,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 441513,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 441513,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 441513,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 441513,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 385533,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 385533,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 385533,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 385533,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 23013,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 23013,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 23013,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 23013,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 289340,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 289340,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 289340,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 289340,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 294948,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 294948,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 294948,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 294948,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 416266,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 416266,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 416266,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 416266,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 142065,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 142065,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 142065,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 142065,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 395803,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 395803,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 395803,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 395803,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 902161,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 902161,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 902161,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 902161,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 663575,
+            "target_id": 195933,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 663575,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 663575,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 663575,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 330519,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 683821,
+            "target_id": 413696,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 768579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 441513,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 385533,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 23013,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 289340,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 294948,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 416266,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 142065,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 395803,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 597100,
+            "target_id": 902161,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 998256,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "c"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 330519,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "c"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 683821,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "c"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 597100,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "a"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 768579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 441513,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 385533,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 23013,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 289340,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 294948,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 416266,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 142065,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 395803,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 902161,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 480629,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 104648,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 761773,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 928567,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 192164,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 358958,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 102049,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 255625,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 490597,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          },
+          {
+            "source_id": 118963,
+            "target_id": 575262,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "op"
+            ]
+          }
+        ],
+        "node_count": 30,
+        "edge_count": 103
+      },
+      "time": 0.003049612045288086,
+      "success": true
+    }
+  }
+}
