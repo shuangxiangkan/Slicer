@@ -186,64 +186,55 @@ class Graph:
                 outgoing[source_id].append(target_id)
         return outgoing
     
-    def hasValidPath(self, start, end, is_valid_path):
+    def hasPathAvoidingNodes(self, start, end, avoid_nodes):
         """
-        检查从start到end是否存在满足条件的路径（DFS优化版本）
+        检查从start到end是否存在一条路径，该路径不经过avoid_nodes中的任何节点
+        
+        使用BFS实现，比DFS更快找到路径（如果存在）
         
         Args:
             start: 起始节点ID
             end: 终止节点ID
-            is_valid_path: 路径验证函数，接收路径的中间节点列表(不含start和end)，返回bool
+            avoid_nodes: 要避开的节点ID集合
             
         Returns:
             bool: 是否存在满足条件的路径
-            
-        性能优化：找到第一条满足条件的路径立即返回，不遍历所有路径
         """
         if start == end:
+            return True
+        
+        if start in avoid_nodes or end in avoid_nodes:
             return False
         
         # 获取出边结构
         outgoing_edges = self.get_outgoing_edges()
         
-        # DFS搜索
-        visited = set([start])  # 起始节点标记为已访问
-        path = []  # path只包含中间节点（不含start和end）
+        # BFS搜索
+        from collections import deque
+        queue = deque([start])
+        visited = set([start])
         
-        def dfs(current):
-            """DFS搜索，找到满足条件的路径返回True"""
-            if current == end:
-                # 到达终点，检查路径是否满足条件（path不包含start和end）
-                return is_valid_path(path)
+        while queue:
+            current = queue.popleft()
             
             # 遍历邻接节点
             for next_node in outgoing_edges.get(current, []):
-                if next_node not in visited:
+                if next_node == end:
+                    return True  # 找到路径
+                
+                if next_node not in visited and next_node not in avoid_nodes:
                     visited.add(next_node)
-                    
-                    # 如果next_node不是终点，加入中间路径
-                    if next_node != end:
-                        path.append(next_node)
-                    
-                    if dfs(next_node):
-                        return True  # 找到满足条件的路径，立即返回
-                    
-                    # 回溯
-                    if next_node != end:
-                        path.pop()
-                    visited.remove(next_node)
-            
-            return False
+                    queue.append(next_node)
         
-        return dfs(start)
+        return False
     
     def findAllPath(self, start, end):
         """
         找到从start到end的所有路径
         算法参考：https://zhuanlan.zhihu.com/p/84437102
         
-        注意：此方法性能较差（指数级复杂度），仅在需要所有路径时使用
-        如果只需要判断是否存在满足条件的路径，请使用hasValidPath()
+        注意：此方法性能较差（指数级复杂度O(2^n)），仅在需要所有路径时使用
+        如果只需要判断是否存在路径，请使用hasPathAvoidingNodes()（BFS实现，性能更好）
         """
         if start == end:
             return []

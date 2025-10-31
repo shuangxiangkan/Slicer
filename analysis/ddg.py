@@ -98,17 +98,15 @@ class DDG(CFG):
                     if d == u:  # 跳过同一个节点
                         continue
                     
-                    # 优化：使用hasValidPath代替findAllPath
-                    # 只需要判断是否存在至少一条无中间重定义的路径
-                    def path_validator(path):
-                        """检查路径中是否没有中间重定义变量X"""
-                        for node_id in path:
-                            node = cfg.id_to_nodes[node_id]
-                            if X in node.defs:
-                                return False  # 路径中有中间重定义
-                        return True  # 路径有效
+                    # 优化v2：使用hasPathAvoidingNodes + BFS
+                    # 找出所有重新定义变量X的节点（排除起点d和终点u）
+                    avoid_nodes = set()
+                    for node_id in def_nodes:
+                        if node_id != d and node_id != u:
+                            avoid_nodes.add(node_id)
                     
-                    if cfg.hasValidPath(d, u, path_validator):
+                    # 检查是否存在一条从d到u的路径，不经过其他定义X的节点
+                    if cfg.hasPathAvoidingNodes(d, u, avoid_nodes):
                         edge.setdefault((d, u), set())
                         edge[(d, u)].add(X)
                     
