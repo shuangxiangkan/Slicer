@@ -1,0 +1,433 @@
+{
+  "program_name": "04_for_loop",
+  "program_file": "04_for_loop.c",
+  "code_lines": 9,
+  "code": "int for_loop_test(int n) {\n    int sum = 0;\n    for (int i = 0; i < n; i++) {\n        sum = sum + i;\n    }\n    return sum;\n}\n\n",
+  "timestamp": "2025-10-31 22:48:37",
+  "graphs": {
+    "cfg": {
+      "graph": {
+        "graph_type": "CFG",
+        "nodes": [
+          {
+            "id": 22154,
+            "type": "declaration",
+            "text": "int sum = 0;",
+            "line": 2,
+            "defs": [
+              "sum"
+            ],
+            "uses": []
+          },
+          {
+            "id": 130277,
+            "type": "for_statement",
+            "text": "for(int i = 0;i < n;i++)",
+            "line": 3,
+            "defs": [
+              "i"
+            ],
+            "uses": [
+              "i",
+              "n"
+            ]
+          },
+          {
+            "id": 59237,
+            "type": "expression_statement",
+            "text": "sum = sum + i;",
+            "line": 4,
+            "defs": [
+              "sum"
+            ],
+            "uses": [
+              "sum",
+              "i"
+            ]
+          },
+          {
+            "id": 494818,
+            "type": "return_statement",
+            "text": "return sum;",
+            "line": 6,
+            "defs": [],
+            "uses": [
+              "sum"
+            ]
+          },
+          {
+            "id": 531264,
+            "type": "function_definition",
+            "text": "int for_loop_test(int n)",
+            "line": 1,
+            "defs": [
+              "n"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 531264,
+            "target_id": 22154,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 22154,
+            "target_id": 130277,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 59237,
+            "target_id": 130277,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 130277,
+            "target_id": 59237,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 130277,
+            "target_id": 494818,
+            "label": "N",
+            "type": "CFG"
+          }
+        ],
+        "node_count": 5,
+        "edge_count": 5
+      },
+      "time": 0.0003495216369628906,
+      "success": true
+    },
+    "cdg": {
+      "graph": {
+        "graph_type": "CDG",
+        "nodes": [
+          {
+            "id": 22154,
+            "type": "declaration",
+            "text": "int sum = 0;",
+            "line": 2,
+            "defs": [
+              "sum"
+            ],
+            "uses": []
+          },
+          {
+            "id": 130277,
+            "type": "for_statement",
+            "text": "for(int i = 0;i < n;i++)",
+            "line": 3,
+            "defs": [
+              "i"
+            ],
+            "uses": [
+              "i",
+              "n"
+            ]
+          },
+          {
+            "id": 59237,
+            "type": "expression_statement",
+            "text": "sum = sum + i;",
+            "line": 4,
+            "defs": [
+              "sum"
+            ],
+            "uses": [
+              "sum",
+              "i"
+            ]
+          },
+          {
+            "id": 494818,
+            "type": "return_statement",
+            "text": "return sum;",
+            "line": 6,
+            "defs": [],
+            "uses": [
+              "sum"
+            ]
+          },
+          {
+            "id": 531264,
+            "type": "function_definition",
+            "text": "int for_loop_test(int n)",
+            "line": 1,
+            "defs": [
+              "n"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 130277,
+            "target_id": 59237,
+            "label": "",
+            "type": "CDG"
+          }
+        ],
+        "node_count": 6,
+        "edge_count": 1
+      },
+      "time": 0.000408172607421875,
+      "success": true
+    },
+    "ddg": {
+      "graph": {
+        "graph_type": "DDG",
+        "nodes": [
+          {
+            "id": 22154,
+            "type": "declaration",
+            "text": "int sum = 0;",
+            "line": 2,
+            "defs": [
+              "sum"
+            ],
+            "uses": []
+          },
+          {
+            "id": 130277,
+            "type": "for_statement",
+            "text": "for(int i = 0;i < n;i++)",
+            "line": 3,
+            "defs": [
+              "i"
+            ],
+            "uses": [
+              "i",
+              "n"
+            ]
+          },
+          {
+            "id": 59237,
+            "type": "expression_statement",
+            "text": "sum = sum + i;",
+            "line": 4,
+            "defs": [
+              "sum"
+            ],
+            "uses": [
+              "sum",
+              "i"
+            ]
+          },
+          {
+            "id": 494818,
+            "type": "return_statement",
+            "text": "return sum;",
+            "line": 6,
+            "defs": [],
+            "uses": [
+              "sum"
+            ]
+          },
+          {
+            "id": 531264,
+            "type": "function_definition",
+            "text": "int for_loop_test(int n)",
+            "line": 1,
+            "defs": [
+              "n"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 22154,
+            "target_id": 59237,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "sum"
+            ]
+          },
+          {
+            "source_id": 22154,
+            "target_id": 494818,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "sum"
+            ]
+          },
+          {
+            "source_id": 59237,
+            "target_id": 494818,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "sum"
+            ]
+          },
+          {
+            "source_id": 130277,
+            "target_id": 59237,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 531264,
+            "target_id": 130277,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "n"
+            ]
+          }
+        ],
+        "node_count": 5,
+        "edge_count": 5
+      },
+      "time": 0.00038886070251464844,
+      "success": true
+    },
+    "pdg": {
+      "graph": {
+        "graph_type": "PDG",
+        "nodes": [
+          {
+            "id": 22154,
+            "type": "declaration",
+            "text": "int sum = 0;",
+            "line": 2,
+            "defs": [
+              "sum"
+            ],
+            "uses": []
+          },
+          {
+            "id": 130277,
+            "type": "for_statement",
+            "text": "for(int i = 0;i < n;i++)",
+            "line": 3,
+            "defs": [
+              "i"
+            ],
+            "uses": [
+              "i",
+              "n"
+            ]
+          },
+          {
+            "id": 59237,
+            "type": "expression_statement",
+            "text": "sum = sum + i;",
+            "line": 4,
+            "defs": [
+              "sum"
+            ],
+            "uses": [
+              "sum",
+              "i"
+            ]
+          },
+          {
+            "id": 494818,
+            "type": "return_statement",
+            "text": "return sum;",
+            "line": 6,
+            "defs": [],
+            "uses": [
+              "sum"
+            ]
+          },
+          {
+            "id": 531264,
+            "type": "function_definition",
+            "text": "int for_loop_test(int n)",
+            "line": 1,
+            "defs": [
+              "n"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 130277,
+            "target_id": 59237,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 22154,
+            "target_id": 59237,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "sum"
+            ]
+          },
+          {
+            "source_id": 22154,
+            "target_id": 494818,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "sum"
+            ]
+          },
+          {
+            "source_id": 59237,
+            "target_id": 494818,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "sum"
+            ]
+          },
+          {
+            "source_id": 130277,
+            "target_id": 59237,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 531264,
+            "target_id": 130277,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "n"
+            ]
+          }
+        ],
+        "node_count": 6,
+        "edge_count": 6
+      },
+      "time": 0.0008025169372558594,
+      "success": true
+    }
+  }
+}

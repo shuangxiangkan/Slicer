@@ -1,0 +1,3295 @@
+{
+  "program_name": "09_large_switch",
+  "program_file": "09_large_switch.c",
+  "code_lines": 24,
+  "code": "int large_switch_test(int x) {\n    int result = 0;\n    switch (x) {\n        case 1: result = 1; break;\n        case 2: result = 2; break;\n        case 3: result = 3; break;\n        case 4: result = 4; break;\n        case 5: result = 5; break;\n        case 6: result = 6; break;\n        case 7: result = 7; break;\n        case 8: result = 8; break;\n        case 9: result = 9; break;\n        case 10: result = 10; break;\n        case 11: result = 11; break;\n        case 12: result = 12; break;\n        case 13: result = 13; break;\n        case 14: result = 14; break;\n        case 15: result = 15; break;\n        default: result = 0; break;\n    }\n    return result;\n}\n\n",
+  "timestamp": "2025-10-31 22:48:37",
+  "graphs": {
+    "cfg": {
+      "graph": {
+        "graph_type": "CFG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 850068,
+            "type": "switch_statement",
+            "text": "switch(x)",
+            "line": 3,
+            "defs": [],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 444827,
+            "type": "case_statement",
+            "text": "case 1",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 94899,
+            "type": "expression_statement",
+            "text": "result = 1;",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 897061,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 4,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 805224,
+            "type": "case_statement",
+            "text": "case 2",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 486851,
+            "type": "expression_statement",
+            "text": "result = 2;",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 257458,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 5,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 716052,
+            "type": "case_statement",
+            "text": "case 3",
+            "line": 6,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 806471,
+            "type": "expression_statement",
+            "text": "result = 3;",
+            "line": 6,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 168286,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 6,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 742590,
+            "type": "case_statement",
+            "text": "case 4",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 758917,
+            "type": "expression_statement",
+            "text": "result = 4;",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 408075,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 7,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 837370,
+            "type": "case_statement",
+            "text": "case 5",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 942016,
+            "type": "expression_statement",
+            "text": "result = 5;",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 289604,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 8,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 149907,
+            "type": "case_statement",
+            "text": "case 6",
+            "line": 9,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 916188,
+            "type": "expression_statement",
+            "text": "result = 6;",
+            "line": 9,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 983967,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 9,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 781390,
+            "type": "case_statement",
+            "text": "case 7",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 797717,
+            "type": "expression_statement",
+            "text": "result = 7;",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 865496,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 10,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 869516,
+            "type": "case_statement",
+            "text": "case 8",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 117337,
+            "type": "expression_statement",
+            "text": "result = 8;",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 989575,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 11,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 418870,
+            "type": "case_statement",
+            "text": "case 9",
+            "line": 12,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 366114,
+            "type": "expression_statement",
+            "text": "result = 9;",
+            "line": 12,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 871104,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 12,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 131452,
+            "type": "case_statement",
+            "text": "case 10",
+            "line": 13,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 648829,
+            "type": "expression_statement",
+            "text": "result = 10;",
+            "line": 13,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 535124,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 13,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 371241,
+            "type": "case_statement",
+            "text": "case 11",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 46020,
+            "type": "expression_statement",
+            "text": "result = 11;",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 72965,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 14,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 482933,
+            "type": "case_statement",
+            "text": "case 12",
+            "line": 15,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 368438,
+            "type": "expression_statement",
+            "text": "result = 12;",
+            "line": 15,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 709307,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 15,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 8721,
+            "type": "case_statement",
+            "text": "case 13",
+            "line": 16,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 470249,
+            "type": "expression_statement",
+            "text": "result = 13;",
+            "line": 16,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 976062,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 16,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 890250,
+            "type": "case_statement",
+            "text": "case 14",
+            "line": 17,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 41372,
+            "type": "expression_statement",
+            "text": "result = 14;",
+            "line": 17,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 830625,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 17,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 273214,
+            "type": "case_statement",
+            "text": "case 15",
+            "line": 18,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 627520,
+            "type": "expression_statement",
+            "text": "result = 15;",
+            "line": 18,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 511290,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 18,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 538485,
+            "type": "case_statement",
+            "text": "default",
+            "line": 19,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 430180,
+            "type": "expression_statement",
+            "text": "result = 0;",
+            "line": 19,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 505996,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 19,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 458579,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 21,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 186076,
+            "type": "function_definition",
+            "text": "int large_switch_test(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 186076,
+            "target_id": 908520,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 908520,
+            "target_id": 850068,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 850068,
+            "target_id": 444827,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 444827,
+            "target_id": 94899,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 94899,
+            "target_id": 897061,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 444827,
+            "target_id": 805224,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 805224,
+            "target_id": 486851,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 486851,
+            "target_id": 257458,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 805224,
+            "target_id": 716052,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 716052,
+            "target_id": 806471,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 806471,
+            "target_id": 168286,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 716052,
+            "target_id": 742590,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 742590,
+            "target_id": 758917,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 758917,
+            "target_id": 408075,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 742590,
+            "target_id": 837370,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 837370,
+            "target_id": 942016,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 942016,
+            "target_id": 289604,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 837370,
+            "target_id": 149907,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 149907,
+            "target_id": 916188,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 916188,
+            "target_id": 983967,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 149907,
+            "target_id": 781390,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 781390,
+            "target_id": 797717,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 797717,
+            "target_id": 865496,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 781390,
+            "target_id": 869516,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 869516,
+            "target_id": 117337,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 117337,
+            "target_id": 989575,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 869516,
+            "target_id": 418870,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 418870,
+            "target_id": 366114,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 366114,
+            "target_id": 871104,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 418870,
+            "target_id": 131452,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 131452,
+            "target_id": 648829,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 648829,
+            "target_id": 535124,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 131452,
+            "target_id": 371241,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 371241,
+            "target_id": 46020,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 46020,
+            "target_id": 72965,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 371241,
+            "target_id": 482933,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 482933,
+            "target_id": 368438,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 368438,
+            "target_id": 709307,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 482933,
+            "target_id": 8721,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 8721,
+            "target_id": 470249,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 470249,
+            "target_id": 976062,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 8721,
+            "target_id": 890250,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 890250,
+            "target_id": 41372,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 41372,
+            "target_id": 830625,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 890250,
+            "target_id": 273214,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 273214,
+            "target_id": 627520,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 627520,
+            "target_id": 511290,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 273214,
+            "target_id": 538485,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 538485,
+            "target_id": 430180,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 430180,
+            "target_id": 505996,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 897061,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 257458,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 168286,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 408075,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 289604,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 983967,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 865496,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 989575,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 871104,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 535124,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 72965,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 709307,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 976062,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 830625,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 511290,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 505996,
+            "target_id": 458579,
+            "label": "",
+            "type": "CFG"
+          }
+        ],
+        "node_count": 52,
+        "edge_count": 66
+      },
+      "time": 0.0007982254028320312,
+      "success": true
+    },
+    "cdg": {
+      "graph": {
+        "graph_type": "CDG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 850068,
+            "type": "switch_statement",
+            "text": "switch(x)",
+            "line": 3,
+            "defs": [],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 444827,
+            "type": "case_statement",
+            "text": "case 1",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 94899,
+            "type": "expression_statement",
+            "text": "result = 1;",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 897061,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 4,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 805224,
+            "type": "case_statement",
+            "text": "case 2",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 486851,
+            "type": "expression_statement",
+            "text": "result = 2;",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 257458,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 5,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 716052,
+            "type": "case_statement",
+            "text": "case 3",
+            "line": 6,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 806471,
+            "type": "expression_statement",
+            "text": "result = 3;",
+            "line": 6,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 168286,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 6,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 742590,
+            "type": "case_statement",
+            "text": "case 4",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 758917,
+            "type": "expression_statement",
+            "text": "result = 4;",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 408075,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 7,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 837370,
+            "type": "case_statement",
+            "text": "case 5",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 942016,
+            "type": "expression_statement",
+            "text": "result = 5;",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 289604,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 8,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 149907,
+            "type": "case_statement",
+            "text": "case 6",
+            "line": 9,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 916188,
+            "type": "expression_statement",
+            "text": "result = 6;",
+            "line": 9,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 983967,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 9,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 781390,
+            "type": "case_statement",
+            "text": "case 7",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 797717,
+            "type": "expression_statement",
+            "text": "result = 7;",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 865496,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 10,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 869516,
+            "type": "case_statement",
+            "text": "case 8",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 117337,
+            "type": "expression_statement",
+            "text": "result = 8;",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 989575,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 11,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 418870,
+            "type": "case_statement",
+            "text": "case 9",
+            "line": 12,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 366114,
+            "type": "expression_statement",
+            "text": "result = 9;",
+            "line": 12,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 871104,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 12,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 131452,
+            "type": "case_statement",
+            "text": "case 10",
+            "line": 13,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 648829,
+            "type": "expression_statement",
+            "text": "result = 10;",
+            "line": 13,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 535124,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 13,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 371241,
+            "type": "case_statement",
+            "text": "case 11",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 46020,
+            "type": "expression_statement",
+            "text": "result = 11;",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 72965,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 14,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 482933,
+            "type": "case_statement",
+            "text": "case 12",
+            "line": 15,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 368438,
+            "type": "expression_statement",
+            "text": "result = 12;",
+            "line": 15,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 709307,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 15,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 8721,
+            "type": "case_statement",
+            "text": "case 13",
+            "line": 16,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 470249,
+            "type": "expression_statement",
+            "text": "result = 13;",
+            "line": 16,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 976062,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 16,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 890250,
+            "type": "case_statement",
+            "text": "case 14",
+            "line": 17,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 41372,
+            "type": "expression_statement",
+            "text": "result = 14;",
+            "line": 17,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 830625,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 17,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 273214,
+            "type": "case_statement",
+            "text": "case 15",
+            "line": 18,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 627520,
+            "type": "expression_statement",
+            "text": "result = 15;",
+            "line": 18,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 511290,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 18,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 538485,
+            "type": "case_statement",
+            "text": "default",
+            "line": 19,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 430180,
+            "type": "expression_statement",
+            "text": "result = 0;",
+            "line": 19,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 505996,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 19,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 458579,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 21,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 186076,
+            "type": "function_definition",
+            "text": "int large_switch_test(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 742590,
+            "target_id": 758917,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 371241,
+            "target_id": 72965,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 869516,
+            "target_id": 989575,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 8721,
+            "target_id": 890250,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 742590,
+            "target_id": 408075,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 781390,
+            "target_id": 869516,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 273214,
+            "target_id": 505996,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 482933,
+            "target_id": 8721,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 837370,
+            "target_id": 149907,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 805224,
+            "target_id": 716052,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 781390,
+            "target_id": 797717,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 890250,
+            "target_id": 41372,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 149907,
+            "target_id": 983967,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 890250,
+            "target_id": 830625,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 418870,
+            "target_id": 366114,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 444827,
+            "target_id": 897061,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 131452,
+            "target_id": 371241,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 805224,
+            "target_id": 257458,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 444827,
+            "target_id": 94899,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 869516,
+            "target_id": 418870,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 482933,
+            "target_id": 368438,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 273214,
+            "target_id": 511290,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 482933,
+            "target_id": 709307,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 716052,
+            "target_id": 742590,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 8721,
+            "target_id": 976062,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 837370,
+            "target_id": 942016,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 418870,
+            "target_id": 871104,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 890250,
+            "target_id": 273214,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 805224,
+            "target_id": 486851,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 837370,
+            "target_id": 289604,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 371241,
+            "target_id": 46020,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 273214,
+            "target_id": 627520,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 716052,
+            "target_id": 806471,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 149907,
+            "target_id": 781390,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 131452,
+            "target_id": 535124,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 781390,
+            "target_id": 865496,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 869516,
+            "target_id": 117337,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 149907,
+            "target_id": 916188,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 716052,
+            "target_id": 168286,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 273214,
+            "target_id": 430180,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 444827,
+            "target_id": 805224,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 8721,
+            "target_id": 470249,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 371241,
+            "target_id": 482933,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 273214,
+            "target_id": 538485,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 742590,
+            "target_id": 837370,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 418870,
+            "target_id": 131452,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 131452,
+            "target_id": 648829,
+            "label": "",
+            "type": "CDG"
+          }
+        ],
+        "node_count": 53,
+        "edge_count": 47
+      },
+      "time": 0.0011992454528808594,
+      "success": true
+    },
+    "ddg": {
+      "graph": {
+        "graph_type": "DDG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 850068,
+            "type": "switch_statement",
+            "text": "switch(x)",
+            "line": 3,
+            "defs": [],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 444827,
+            "type": "case_statement",
+            "text": "case 1",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 94899,
+            "type": "expression_statement",
+            "text": "result = 1;",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 897061,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 4,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 805224,
+            "type": "case_statement",
+            "text": "case 2",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 486851,
+            "type": "expression_statement",
+            "text": "result = 2;",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 257458,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 5,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 716052,
+            "type": "case_statement",
+            "text": "case 3",
+            "line": 6,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 806471,
+            "type": "expression_statement",
+            "text": "result = 3;",
+            "line": 6,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 168286,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 6,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 742590,
+            "type": "case_statement",
+            "text": "case 4",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 758917,
+            "type": "expression_statement",
+            "text": "result = 4;",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 408075,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 7,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 837370,
+            "type": "case_statement",
+            "text": "case 5",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 942016,
+            "type": "expression_statement",
+            "text": "result = 5;",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 289604,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 8,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 149907,
+            "type": "case_statement",
+            "text": "case 6",
+            "line": 9,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 916188,
+            "type": "expression_statement",
+            "text": "result = 6;",
+            "line": 9,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 983967,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 9,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 781390,
+            "type": "case_statement",
+            "text": "case 7",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 797717,
+            "type": "expression_statement",
+            "text": "result = 7;",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 865496,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 10,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 869516,
+            "type": "case_statement",
+            "text": "case 8",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 117337,
+            "type": "expression_statement",
+            "text": "result = 8;",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 989575,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 11,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 418870,
+            "type": "case_statement",
+            "text": "case 9",
+            "line": 12,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 366114,
+            "type": "expression_statement",
+            "text": "result = 9;",
+            "line": 12,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 871104,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 12,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 131452,
+            "type": "case_statement",
+            "text": "case 10",
+            "line": 13,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 648829,
+            "type": "expression_statement",
+            "text": "result = 10;",
+            "line": 13,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 535124,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 13,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 371241,
+            "type": "case_statement",
+            "text": "case 11",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 46020,
+            "type": "expression_statement",
+            "text": "result = 11;",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 72965,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 14,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 482933,
+            "type": "case_statement",
+            "text": "case 12",
+            "line": 15,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 368438,
+            "type": "expression_statement",
+            "text": "result = 12;",
+            "line": 15,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 709307,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 15,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 8721,
+            "type": "case_statement",
+            "text": "case 13",
+            "line": 16,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 470249,
+            "type": "expression_statement",
+            "text": "result = 13;",
+            "line": 16,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 976062,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 16,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 890250,
+            "type": "case_statement",
+            "text": "case 14",
+            "line": 17,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 41372,
+            "type": "expression_statement",
+            "text": "result = 14;",
+            "line": 17,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 830625,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 17,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 273214,
+            "type": "case_statement",
+            "text": "case 15",
+            "line": 18,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 627520,
+            "type": "expression_statement",
+            "text": "result = 15;",
+            "line": 18,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 511290,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 18,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 538485,
+            "type": "case_statement",
+            "text": "default",
+            "line": 19,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 430180,
+            "type": "expression_statement",
+            "text": "result = 0;",
+            "line": 19,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 505996,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 19,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 458579,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 21,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 186076,
+            "type": "function_definition",
+            "text": "int large_switch_test(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 94899,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 486851,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 806471,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 758917,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 942016,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 916188,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 797717,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 117337,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 366114,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 648829,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 46020,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 368438,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 470249,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 41372,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 627520,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 430180,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 186076,
+            "target_id": 850068,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x"
+            ]
+          }
+        ],
+        "node_count": 52,
+        "edge_count": 17
+      },
+      "time": 0.001430511474609375,
+      "success": true
+    },
+    "pdg": {
+      "graph": {
+        "graph_type": "PDG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 850068,
+            "type": "switch_statement",
+            "text": "switch(x)",
+            "line": 3,
+            "defs": [],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 444827,
+            "type": "case_statement",
+            "text": "case 1",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 94899,
+            "type": "expression_statement",
+            "text": "result = 1;",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 897061,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 4,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 805224,
+            "type": "case_statement",
+            "text": "case 2",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 486851,
+            "type": "expression_statement",
+            "text": "result = 2;",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 257458,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 5,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 716052,
+            "type": "case_statement",
+            "text": "case 3",
+            "line": 6,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 806471,
+            "type": "expression_statement",
+            "text": "result = 3;",
+            "line": 6,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 168286,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 6,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 742590,
+            "type": "case_statement",
+            "text": "case 4",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 758917,
+            "type": "expression_statement",
+            "text": "result = 4;",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 408075,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 7,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 837370,
+            "type": "case_statement",
+            "text": "case 5",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 942016,
+            "type": "expression_statement",
+            "text": "result = 5;",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 289604,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 8,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 149907,
+            "type": "case_statement",
+            "text": "case 6",
+            "line": 9,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 916188,
+            "type": "expression_statement",
+            "text": "result = 6;",
+            "line": 9,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 983967,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 9,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 781390,
+            "type": "case_statement",
+            "text": "case 7",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 797717,
+            "type": "expression_statement",
+            "text": "result = 7;",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 865496,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 10,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 869516,
+            "type": "case_statement",
+            "text": "case 8",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 117337,
+            "type": "expression_statement",
+            "text": "result = 8;",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 989575,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 11,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 418870,
+            "type": "case_statement",
+            "text": "case 9",
+            "line": 12,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 366114,
+            "type": "expression_statement",
+            "text": "result = 9;",
+            "line": 12,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 871104,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 12,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 131452,
+            "type": "case_statement",
+            "text": "case 10",
+            "line": 13,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 648829,
+            "type": "expression_statement",
+            "text": "result = 10;",
+            "line": 13,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 535124,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 13,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 371241,
+            "type": "case_statement",
+            "text": "case 11",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 46020,
+            "type": "expression_statement",
+            "text": "result = 11;",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 72965,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 14,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 482933,
+            "type": "case_statement",
+            "text": "case 12",
+            "line": 15,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 368438,
+            "type": "expression_statement",
+            "text": "result = 12;",
+            "line": 15,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 709307,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 15,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 8721,
+            "type": "case_statement",
+            "text": "case 13",
+            "line": 16,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 470249,
+            "type": "expression_statement",
+            "text": "result = 13;",
+            "line": 16,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 976062,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 16,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 890250,
+            "type": "case_statement",
+            "text": "case 14",
+            "line": 17,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 41372,
+            "type": "expression_statement",
+            "text": "result = 14;",
+            "line": 17,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 830625,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 17,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 273214,
+            "type": "case_statement",
+            "text": "case 15",
+            "line": 18,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 627520,
+            "type": "expression_statement",
+            "text": "result = 15;",
+            "line": 18,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 511290,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 18,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 538485,
+            "type": "case_statement",
+            "text": "default",
+            "line": 19,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 430180,
+            "type": "expression_statement",
+            "text": "result = 0;",
+            "line": 19,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 505996,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 19,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 458579,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 21,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 186076,
+            "type": "function_definition",
+            "text": "int large_switch_test(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 742590,
+            "target_id": 758917,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 371241,
+            "target_id": 72965,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 869516,
+            "target_id": 989575,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 8721,
+            "target_id": 890250,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 742590,
+            "target_id": 408075,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 781390,
+            "target_id": 869516,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 273214,
+            "target_id": 505996,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 482933,
+            "target_id": 8721,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 837370,
+            "target_id": 149907,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 805224,
+            "target_id": 716052,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 781390,
+            "target_id": 797717,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 890250,
+            "target_id": 41372,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 149907,
+            "target_id": 983967,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 890250,
+            "target_id": 830625,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 418870,
+            "target_id": 366114,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 444827,
+            "target_id": 897061,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 131452,
+            "target_id": 371241,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 805224,
+            "target_id": 257458,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 444827,
+            "target_id": 94899,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 869516,
+            "target_id": 418870,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 482933,
+            "target_id": 368438,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 273214,
+            "target_id": 511290,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 482933,
+            "target_id": 709307,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 716052,
+            "target_id": 742590,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 8721,
+            "target_id": 976062,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 837370,
+            "target_id": 942016,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 418870,
+            "target_id": 871104,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 890250,
+            "target_id": 273214,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 805224,
+            "target_id": 486851,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 837370,
+            "target_id": 289604,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 371241,
+            "target_id": 46020,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 273214,
+            "target_id": 627520,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 716052,
+            "target_id": 806471,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 149907,
+            "target_id": 781390,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 131452,
+            "target_id": 535124,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 781390,
+            "target_id": 865496,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 869516,
+            "target_id": 117337,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 149907,
+            "target_id": 916188,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 716052,
+            "target_id": 168286,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 273214,
+            "target_id": 430180,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 444827,
+            "target_id": 805224,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 8721,
+            "target_id": 470249,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 371241,
+            "target_id": 482933,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 273214,
+            "target_id": 538485,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 742590,
+            "target_id": 837370,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 418870,
+            "target_id": 131452,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 131452,
+            "target_id": 648829,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 94899,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 486851,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 806471,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 758917,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 942016,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 916188,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 797717,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 117337,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 366114,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 648829,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 46020,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 368438,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 470249,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 41372,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 627520,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 430180,
+            "target_id": 458579,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 186076,
+            "target_id": 850068,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x"
+            ]
+          }
+        ],
+        "node_count": 53,
+        "edge_count": 64
+      },
+      "time": 0.0025458335876464844,
+      "success": true
+    }
+  }
+}

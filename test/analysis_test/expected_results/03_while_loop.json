@@ -1,0 +1,609 @@
+{
+  "program_name": "03_while_loop",
+  "program_file": "03_while_loop.c",
+  "code_lines": 11,
+  "code": "int while_loop_test(int n) {\n    int sum = 0;\n    int i = 0;\n    while (i < n) {\n        sum = sum + i;\n        i = i + 1;\n    }\n    return sum;\n}\n\n",
+  "timestamp": "2025-10-31 22:48:37",
+  "graphs": {
+    "cfg": {
+      "graph": {
+        "graph_type": "CFG",
+        "nodes": [
+          {
+            "id": 22154,
+            "type": "declaration",
+            "text": "int sum = 0;",
+            "line": 2,
+            "defs": [
+              "sum"
+            ],
+            "uses": []
+          },
+          {
+            "id": 696507,
+            "type": "declaration",
+            "text": "int i = 0;",
+            "line": 3,
+            "defs": [
+              "i"
+            ],
+            "uses": []
+          },
+          {
+            "id": 571807,
+            "type": "while_statement",
+            "text": "while(i < n)",
+            "line": 4,
+            "defs": [],
+            "uses": [
+              "i",
+              "n"
+            ]
+          },
+          {
+            "id": 419634,
+            "type": "expression_statement",
+            "text": "sum = sum + i;",
+            "line": 5,
+            "defs": [
+              "sum"
+            ],
+            "uses": [
+              "sum",
+              "i"
+            ]
+          },
+          {
+            "id": 372722,
+            "type": "expression_statement",
+            "text": "i = i + 1;",
+            "line": 6,
+            "defs": [
+              "i"
+            ],
+            "uses": [
+              "i"
+            ]
+          },
+          {
+            "id": 661918,
+            "type": "return_statement",
+            "text": "return sum;",
+            "line": 8,
+            "defs": [],
+            "uses": [
+              "sum"
+            ]
+          },
+          {
+            "id": 826479,
+            "type": "function_definition",
+            "text": "int while_loop_test(int n)",
+            "line": 1,
+            "defs": [
+              "n"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 826479,
+            "target_id": 22154,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 22154,
+            "target_id": 696507,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 696507,
+            "target_id": 571807,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 372722,
+            "target_id": 571807,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 571807,
+            "target_id": 419634,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 419634,
+            "target_id": 372722,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 571807,
+            "target_id": 661918,
+            "label": "N",
+            "type": "CFG"
+          }
+        ],
+        "node_count": 7,
+        "edge_count": 7
+      },
+      "time": 0.0008175373077392578,
+      "success": true
+    },
+    "cdg": {
+      "graph": {
+        "graph_type": "CDG",
+        "nodes": [
+          {
+            "id": 22154,
+            "type": "declaration",
+            "text": "int sum = 0;",
+            "line": 2,
+            "defs": [
+              "sum"
+            ],
+            "uses": []
+          },
+          {
+            "id": 696507,
+            "type": "declaration",
+            "text": "int i = 0;",
+            "line": 3,
+            "defs": [
+              "i"
+            ],
+            "uses": []
+          },
+          {
+            "id": 571807,
+            "type": "while_statement",
+            "text": "while(i < n)",
+            "line": 4,
+            "defs": [],
+            "uses": [
+              "i",
+              "n"
+            ]
+          },
+          {
+            "id": 419634,
+            "type": "expression_statement",
+            "text": "sum = sum + i;",
+            "line": 5,
+            "defs": [
+              "sum"
+            ],
+            "uses": [
+              "sum",
+              "i"
+            ]
+          },
+          {
+            "id": 372722,
+            "type": "expression_statement",
+            "text": "i = i + 1;",
+            "line": 6,
+            "defs": [
+              "i"
+            ],
+            "uses": [
+              "i"
+            ]
+          },
+          {
+            "id": 661918,
+            "type": "return_statement",
+            "text": "return sum;",
+            "line": 8,
+            "defs": [],
+            "uses": [
+              "sum"
+            ]
+          },
+          {
+            "id": 826479,
+            "type": "function_definition",
+            "text": "int while_loop_test(int n)",
+            "line": 1,
+            "defs": [
+              "n"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 571807,
+            "target_id": 419634,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 571807,
+            "target_id": 372722,
+            "label": "",
+            "type": "CDG"
+          }
+        ],
+        "node_count": 8,
+        "edge_count": 2
+      },
+      "time": 0.0008666515350341797,
+      "success": true
+    },
+    "ddg": {
+      "graph": {
+        "graph_type": "DDG",
+        "nodes": [
+          {
+            "id": 22154,
+            "type": "declaration",
+            "text": "int sum = 0;",
+            "line": 2,
+            "defs": [
+              "sum"
+            ],
+            "uses": []
+          },
+          {
+            "id": 696507,
+            "type": "declaration",
+            "text": "int i = 0;",
+            "line": 3,
+            "defs": [
+              "i"
+            ],
+            "uses": []
+          },
+          {
+            "id": 571807,
+            "type": "while_statement",
+            "text": "while(i < n)",
+            "line": 4,
+            "defs": [],
+            "uses": [
+              "i",
+              "n"
+            ]
+          },
+          {
+            "id": 419634,
+            "type": "expression_statement",
+            "text": "sum = sum + i;",
+            "line": 5,
+            "defs": [
+              "sum"
+            ],
+            "uses": [
+              "sum",
+              "i"
+            ]
+          },
+          {
+            "id": 372722,
+            "type": "expression_statement",
+            "text": "i = i + 1;",
+            "line": 6,
+            "defs": [
+              "i"
+            ],
+            "uses": [
+              "i"
+            ]
+          },
+          {
+            "id": 661918,
+            "type": "return_statement",
+            "text": "return sum;",
+            "line": 8,
+            "defs": [],
+            "uses": [
+              "sum"
+            ]
+          },
+          {
+            "id": 826479,
+            "type": "function_definition",
+            "text": "int while_loop_test(int n)",
+            "line": 1,
+            "defs": [
+              "n"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 22154,
+            "target_id": 419634,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "sum"
+            ]
+          },
+          {
+            "source_id": 22154,
+            "target_id": 661918,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "sum"
+            ]
+          },
+          {
+            "source_id": 419634,
+            "target_id": 661918,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "sum"
+            ]
+          },
+          {
+            "source_id": 696507,
+            "target_id": 571807,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 696507,
+            "target_id": 419634,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 696507,
+            "target_id": 372722,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 372722,
+            "target_id": 571807,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 372722,
+            "target_id": 419634,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 826479,
+            "target_id": 571807,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "n"
+            ]
+          }
+        ],
+        "node_count": 7,
+        "edge_count": 9
+      },
+      "time": 0.0008041858673095703,
+      "success": true
+    },
+    "pdg": {
+      "graph": {
+        "graph_type": "PDG",
+        "nodes": [
+          {
+            "id": 22154,
+            "type": "declaration",
+            "text": "int sum = 0;",
+            "line": 2,
+            "defs": [
+              "sum"
+            ],
+            "uses": []
+          },
+          {
+            "id": 696507,
+            "type": "declaration",
+            "text": "int i = 0;",
+            "line": 3,
+            "defs": [
+              "i"
+            ],
+            "uses": []
+          },
+          {
+            "id": 571807,
+            "type": "while_statement",
+            "text": "while(i < n)",
+            "line": 4,
+            "defs": [],
+            "uses": [
+              "i",
+              "n"
+            ]
+          },
+          {
+            "id": 419634,
+            "type": "expression_statement",
+            "text": "sum = sum + i;",
+            "line": 5,
+            "defs": [
+              "sum"
+            ],
+            "uses": [
+              "sum",
+              "i"
+            ]
+          },
+          {
+            "id": 372722,
+            "type": "expression_statement",
+            "text": "i = i + 1;",
+            "line": 6,
+            "defs": [
+              "i"
+            ],
+            "uses": [
+              "i"
+            ]
+          },
+          {
+            "id": 661918,
+            "type": "return_statement",
+            "text": "return sum;",
+            "line": 8,
+            "defs": [],
+            "uses": [
+              "sum"
+            ]
+          },
+          {
+            "id": 826479,
+            "type": "function_definition",
+            "text": "int while_loop_test(int n)",
+            "line": 1,
+            "defs": [
+              "n"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 571807,
+            "target_id": 419634,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 571807,
+            "target_id": 372722,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 22154,
+            "target_id": 419634,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "sum"
+            ]
+          },
+          {
+            "source_id": 22154,
+            "target_id": 661918,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "sum"
+            ]
+          },
+          {
+            "source_id": 419634,
+            "target_id": 661918,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "sum"
+            ]
+          },
+          {
+            "source_id": 696507,
+            "target_id": 571807,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 696507,
+            "target_id": 419634,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 696507,
+            "target_id": 372722,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 372722,
+            "target_id": 571807,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 372722,
+            "target_id": 419634,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 826479,
+            "target_id": 571807,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "n"
+            ]
+          }
+        ],
+        "node_count": 8,
+        "edge_count": 11
+      },
+      "time": 0.001560211181640625,
+      "success": true
+    }
+  }
+}

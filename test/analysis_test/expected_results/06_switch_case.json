@@ -1,0 +1,1015 @@
+{
+  "program_name": "06_switch_case",
+  "program_file": "06_switch_case.c",
+  "code_lines": 20,
+  "code": "int switch_case_test(int x) {\n    int result = 0;\n    switch (x) {\n        case 1:\n            result = 10;\n            break;\n        case 2:\n            result = 20;\n            break;\n        case 3:\n            result = 30;\n            break;\n        default:\n            result = 0;\n            break;\n    }\n    return result;\n}\n\n",
+  "timestamp": "2025-10-31 22:48:37",
+  "graphs": {
+    "cfg": {
+      "graph": {
+        "graph_type": "CFG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 10358,
+            "type": "switch_statement",
+            "text": "switch(x)",
+            "line": 3,
+            "defs": [],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 205928,
+            "type": "case_statement",
+            "text": "case 1",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 685907,
+            "type": "expression_statement",
+            "text": "result = 10;",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 207395,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 6,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 686155,
+            "type": "case_statement",
+            "text": "case 2",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 269669,
+            "type": "expression_statement",
+            "text": "result = 20;",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 641250,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 9,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 774242,
+            "type": "case_statement",
+            "text": "case 3",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 301815,
+            "type": "expression_statement",
+            "text": "result = 30;",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 366917,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 12,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 349684,
+            "type": "case_statement",
+            "text": "default",
+            "line": 13,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 972030,
+            "type": "expression_statement",
+            "text": "result = 0;",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 574231,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 15,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 194964,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 17,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 857669,
+            "type": "function_definition",
+            "text": "int switch_case_test(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 857669,
+            "target_id": 908520,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 908520,
+            "target_id": 10358,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 10358,
+            "target_id": 205928,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 205928,
+            "target_id": 685907,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 685907,
+            "target_id": 207395,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 205928,
+            "target_id": 686155,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 686155,
+            "target_id": 269669,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 269669,
+            "target_id": 641250,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 686155,
+            "target_id": 774242,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 774242,
+            "target_id": 301815,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 301815,
+            "target_id": 366917,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 774242,
+            "target_id": 349684,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 349684,
+            "target_id": 972030,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 972030,
+            "target_id": 574231,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 207395,
+            "target_id": 194964,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 641250,
+            "target_id": 194964,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 366917,
+            "target_id": 194964,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 574231,
+            "target_id": 194964,
+            "label": "",
+            "type": "CFG"
+          }
+        ],
+        "node_count": 16,
+        "edge_count": 18
+      },
+      "time": 0.0007421970367431641,
+      "success": true
+    },
+    "cdg": {
+      "graph": {
+        "graph_type": "CDG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 10358,
+            "type": "switch_statement",
+            "text": "switch(x)",
+            "line": 3,
+            "defs": [],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 205928,
+            "type": "case_statement",
+            "text": "case 1",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 685907,
+            "type": "expression_statement",
+            "text": "result = 10;",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 207395,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 6,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 686155,
+            "type": "case_statement",
+            "text": "case 2",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 269669,
+            "type": "expression_statement",
+            "text": "result = 20;",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 641250,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 9,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 774242,
+            "type": "case_statement",
+            "text": "case 3",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 301815,
+            "type": "expression_statement",
+            "text": "result = 30;",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 366917,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 12,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 349684,
+            "type": "case_statement",
+            "text": "default",
+            "line": 13,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 972030,
+            "type": "expression_statement",
+            "text": "result = 0;",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 574231,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 15,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 194964,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 17,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 857669,
+            "type": "function_definition",
+            "text": "int switch_case_test(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 686155,
+            "target_id": 641250,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 205928,
+            "target_id": 207395,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 686155,
+            "target_id": 774242,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 686155,
+            "target_id": 269669,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 774242,
+            "target_id": 366917,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 205928,
+            "target_id": 686155,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 774242,
+            "target_id": 574231,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 205928,
+            "target_id": 685907,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 774242,
+            "target_id": 349684,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 774242,
+            "target_id": 301815,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 774242,
+            "target_id": 972030,
+            "label": "",
+            "type": "CDG"
+          }
+        ],
+        "node_count": 17,
+        "edge_count": 11
+      },
+      "time": 0.0009217262268066406,
+      "success": true
+    },
+    "ddg": {
+      "graph": {
+        "graph_type": "DDG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 10358,
+            "type": "switch_statement",
+            "text": "switch(x)",
+            "line": 3,
+            "defs": [],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 205928,
+            "type": "case_statement",
+            "text": "case 1",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 685907,
+            "type": "expression_statement",
+            "text": "result = 10;",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 207395,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 6,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 686155,
+            "type": "case_statement",
+            "text": "case 2",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 269669,
+            "type": "expression_statement",
+            "text": "result = 20;",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 641250,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 9,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 774242,
+            "type": "case_statement",
+            "text": "case 3",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 301815,
+            "type": "expression_statement",
+            "text": "result = 30;",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 366917,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 12,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 349684,
+            "type": "case_statement",
+            "text": "default",
+            "line": 13,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 972030,
+            "type": "expression_statement",
+            "text": "result = 0;",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 574231,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 15,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 194964,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 17,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 857669,
+            "type": "function_definition",
+            "text": "int switch_case_test(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 685907,
+            "target_id": 194964,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 269669,
+            "target_id": 194964,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 301815,
+            "target_id": 194964,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 972030,
+            "target_id": 194964,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 857669,
+            "target_id": 10358,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x"
+            ]
+          }
+        ],
+        "node_count": 16,
+        "edge_count": 5
+      },
+      "time": 0.0008993148803710938,
+      "success": true
+    },
+    "pdg": {
+      "graph": {
+        "graph_type": "PDG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 10358,
+            "type": "switch_statement",
+            "text": "switch(x)",
+            "line": 3,
+            "defs": [],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 205928,
+            "type": "case_statement",
+            "text": "case 1",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 685907,
+            "type": "expression_statement",
+            "text": "result = 10;",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 207395,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 6,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 686155,
+            "type": "case_statement",
+            "text": "case 2",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 269669,
+            "type": "expression_statement",
+            "text": "result = 20;",
+            "line": 8,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 641250,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 9,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 774242,
+            "type": "case_statement",
+            "text": "case 3",
+            "line": 10,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 301815,
+            "type": "expression_statement",
+            "text": "result = 30;",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 366917,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 12,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 349684,
+            "type": "case_statement",
+            "text": "default",
+            "line": 13,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 972030,
+            "type": "expression_statement",
+            "text": "result = 0;",
+            "line": 14,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 574231,
+            "type": "break_statement",
+            "text": "break;",
+            "line": 15,
+            "defs": [],
+            "uses": []
+          },
+          {
+            "id": 194964,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 17,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 857669,
+            "type": "function_definition",
+            "text": "int switch_case_test(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 686155,
+            "target_id": 641250,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 205928,
+            "target_id": 207395,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 686155,
+            "target_id": 774242,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 686155,
+            "target_id": 269669,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 774242,
+            "target_id": 366917,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 205928,
+            "target_id": 686155,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 774242,
+            "target_id": 574231,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 205928,
+            "target_id": 685907,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 774242,
+            "target_id": 349684,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 774242,
+            "target_id": 301815,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 774242,
+            "target_id": 972030,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 685907,
+            "target_id": 194964,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 269669,
+            "target_id": 194964,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 301815,
+            "target_id": 194964,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 972030,
+            "target_id": 194964,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 857669,
+            "target_id": 10358,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x"
+            ]
+          }
+        ],
+        "node_count": 17,
+        "edge_count": 16
+      },
+      "time": 0.0014498233795166016,
+      "success": true
+    }
+  }
+}

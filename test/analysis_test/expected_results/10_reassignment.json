@@ -1,0 +1,396 @@
+{
+  "program_name": "10_reassignment",
+  "program_file": "10_reassignment.c",
+  "code_lines": 8,
+  "code": "int reassignment_test(int x) {\n    int y = x + 1;\n    y = y * 2;\n    y = y + 3;\n    return y;\n}\n\n",
+  "timestamp": "2025-10-31 22:48:37",
+  "graphs": {
+    "cfg": {
+      "graph": {
+        "graph_type": "CFG",
+        "nodes": [
+          {
+            "id": 483245,
+            "type": "declaration",
+            "text": "int y = x + 1;",
+            "line": 2,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 696507,
+            "type": "expression_statement",
+            "text": "y = y * 2;",
+            "line": 3,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 166446,
+            "type": "expression_statement",
+            "text": "y = y + 3;",
+            "line": 4,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 269225,
+            "type": "return_statement",
+            "text": "return y;",
+            "line": 5,
+            "defs": [],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 819686,
+            "type": "function_definition",
+            "text": "int reassignment_test(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 819686,
+            "target_id": 483245,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 483245,
+            "target_id": 696507,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 696507,
+            "target_id": 166446,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 166446,
+            "target_id": 269225,
+            "label": "",
+            "type": "CFG"
+          }
+        ],
+        "node_count": 5,
+        "edge_count": 4
+      },
+      "time": 0.00012755393981933594,
+      "success": true
+    },
+    "cdg": {
+      "graph": {
+        "graph_type": "CDG",
+        "nodes": [
+          {
+            "id": 483245,
+            "type": "declaration",
+            "text": "int y = x + 1;",
+            "line": 2,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 696507,
+            "type": "expression_statement",
+            "text": "y = y * 2;",
+            "line": 3,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 166446,
+            "type": "expression_statement",
+            "text": "y = y + 3;",
+            "line": 4,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 269225,
+            "type": "return_statement",
+            "text": "return y;",
+            "line": 5,
+            "defs": [],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 819686,
+            "type": "function_definition",
+            "text": "int reassignment_test(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [],
+        "node_count": 6,
+        "edge_count": 0
+      },
+      "time": 0.00013971328735351562,
+      "success": true
+    },
+    "ddg": {
+      "graph": {
+        "graph_type": "DDG",
+        "nodes": [
+          {
+            "id": 483245,
+            "type": "declaration",
+            "text": "int y = x + 1;",
+            "line": 2,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 696507,
+            "type": "expression_statement",
+            "text": "y = y * 2;",
+            "line": 3,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 166446,
+            "type": "expression_statement",
+            "text": "y = y + 3;",
+            "line": 4,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 269225,
+            "type": "return_statement",
+            "text": "return y;",
+            "line": 5,
+            "defs": [],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 819686,
+            "type": "function_definition",
+            "text": "int reassignment_test(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 483245,
+            "target_id": 696507,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "y"
+            ]
+          },
+          {
+            "source_id": 696507,
+            "target_id": 166446,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "y"
+            ]
+          },
+          {
+            "source_id": 166446,
+            "target_id": 269225,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "y"
+            ]
+          },
+          {
+            "source_id": 819686,
+            "target_id": 483245,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x"
+            ]
+          }
+        ],
+        "node_count": 5,
+        "edge_count": 4
+      },
+      "time": 0.0001385211944580078,
+      "success": true
+    },
+    "pdg": {
+      "graph": {
+        "graph_type": "PDG",
+        "nodes": [
+          {
+            "id": 483245,
+            "type": "declaration",
+            "text": "int y = x + 1;",
+            "line": 2,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 696507,
+            "type": "expression_statement",
+            "text": "y = y * 2;",
+            "line": 3,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 166446,
+            "type": "expression_statement",
+            "text": "y = y + 3;",
+            "line": 4,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 269225,
+            "type": "return_statement",
+            "text": "return y;",
+            "line": 5,
+            "defs": [],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 819686,
+            "type": "function_definition",
+            "text": "int reassignment_test(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 483245,
+            "target_id": 696507,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "y"
+            ]
+          },
+          {
+            "source_id": 696507,
+            "target_id": 166446,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "y"
+            ]
+          },
+          {
+            "source_id": 166446,
+            "target_id": 269225,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "y"
+            ]
+          },
+          {
+            "source_id": 819686,
+            "target_id": 483245,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x"
+            ]
+          }
+        ],
+        "node_count": 6,
+        "edge_count": 4
+      },
+      "time": 0.000263214111328125,
+      "success": true
+    }
+  }
+}

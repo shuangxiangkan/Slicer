@@ -1,0 +1,599 @@
+{
+  "program_name": "05_nested_if",
+  "program_file": "05_nested_if.c",
+  "code_lines": 13,
+  "code": "int nested_if_test(int x, int y) {\n    int result = 0;\n    if (x > 0) {\n        if (y > 0) {\n            result = x + y;\n        } else {\n            result = x - y;\n        }\n    }\n    return result;\n}\n\n",
+  "timestamp": "2025-10-31 22:48:37",
+  "graphs": {
+    "cfg": {
+      "graph": {
+        "graph_type": "CFG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 266063,
+            "type": "if_statement",
+            "text": "if(x > 0)",
+            "line": 3,
+            "defs": [],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 482296,
+            "type": "if_statement",
+            "text": "if(y > 0)",
+            "line": 4,
+            "defs": [],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 429098,
+            "type": "expression_statement",
+            "text": "result = x + y;",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "x",
+              "y"
+            ]
+          },
+          {
+            "id": 701164,
+            "type": "expression_statement",
+            "text": "result = x - y;",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "x",
+              "y"
+            ]
+          },
+          {
+            "id": 626971,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 10,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 11166,
+            "type": "function_definition",
+            "text": "int nested_if_test(int x, int y)",
+            "line": 1,
+            "defs": [
+              "x",
+              "y"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 11166,
+            "target_id": 908520,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 908520,
+            "target_id": 266063,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 266063,
+            "target_id": 482296,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 482296,
+            "target_id": 429098,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 482296,
+            "target_id": 701164,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 429098,
+            "target_id": 626971,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 701164,
+            "target_id": 626971,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 266063,
+            "target_id": 626971,
+            "label": "N",
+            "type": "CFG"
+          }
+        ],
+        "node_count": 7,
+        "edge_count": 8
+      },
+      "time": 0.0002834796905517578,
+      "success": true
+    },
+    "cdg": {
+      "graph": {
+        "graph_type": "CDG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 266063,
+            "type": "if_statement",
+            "text": "if(x > 0)",
+            "line": 3,
+            "defs": [],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 482296,
+            "type": "if_statement",
+            "text": "if(y > 0)",
+            "line": 4,
+            "defs": [],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 429098,
+            "type": "expression_statement",
+            "text": "result = x + y;",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "x",
+              "y"
+            ]
+          },
+          {
+            "id": 701164,
+            "type": "expression_statement",
+            "text": "result = x - y;",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "x",
+              "y"
+            ]
+          },
+          {
+            "id": 626971,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 10,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 11166,
+            "type": "function_definition",
+            "text": "int nested_if_test(int x, int y)",
+            "line": 1,
+            "defs": [
+              "x",
+              "y"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 482296,
+            "target_id": 429098,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 482296,
+            "target_id": 701164,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 266063,
+            "target_id": 482296,
+            "label": "",
+            "type": "CDG"
+          }
+        ],
+        "node_count": 8,
+        "edge_count": 3
+      },
+      "time": 0.00031280517578125,
+      "success": true
+    },
+    "ddg": {
+      "graph": {
+        "graph_type": "DDG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 266063,
+            "type": "if_statement",
+            "text": "if(x > 0)",
+            "line": 3,
+            "defs": [],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 482296,
+            "type": "if_statement",
+            "text": "if(y > 0)",
+            "line": 4,
+            "defs": [],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 429098,
+            "type": "expression_statement",
+            "text": "result = x + y;",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "x",
+              "y"
+            ]
+          },
+          {
+            "id": 701164,
+            "type": "expression_statement",
+            "text": "result = x - y;",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "x",
+              "y"
+            ]
+          },
+          {
+            "id": 626971,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 10,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 11166,
+            "type": "function_definition",
+            "text": "int nested_if_test(int x, int y)",
+            "line": 1,
+            "defs": [
+              "x",
+              "y"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 908520,
+            "target_id": 626971,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 429098,
+            "target_id": 626971,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 701164,
+            "target_id": 626971,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 11166,
+            "target_id": 266063,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x"
+            ]
+          },
+          {
+            "source_id": 11166,
+            "target_id": 429098,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x",
+              "y"
+            ]
+          },
+          {
+            "source_id": 11166,
+            "target_id": 701164,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x",
+              "y"
+            ]
+          },
+          {
+            "source_id": 11166,
+            "target_id": 482296,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "y"
+            ]
+          }
+        ],
+        "node_count": 7,
+        "edge_count": 7
+      },
+      "time": 0.00031638145446777344,
+      "success": true
+    },
+    "pdg": {
+      "graph": {
+        "graph_type": "PDG",
+        "nodes": [
+          {
+            "id": 908520,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 2,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 266063,
+            "type": "if_statement",
+            "text": "if(x > 0)",
+            "line": 3,
+            "defs": [],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 482296,
+            "type": "if_statement",
+            "text": "if(y > 0)",
+            "line": 4,
+            "defs": [],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 429098,
+            "type": "expression_statement",
+            "text": "result = x + y;",
+            "line": 5,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "x",
+              "y"
+            ]
+          },
+          {
+            "id": 701164,
+            "type": "expression_statement",
+            "text": "result = x - y;",
+            "line": 7,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "x",
+              "y"
+            ]
+          },
+          {
+            "id": 626971,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 10,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 11166,
+            "type": "function_definition",
+            "text": "int nested_if_test(int x, int y)",
+            "line": 1,
+            "defs": [
+              "x",
+              "y"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 482296,
+            "target_id": 429098,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 482296,
+            "target_id": 701164,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 266063,
+            "target_id": 482296,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 908520,
+            "target_id": 626971,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 429098,
+            "target_id": 626971,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 701164,
+            "target_id": 626971,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 11166,
+            "target_id": 266063,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x"
+            ]
+          },
+          {
+            "source_id": 11166,
+            "target_id": 429098,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x",
+              "y"
+            ]
+          },
+          {
+            "source_id": 11166,
+            "target_id": 701164,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x",
+              "y"
+            ]
+          },
+          {
+            "source_id": 11166,
+            "target_id": 482296,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "y"
+            ]
+          }
+        ],
+        "node_count": 8,
+        "edge_count": 10
+      },
+      "time": 0.0006246566772460938,
+      "success": true
+    }
+  }
+}

@@ -1,0 +1,324 @@
+{
+  "program_name": "01_simple_def_use",
+  "program_file": "01_simple_def_use.c",
+  "code_lines": 7,
+  "code": "int simple_def_use(int x) {\n    int y = x + 1;\n    int z = y * 2;\n    return z;\n}\n\n",
+  "timestamp": "2025-10-31 22:48:37",
+  "graphs": {
+    "cfg": {
+      "graph": {
+        "graph_type": "CFG",
+        "nodes": [
+          {
+            "id": 483245,
+            "type": "declaration",
+            "text": "int y = x + 1;",
+            "line": 2,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 502752,
+            "type": "declaration",
+            "text": "int z = y * 2;",
+            "line": 3,
+            "defs": [
+              "z"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 551776,
+            "type": "return_statement",
+            "text": "return z;",
+            "line": 4,
+            "defs": [],
+            "uses": [
+              "z"
+            ]
+          },
+          {
+            "id": 322565,
+            "type": "function_definition",
+            "text": "int simple_def_use(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 322565,
+            "target_id": 483245,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 483245,
+            "target_id": 502752,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 502752,
+            "target_id": 551776,
+            "label": "",
+            "type": "CFG"
+          }
+        ],
+        "node_count": 4,
+        "edge_count": 3
+      },
+      "time": 0.0010631084442138672,
+      "success": true
+    },
+    "cdg": {
+      "graph": {
+        "graph_type": "CDG",
+        "nodes": [
+          {
+            "id": 483245,
+            "type": "declaration",
+            "text": "int y = x + 1;",
+            "line": 2,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 502752,
+            "type": "declaration",
+            "text": "int z = y * 2;",
+            "line": 3,
+            "defs": [
+              "z"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 551776,
+            "type": "return_statement",
+            "text": "return z;",
+            "line": 4,
+            "defs": [],
+            "uses": [
+              "z"
+            ]
+          },
+          {
+            "id": 322565,
+            "type": "function_definition",
+            "text": "int simple_def_use(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [],
+        "node_count": 5,
+        "edge_count": 0
+      },
+      "time": 0.0008540153503417969,
+      "success": true
+    },
+    "ddg": {
+      "graph": {
+        "graph_type": "DDG",
+        "nodes": [
+          {
+            "id": 483245,
+            "type": "declaration",
+            "text": "int y = x + 1;",
+            "line": 2,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 502752,
+            "type": "declaration",
+            "text": "int z = y * 2;",
+            "line": 3,
+            "defs": [
+              "z"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 551776,
+            "type": "return_statement",
+            "text": "return z;",
+            "line": 4,
+            "defs": [],
+            "uses": [
+              "z"
+            ]
+          },
+          {
+            "id": 322565,
+            "type": "function_definition",
+            "text": "int simple_def_use(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 483245,
+            "target_id": 502752,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "y"
+            ]
+          },
+          {
+            "source_id": 502752,
+            "target_id": 551776,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "z"
+            ]
+          },
+          {
+            "source_id": 322565,
+            "target_id": 483245,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x"
+            ]
+          }
+        ],
+        "node_count": 4,
+        "edge_count": 3
+      },
+      "time": 0.0006961822509765625,
+      "success": true
+    },
+    "pdg": {
+      "graph": {
+        "graph_type": "PDG",
+        "nodes": [
+          {
+            "id": 483245,
+            "type": "declaration",
+            "text": "int y = x + 1;",
+            "line": 2,
+            "defs": [
+              "y"
+            ],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 502752,
+            "type": "declaration",
+            "text": "int z = y * 2;",
+            "line": 3,
+            "defs": [
+              "z"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 551776,
+            "type": "return_statement",
+            "text": "return z;",
+            "line": 4,
+            "defs": [],
+            "uses": [
+              "z"
+            ]
+          },
+          {
+            "id": 322565,
+            "type": "function_definition",
+            "text": "int simple_def_use(int x)",
+            "line": 1,
+            "defs": [
+              "x"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 483245,
+            "target_id": 502752,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "y"
+            ]
+          },
+          {
+            "source_id": 502752,
+            "target_id": 551776,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "z"
+            ]
+          },
+          {
+            "source_id": 322565,
+            "target_id": 483245,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x"
+            ]
+          }
+        ],
+        "node_count": 5,
+        "edge_count": 3
+      },
+      "time": 0.0014925003051757812,
+      "success": true
+    }
+  }
+}

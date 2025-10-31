@@ -1,0 +1,1435 @@
+{
+  "program_name": "08_complex_function",
+  "program_file": "08_complex_function.c",
+  "code_lines": 26,
+  "code": "int complex_function_test(int x, int y, int z) {\n    int a = x + 1;\n    int b = y + 2;\n    int result = 0;\n    \n    if (a > b) {\n        for (int i = 0; i < a; i++) {\n            if (i % 2 == 0) {\n                result = result + i;\n            } else {\n                result = result - i;\n            }\n        }\n    } else {\n        int temp = b;\n        while (temp > 0) {\n            result = result + temp;\n            temp = temp - 1;\n        }\n    }\n    \n    result = result + z;\n    return result;\n}\n\n",
+  "timestamp": "2025-10-31 22:48:37",
+  "graphs": {
+    "cfg": {
+      "graph": {
+        "graph_type": "CFG",
+        "nodes": [
+          {
+            "id": 483245,
+            "type": "declaration",
+            "text": "int a = x + 1;",
+            "line": 2,
+            "defs": [
+              "a"
+            ],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 502752,
+            "type": "declaration",
+            "text": "int b = y + 2;",
+            "line": 3,
+            "defs": [
+              "b"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 675937,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 98198,
+            "type": "if_statement",
+            "text": "if(a > b)",
+            "line": 6,
+            "defs": [],
+            "uses": [
+              "b",
+              "a"
+            ]
+          },
+          {
+            "id": 698826,
+            "type": "for_statement",
+            "text": "for(int i = 0;i < a;i++)",
+            "line": 7,
+            "defs": [
+              "i"
+            ],
+            "uses": [
+              "a",
+              "i"
+            ]
+          },
+          {
+            "id": 58907,
+            "type": "if_statement",
+            "text": "if(i % 2 == 0)",
+            "line": 8,
+            "defs": [],
+            "uses": [
+              "i"
+            ]
+          },
+          {
+            "id": 558587,
+            "type": "expression_statement",
+            "text": "result = result + i;",
+            "line": 9,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "i",
+              "result"
+            ]
+          },
+          {
+            "id": 616561,
+            "type": "expression_statement",
+            "text": "result = result - i;",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "i",
+              "result"
+            ]
+          },
+          {
+            "id": 259669,
+            "type": "declaration",
+            "text": "int temp = b;",
+            "line": 15,
+            "defs": [
+              "temp"
+            ],
+            "uses": [
+              "b"
+            ]
+          },
+          {
+            "id": 640248,
+            "type": "while_statement",
+            "text": "while(temp > 0)",
+            "line": 16,
+            "defs": [],
+            "uses": [
+              "temp"
+            ]
+          },
+          {
+            "id": 781460,
+            "type": "expression_statement",
+            "text": "result = result + temp;",
+            "line": 17,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "result"
+            ]
+          },
+          {
+            "id": 839941,
+            "type": "expression_statement",
+            "text": "temp = temp - 1;",
+            "line": 18,
+            "defs": [
+              "temp"
+            ],
+            "uses": [
+              "temp"
+            ]
+          },
+          {
+            "id": 651717,
+            "type": "expression_statement",
+            "text": "result = result + z;",
+            "line": 22,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "z",
+              "result"
+            ]
+          },
+          {
+            "id": 872979,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 23,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 882066,
+            "type": "function_definition",
+            "text": "int complex_function_test(int x, int y, int z)",
+            "line": 1,
+            "defs": [
+              "z",
+              "x",
+              "y"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 882066,
+            "target_id": 483245,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 483245,
+            "target_id": 502752,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 502752,
+            "target_id": 675937,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 675937,
+            "target_id": 98198,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 98198,
+            "target_id": 698826,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 558587,
+            "target_id": 698826,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 616561,
+            "target_id": 698826,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 698826,
+            "target_id": 58907,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 58907,
+            "target_id": 558587,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 58907,
+            "target_id": 616561,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 98198,
+            "target_id": 259669,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 259669,
+            "target_id": 640248,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 839941,
+            "target_id": 640248,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 640248,
+            "target_id": 781460,
+            "label": "Y",
+            "type": "CFG"
+          },
+          {
+            "source_id": 781460,
+            "target_id": 839941,
+            "label": "",
+            "type": "CFG"
+          },
+          {
+            "source_id": 698826,
+            "target_id": 651717,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 640248,
+            "target_id": 651717,
+            "label": "N",
+            "type": "CFG"
+          },
+          {
+            "source_id": 651717,
+            "target_id": 872979,
+            "label": "",
+            "type": "CFG"
+          }
+        ],
+        "node_count": 15,
+        "edge_count": 18
+      },
+      "time": 0.00045990943908691406,
+      "success": true
+    },
+    "cdg": {
+      "graph": {
+        "graph_type": "CDG",
+        "nodes": [
+          {
+            "id": 483245,
+            "type": "declaration",
+            "text": "int a = x + 1;",
+            "line": 2,
+            "defs": [
+              "a"
+            ],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 502752,
+            "type": "declaration",
+            "text": "int b = y + 2;",
+            "line": 3,
+            "defs": [
+              "b"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 675937,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 98198,
+            "type": "if_statement",
+            "text": "if(a > b)",
+            "line": 6,
+            "defs": [],
+            "uses": [
+              "b",
+              "a"
+            ]
+          },
+          {
+            "id": 698826,
+            "type": "for_statement",
+            "text": "for(int i = 0;i < a;i++)",
+            "line": 7,
+            "defs": [
+              "i"
+            ],
+            "uses": [
+              "a",
+              "i"
+            ]
+          },
+          {
+            "id": 58907,
+            "type": "if_statement",
+            "text": "if(i % 2 == 0)",
+            "line": 8,
+            "defs": [],
+            "uses": [
+              "i"
+            ]
+          },
+          {
+            "id": 558587,
+            "type": "expression_statement",
+            "text": "result = result + i;",
+            "line": 9,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "i",
+              "result"
+            ]
+          },
+          {
+            "id": 616561,
+            "type": "expression_statement",
+            "text": "result = result - i;",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "i",
+              "result"
+            ]
+          },
+          {
+            "id": 259669,
+            "type": "declaration",
+            "text": "int temp = b;",
+            "line": 15,
+            "defs": [
+              "temp"
+            ],
+            "uses": [
+              "b"
+            ]
+          },
+          {
+            "id": 640248,
+            "type": "while_statement",
+            "text": "while(temp > 0)",
+            "line": 16,
+            "defs": [],
+            "uses": [
+              "temp"
+            ]
+          },
+          {
+            "id": 781460,
+            "type": "expression_statement",
+            "text": "result = result + temp;",
+            "line": 17,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "result"
+            ]
+          },
+          {
+            "id": 839941,
+            "type": "expression_statement",
+            "text": "temp = temp - 1;",
+            "line": 18,
+            "defs": [
+              "temp"
+            ],
+            "uses": [
+              "temp"
+            ]
+          },
+          {
+            "id": 651717,
+            "type": "expression_statement",
+            "text": "result = result + z;",
+            "line": 22,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "z",
+              "result"
+            ]
+          },
+          {
+            "id": 872979,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 23,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 882066,
+            "type": "function_definition",
+            "text": "int complex_function_test(int x, int y, int z)",
+            "line": 1,
+            "defs": [
+              "z",
+              "x",
+              "y"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 640248,
+            "target_id": 839941,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 98198,
+            "target_id": 698826,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 58907,
+            "target_id": 616561,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 640248,
+            "target_id": 781460,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 98198,
+            "target_id": 259669,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 58907,
+            "target_id": 558587,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 98198,
+            "target_id": 640248,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 698826,
+            "target_id": 58907,
+            "label": "",
+            "type": "CDG"
+          }
+        ],
+        "node_count": 16,
+        "edge_count": 8
+      },
+      "time": 0.0005795955657958984,
+      "success": true
+    },
+    "ddg": {
+      "graph": {
+        "graph_type": "DDG",
+        "nodes": [
+          {
+            "id": 483245,
+            "type": "declaration",
+            "text": "int a = x + 1;",
+            "line": 2,
+            "defs": [
+              "a"
+            ],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 502752,
+            "type": "declaration",
+            "text": "int b = y + 2;",
+            "line": 3,
+            "defs": [
+              "b"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 675937,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 98198,
+            "type": "if_statement",
+            "text": "if(a > b)",
+            "line": 6,
+            "defs": [],
+            "uses": [
+              "b",
+              "a"
+            ]
+          },
+          {
+            "id": 698826,
+            "type": "for_statement",
+            "text": "for(int i = 0;i < a;i++)",
+            "line": 7,
+            "defs": [
+              "i"
+            ],
+            "uses": [
+              "a",
+              "i"
+            ]
+          },
+          {
+            "id": 58907,
+            "type": "if_statement",
+            "text": "if(i % 2 == 0)",
+            "line": 8,
+            "defs": [],
+            "uses": [
+              "i"
+            ]
+          },
+          {
+            "id": 558587,
+            "type": "expression_statement",
+            "text": "result = result + i;",
+            "line": 9,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "i",
+              "result"
+            ]
+          },
+          {
+            "id": 616561,
+            "type": "expression_statement",
+            "text": "result = result - i;",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "i",
+              "result"
+            ]
+          },
+          {
+            "id": 259669,
+            "type": "declaration",
+            "text": "int temp = b;",
+            "line": 15,
+            "defs": [
+              "temp"
+            ],
+            "uses": [
+              "b"
+            ]
+          },
+          {
+            "id": 640248,
+            "type": "while_statement",
+            "text": "while(temp > 0)",
+            "line": 16,
+            "defs": [],
+            "uses": [
+              "temp"
+            ]
+          },
+          {
+            "id": 781460,
+            "type": "expression_statement",
+            "text": "result = result + temp;",
+            "line": 17,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "result"
+            ]
+          },
+          {
+            "id": 839941,
+            "type": "expression_statement",
+            "text": "temp = temp - 1;",
+            "line": 18,
+            "defs": [
+              "temp"
+            ],
+            "uses": [
+              "temp"
+            ]
+          },
+          {
+            "id": 651717,
+            "type": "expression_statement",
+            "text": "result = result + z;",
+            "line": 22,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "z",
+              "result"
+            ]
+          },
+          {
+            "id": 872979,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 23,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 882066,
+            "type": "function_definition",
+            "text": "int complex_function_test(int x, int y, int z)",
+            "line": 1,
+            "defs": [
+              "z",
+              "x",
+              "y"
+            ],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 483245,
+            "target_id": 98198,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "a"
+            ]
+          },
+          {
+            "source_id": 483245,
+            "target_id": 698826,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "a"
+            ]
+          },
+          {
+            "source_id": 502752,
+            "target_id": 98198,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 502752,
+            "target_id": 259669,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 675937,
+            "target_id": 558587,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 675937,
+            "target_id": 616561,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 675937,
+            "target_id": 781460,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 675937,
+            "target_id": 651717,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 558587,
+            "target_id": 616561,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 558587,
+            "target_id": 651717,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 616561,
+            "target_id": 558587,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 616561,
+            "target_id": 651717,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 781460,
+            "target_id": 651717,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 651717,
+            "target_id": 872979,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 698826,
+            "target_id": 58907,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 698826,
+            "target_id": 558587,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 698826,
+            "target_id": 616561,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 259669,
+            "target_id": 640248,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 259669,
+            "target_id": 781460,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 259669,
+            "target_id": 839941,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 839941,
+            "target_id": 640248,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 839941,
+            "target_id": 781460,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 882066,
+            "target_id": 651717,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "z"
+            ]
+          },
+          {
+            "source_id": 882066,
+            "target_id": 483245,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x"
+            ]
+          },
+          {
+            "source_id": 882066,
+            "target_id": 502752,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "y"
+            ]
+          }
+        ],
+        "node_count": 15,
+        "edge_count": 25
+      },
+      "time": 0.0006947517395019531,
+      "success": true
+    },
+    "pdg": {
+      "graph": {
+        "graph_type": "PDG",
+        "nodes": [
+          {
+            "id": 483245,
+            "type": "declaration",
+            "text": "int a = x + 1;",
+            "line": 2,
+            "defs": [
+              "a"
+            ],
+            "uses": [
+              "x"
+            ]
+          },
+          {
+            "id": 502752,
+            "type": "declaration",
+            "text": "int b = y + 2;",
+            "line": 3,
+            "defs": [
+              "b"
+            ],
+            "uses": [
+              "y"
+            ]
+          },
+          {
+            "id": 675937,
+            "type": "declaration",
+            "text": "int result = 0;",
+            "line": 4,
+            "defs": [
+              "result"
+            ],
+            "uses": []
+          },
+          {
+            "id": 98198,
+            "type": "if_statement",
+            "text": "if(a > b)",
+            "line": 6,
+            "defs": [],
+            "uses": [
+              "b",
+              "a"
+            ]
+          },
+          {
+            "id": 698826,
+            "type": "for_statement",
+            "text": "for(int i = 0;i < a;i++)",
+            "line": 7,
+            "defs": [
+              "i"
+            ],
+            "uses": [
+              "a",
+              "i"
+            ]
+          },
+          {
+            "id": 58907,
+            "type": "if_statement",
+            "text": "if(i % 2 == 0)",
+            "line": 8,
+            "defs": [],
+            "uses": [
+              "i"
+            ]
+          },
+          {
+            "id": 558587,
+            "type": "expression_statement",
+            "text": "result = result + i;",
+            "line": 9,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "i",
+              "result"
+            ]
+          },
+          {
+            "id": 616561,
+            "type": "expression_statement",
+            "text": "result = result - i;",
+            "line": 11,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "i",
+              "result"
+            ]
+          },
+          {
+            "id": 259669,
+            "type": "declaration",
+            "text": "int temp = b;",
+            "line": 15,
+            "defs": [
+              "temp"
+            ],
+            "uses": [
+              "b"
+            ]
+          },
+          {
+            "id": 640248,
+            "type": "while_statement",
+            "text": "while(temp > 0)",
+            "line": 16,
+            "defs": [],
+            "uses": [
+              "temp"
+            ]
+          },
+          {
+            "id": 781460,
+            "type": "expression_statement",
+            "text": "result = result + temp;",
+            "line": 17,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "temp",
+              "result"
+            ]
+          },
+          {
+            "id": 839941,
+            "type": "expression_statement",
+            "text": "temp = temp - 1;",
+            "line": 18,
+            "defs": [
+              "temp"
+            ],
+            "uses": [
+              "temp"
+            ]
+          },
+          {
+            "id": 651717,
+            "type": "expression_statement",
+            "text": "result = result + z;",
+            "line": 22,
+            "defs": [
+              "result"
+            ],
+            "uses": [
+              "z",
+              "result"
+            ]
+          },
+          {
+            "id": 872979,
+            "type": "return_statement",
+            "text": "return result;",
+            "line": 23,
+            "defs": [],
+            "uses": [
+              "result"
+            ]
+          },
+          {
+            "id": 882066,
+            "type": "function_definition",
+            "text": "int complex_function_test(int x, int y, int z)",
+            "line": 1,
+            "defs": [
+              "z",
+              "x",
+              "y"
+            ],
+            "uses": []
+          },
+          {
+            "id": -1,
+            "type": "virtual_exit",
+            "text": "EXIT",
+            "line": -1,
+            "defs": [],
+            "uses": []
+          }
+        ],
+        "edges": [
+          {
+            "source_id": 640248,
+            "target_id": 839941,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 98198,
+            "target_id": 698826,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 58907,
+            "target_id": 616561,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 640248,
+            "target_id": 781460,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 98198,
+            "target_id": 259669,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 58907,
+            "target_id": 558587,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 98198,
+            "target_id": 640248,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 698826,
+            "target_id": 58907,
+            "label": "",
+            "type": "CDG"
+          },
+          {
+            "source_id": 483245,
+            "target_id": 98198,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "a"
+            ]
+          },
+          {
+            "source_id": 483245,
+            "target_id": 698826,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "a"
+            ]
+          },
+          {
+            "source_id": 502752,
+            "target_id": 98198,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 502752,
+            "target_id": 259669,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "b"
+            ]
+          },
+          {
+            "source_id": 675937,
+            "target_id": 558587,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 675937,
+            "target_id": 616561,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 675937,
+            "target_id": 781460,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 675937,
+            "target_id": 651717,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 558587,
+            "target_id": 616561,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 558587,
+            "target_id": 651717,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 616561,
+            "target_id": 558587,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 616561,
+            "target_id": 651717,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 781460,
+            "target_id": 651717,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 651717,
+            "target_id": 872979,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "result"
+            ]
+          },
+          {
+            "source_id": 698826,
+            "target_id": 58907,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 698826,
+            "target_id": 558587,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 698826,
+            "target_id": 616561,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "i"
+            ]
+          },
+          {
+            "source_id": 259669,
+            "target_id": 640248,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 259669,
+            "target_id": 781460,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 259669,
+            "target_id": 839941,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 839941,
+            "target_id": 640248,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 839941,
+            "target_id": 781460,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "temp"
+            ]
+          },
+          {
+            "source_id": 882066,
+            "target_id": 651717,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "z"
+            ]
+          },
+          {
+            "source_id": 882066,
+            "target_id": 483245,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "x"
+            ]
+          },
+          {
+            "source_id": 882066,
+            "target_id": 502752,
+            "label": "",
+            "type": "DDG",
+            "variables": [
+              "y"
+            ]
+          }
+        ],
+        "node_count": 16,
+        "edge_count": 33
+      },
+      "time": 0.0012295246124267578,
+      "success": true
+    }
+  }
+}
