@@ -98,19 +98,34 @@ class DDG(CFG):
                     if d == u:  # 跳过同一个节点
                         continue
                     
-                    # 检查从d到u的所有路径，是否至少有一条路径没有中间重定义
-                    paths = cfg.findAllPath(d, u)
-                    for path in paths:
-                        is_arrival = True
-                        for n in path[1:-1]:  # 检查路径中间节点
-                            node = cfg.id_to_nodes[n]
+                    # 优化：使用hasValidPath代替findAllPath
+                    # 只需要判断是否存在至少一条无中间重定义的路径
+                    def path_validator(path):
+                        """检查路径中是否没有中间重定义变量X"""
+                        for node_id in path:
+                            node = cfg.id_to_nodes[node_id]
                             if X in node.defs:
-                                is_arrival = False
-                                break
-                        if is_arrival:  # 找到至少一条无中间重定义的路径
-                            edge.setdefault((d, u), set())
-                            edge[(d, u)].add(X)
-                            break  # 找到一条就够了
+                                return False  # 路径中有中间重定义
+                        return True  # 路径有效
+                    
+                    if cfg.hasValidPath(d, u, path_validator):
+                        edge.setdefault((d, u), set())
+                        edge[(d, u)].add(X)
+                    
+                    # 旧实现（性能较差，已弃用）：
+                    # 检查从d到u的所有路径，是否至少有一条路径没有中间重定义
+                    # paths = cfg.findAllPath(d, u)
+                    # for path in paths:
+                    #     is_arrival = True
+                    #     for n in path[1:-1]:  # 检查路径中间节点
+                    #         node = cfg.id_to_nodes[n]
+                    #         if X in node.defs:
+                    #             is_arrival = False
+                    #             break
+                    #     if is_arrival:  # 找到至少一条无中间重定义的路径
+                    #         edge.setdefault((d, u), set())
+                    #         edge[(d, u)].add(X)
+                    #         break  # 找到一条就够了
         
         # 情况2: use X to def Y (use节点到def节点) - 反向依赖/输出依赖
         # 注释：程序切片通常只考虑真实依赖，反依赖主要用于并行化分析

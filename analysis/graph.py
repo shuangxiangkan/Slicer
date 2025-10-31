@@ -186,10 +186,64 @@ class Graph:
                 outgoing[source_id].append(target_id)
         return outgoing
     
+    def hasValidPath(self, start, end, is_valid_path):
+        """
+        检查从start到end是否存在满足条件的路径（DFS优化版本）
+        
+        Args:
+            start: 起始节点ID
+            end: 终止节点ID
+            is_valid_path: 路径验证函数，接收路径的中间节点列表(不含start和end)，返回bool
+            
+        Returns:
+            bool: 是否存在满足条件的路径
+            
+        性能优化：找到第一条满足条件的路径立即返回，不遍历所有路径
+        """
+        if start == end:
+            return False
+        
+        # 获取出边结构
+        outgoing_edges = self.get_outgoing_edges()
+        
+        # DFS搜索
+        visited = set([start])  # 起始节点标记为已访问
+        path = []  # path只包含中间节点（不含start和end）
+        
+        def dfs(current):
+            """DFS搜索，找到满足条件的路径返回True"""
+            if current == end:
+                # 到达终点，检查路径是否满足条件（path不包含start和end）
+                return is_valid_path(path)
+            
+            # 遍历邻接节点
+            for next_node in outgoing_edges.get(current, []):
+                if next_node not in visited:
+                    visited.add(next_node)
+                    
+                    # 如果next_node不是终点，加入中间路径
+                    if next_node != end:
+                        path.append(next_node)
+                    
+                    if dfs(next_node):
+                        return True  # 找到满足条件的路径，立即返回
+                    
+                    # 回溯
+                    if next_node != end:
+                        path.pop()
+                    visited.remove(next_node)
+            
+            return False
+        
+        return dfs(start)
+    
     def findAllPath(self, start, end):
         """
         找到从start到end的所有路径
         算法参考：https://zhuanlan.zhihu.com/p/84437102
+        
+        注意：此方法性能较差（指数级复杂度），仅在需要所有路径时使用
+        如果只需要判断是否存在满足条件的路径，请使用hasValidPath()
         """
         if start == end:
             return []
