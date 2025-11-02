@@ -280,7 +280,7 @@ class HarnessGenerator:
         
         return None
     
-    def _extract_top_usage(self, usage_info, max_count=3):
+    def _extract_top_usage(self, usage_info, max_count=3, max_lines=200):
         """
         从usage信息中提取指定数量的usage示例
         按照原有顺序选择前max_count个示例
@@ -288,6 +288,7 @@ class HarnessGenerator:
         Args:
             usage_info: usage信息字典
             max_count: 最大提取数量，默认为3
+            max_lines: 单个usage示例的最大行数，默认为200。超过此行数的示例将被跳过
         """
         top_usage = []
         if usage_info and usage_info.get('all_usage'):
@@ -304,6 +305,14 @@ class HarnessGenerator:
                         break
                         
                     code = caller.get('code', '')
+                    
+                    # 过滤掉行数超过max_lines的usage example
+                    if code:
+                        line_count = len(code.split('\n'))
+                        if line_count > max_lines:
+                            log_info(f"Skipping usage example with {line_count} lines (exceeds {max_lines} lines limit)")
+                            continue
+                    
                     top_usage.append({
                         "code": code
                     })
