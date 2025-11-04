@@ -225,3 +225,5 @@ tools/driver/OGHarn/
 tools/driver/Libraries/
 tools/driver/libraries
 tools/driver/Output*
+
+frama-c/
