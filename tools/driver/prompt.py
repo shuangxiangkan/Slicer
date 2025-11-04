@@ -18,6 +18,27 @@ class PromptGenerator:
         self.include_headers = config_parser.get_include_headers()
         self.library_output_dir = library_output_dir
         
+        # Set prompts directory path
+        self.prompts_dir = os.path.join(os.path.dirname(__file__), 'prompts')
+    
+    def _load_prompt_template(self, template_name: str) -> str:
+        """Load prompt template from file
+        
+        Args:
+            template_name: Name of the template file (without .txt extension)
+            
+        Returns:
+            Template content as string
+        """
+        template_path = os.path.join(self.prompts_dir, f"{template_name}.txt")
+        try:
+            with open(template_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Prompt template not found: {template_path}")
+        except Exception as e:
+            raise Exception(f"Error loading prompt template {template_name}: {str(e)}")
+        
     def generate_fuzz_harness_prompt(self, api_info: Dict[str, Any]) -> str:
         """Generate prompt for creating Libfuzzer fuzz harness"""
         
@@ -41,85 +62,38 @@ class PromptGenerator:
             usage_examples, dependency_context, api_category
         )
         
-        # Determine language-specific requirements
+        # Select language-specific template
         if language == 'C++':
-            language_requirements = "Please generate C++ code following C++ best practices."
-            code_style = "C++"
-            entry_function = "extern \"C\" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)"
+            template_name = 'fuzz_harness_generation_cpp'
         else:
-            language_requirements = "Please generate C code following C best practices."
-            code_style = "C"
-            entry_function = "int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)"
+            template_name = 'fuzz_harness_generation_c'
         
-        prompt = f"""You are a professional {code_style} fuzzing expert. Please generate a high-quality Libfuzzer fuzz harness for the API function {api_name} in the {self.library_name} library.
-
-## Target API Information
-
-**Function Signature**: 
-{signature}
-
-**Include Headers**:
-{headers_section}
-
-**Function Comment**:
-{comments}
-
-**Function information in Documentation files**:
-{documentation}
-
-{examples_section}
-
-{reference_section}
-
-## Requirements
-
-{language_requirements}
-
-Please use the standard Libfuzzer entry function: `{entry_function}` to generate 1 complete {code_style} fuzz harness, including all necessary header files, function implementations, and error handling. The code should be directly usable for Libfuzzer fuzzing tests.
-
-## IMPORTANT: String Input Handling
-
-**Critical**: C library functions expect null-terminated strings, but fuzzer's raw input data is NOT null-terminated. Always ensure string parameters (char*, const char*) are properly null-terminated to avoid false-positive crashes that aren't real bugs.
-"""
+        # Load template and fill in variables
+        template = self._load_prompt_template(template_name)
+        prompt = template.format(
+            api_name=api_name,
+            library_name=self.library_name,
+            signature=signature,
+            headers_section=headers_section,
+            comments=comments,
+            documentation=documentation,
+            examples_section=examples_section,
+            reference_section=reference_section
+        )
         
         return prompt
-    
-    
-    
     
     def generate_api_documentation_extraction_prompt(self, document_content: str, api_functions: List[str]) -> str:
         """Generate prompt for extracting API documentation and usage from documents"""
         
-        prompt = f"""Extract API function information from the document below.
-
-Document:
-```
-{document_content}
-```
-
-Find any API functions mentioned in the document and extract:
-- Function name
-- Description and usage information
-
-Output JSON format:
-```json
-{{
-  "apis": {{
-    "function_name": {{
-      "description": "description and usage info"
-    }}
-  }}
-}}
-```
-
-Only include functions actually mentioned in the document."""
+        # Load template and fill in variables
+        template = self._load_prompt_template('api_documentation_extraction')
+        prompt = template.format(
+            document_content=document_content
+        )
         
         return prompt
-    
-    
-    
-    
-    
+        
     def _build_headers_section(self) -> str:
         """Build headers include section"""
         if not self.include_headers:
@@ -288,69 +262,24 @@ Only include functions actually mentioned in the document."""
             usage_examples, dependency_context, api_category
         )
         
-        # Determine language-specific requirements
+        # Select language-specific template
         if language == 'C++':
-            language_requirements = "Please generate C++ code following C++ best practices."
-            code_style = "C++"
-            entry_function = "extern \"C\" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)"
+            template_name = 'fix_harness_compilation_cpp'
         else:
-            language_requirements = "Please generate C code following C best practices."
-            code_style = "C"
-            entry_function = "int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)"
+            template_name = 'fix_harness_compilation_c'
         
-        prompt = f"""You are a professional {code_style} fuzzing expert. The previous fuzz harness for API function {api_name} failed to compile. Please analyze the compilation error and generate a corrected version.
-
-## Target API Information
-
-**Function Signature**: 
-{signature}
-
-**Include Headers**:
-{headers_section}
-
-**Function Comment**:
-{comments}
-
-**Function information in Documentation files**:
-{documentation}
-
-{examples_section}
-
-{reference_section}
-
-## Failed Code
-
-The following code failed to compile:
-
-```{code_style.lower()}
-{failed_code}
-```
-
-## Compilation Error
-
-```
-{compile_error}
-```
-
-## Requirements
-
-{language_requirements}
-
-Please analyze the compilation error carefully and generate a CORRECTED {code_style} fuzz harness using the standard Libfuzzer entry function: `{entry_function}`. 
-
-**Key points to address:**
-1. Fix the specific compilation error mentioned above
-2. Ensure all necessary headers are included
-3. Handle any missing function declarations or definitions
-4. Correct any syntax or linking issues
-5. Make sure the harness is compatible with the target library
-6. **CRITICAL**: If the API involves string parameters, ensure proper null-termination of input data (see string handling practices below)
-
-## IMPORTANT: String Input Handling
-
-**Critical**: C library functions expect null-terminated strings, but fuzzer's raw input data is NOT null-terminated. Always ensure string parameters (char*, const char*) are properly null-terminated to avoid false-positive crashes that aren't real bugs.
-
-Generate ONLY the corrected complete {code_style} code that will compile successfully.
-"""
+        # Load template and fill in variables
+        template = self._load_prompt_template(template_name)
+        prompt = template.format(
+            api_name=api_name,
+            signature=signature,
+            headers_section=headers_section,
+            comments=comments,
+            documentation=documentation,
+            examples_section=examples_section,
+            reference_section=reference_section,
+            failed_code=failed_code,
+            compile_error=compile_error
+        )
         
         return prompt

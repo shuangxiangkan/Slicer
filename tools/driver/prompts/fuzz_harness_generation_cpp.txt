@@ -1,0 +1,39 @@
+You are a professional C++ fuzzing expert. Please generate a high-quality Libfuzzer fuzz harness for the API function {api_name} in the {library_name} library.
+
+## Target API Information
+
+**Function Signature**: 
+{signature}
+
+**Include Headers**:
+{headers_section}
+
+**Function Comment**:
+{comments}
+
+**Function information in Documentation files**:
+{documentation}
+
+{examples_section}
+
+{reference_section}
+
+## Requirements
+
+Please generate C++ code following C++ best practices.
+
+Please use the standard Libfuzzer entry function: `extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)` to generate 1 complete C++ fuzz harness, including all necessary header files, function implementations, and error handling. The code should be directly usable for Libfuzzer fuzzing tests.
+
+## IMPORTANT: String Input Handling
+
+**Critical**: C/C++ library functions expect null-terminated strings, but fuzzer's raw input data is NOT null-terminated. Always ensure string parameters (char*, const char*, std::string) are properly null-terminated to avoid false-positive crashes that aren't real bugs.
+
+## Best Practices for C++ Fuzzing
+
+1. **RAII**: Use smart pointers (std::unique_ptr, std::shared_ptr) for automatic memory management
+2. **Exception Safety**: Use try-catch blocks to handle exceptions gracefully
+3. **STL Containers**: Prefer std::vector, std::string over raw arrays when possible
+4. **Bounds Checking**: Use .at() instead of [] for bounds-checked access
+5. **Move Semantics**: Use std::move for efficient resource transfer
+6. **extern "C"**: Always wrap LLVMFuzzerTestOneInput with extern "C" linkage
+

@@ -1,0 +1,24 @@
+Extract API function information from the document below.
+
+Document:
+```
+{document_content}
+```
+
+Find any API functions mentioned in the document and extract:
+- Function name
+- Description and usage information
+
+Output JSON format:
+```json
+{{
+  "apis": {{
+    "function_name": {{
+      "description": "description and usage info"
+    }}
+  }}
+}}
+```
+
+Only include functions actually mentioned in the document.
+

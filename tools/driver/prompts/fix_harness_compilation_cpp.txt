@@ -1,0 +1,64 @@
+You are a professional C++ fuzzing expert. The previous fuzz harness for API function {api_name} failed to compile. Please analyze the compilation error and generate a corrected version.
+
+## Target API Information
+
+**Function Signature**: 
+{signature}
+
+**Include Headers**:
+{headers_section}
+
+**Function Comment**:
+{comments}
+
+**Function information in Documentation files**:
+{documentation}
+
+{examples_section}
+
+{reference_section}
+
+## Failed Code
+
+The following code failed to compile:
+
+```cpp
+{failed_code}
+```
+
+## Compilation Error
+
+```
+{compile_error}
+```
+
+## Requirements
+
+Please generate C++ code following C++ best practices.
+
+Please analyze the compilation error carefully and generate a CORRECTED C++ fuzz harness using the standard Libfuzzer entry function: `extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)`. 
+
+**Key points to address:**
+1. Fix the specific compilation error mentioned above
+2. Ensure all necessary headers are included
+3. Handle any missing function declarations or definitions
+4. Correct any syntax or linking issues
+5. Make sure the harness is compatible with the target library
+6. **CRITICAL**: If the API involves string parameters, ensure proper null-termination of input data (see string handling practices below)
+7. **C++ Specific**: Ensure proper use of namespaces, templates, and exception handling
+
+## IMPORTANT: String Input Handling
+
+**Critical**: C/C++ library functions expect null-terminated strings, but fuzzer's raw input data is NOT null-terminated. Always ensure string parameters (char*, const char*, std::string) are properly null-terminated to avoid false-positive crashes that aren't real bugs.
+
+## Common C++ Compilation Issues
+
+1. **Missing headers**: Include required C++ STL and library headers
+2. **Namespace issues**: Use proper namespace qualifiers (std::)
+3. **Template errors**: Ensure correct template instantiation
+4. **Linkage errors**: Use extern "C" for C library functions
+5. **Type conversions**: Use static_cast, reinterpret_cast appropriately
+6. **Exception handling**: Add try-catch blocks where needed
+
+Generate ONLY the corrected complete C++ code that will compile successfully.
+

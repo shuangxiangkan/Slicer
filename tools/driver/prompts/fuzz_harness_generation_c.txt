@@ -1,0 +1,38 @@
+You are a professional C fuzzing expert. Please generate a high-quality Libfuzzer fuzz harness for the API function {api_name} in the {library_name} library.
+
+## Target API Information
+
+**Function Signature**: 
+{signature}
+
+**Include Headers**:
+{headers_section}
+
+**Function Comment**:
+{comments}
+
+**Function information in Documentation files**:
+{documentation}
+
+{examples_section}
+
+{reference_section}
+
+## Requirements
+
+Please generate C code following C best practices.
+
+Please use the standard Libfuzzer entry function: `int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)` to generate 1 complete C fuzz harness, including all necessary header files, function implementations, and error handling. The code should be directly usable for Libfuzzer fuzzing tests.
+
+## IMPORTANT: String Input Handling
+
+**Critical**: C library functions expect null-terminated strings, but fuzzer's raw input data is NOT null-terminated. Always ensure string parameters (char*, const char*) are properly null-terminated to avoid false-positive crashes that aren't real bugs.
+
+## Best Practices for C Fuzzing
+
+1. **Memory Management**: Always check malloc/calloc return values and free allocated memory
+2. **Bounds Checking**: Verify array indices and buffer sizes before access
+3. **Null Termination**: Ensure strings are properly null-terminated
+4. **Size Validation**: Check that size parameter is sufficient for operations
+5. **Error Handling**: Handle all possible error return values from library functions
+

@@ -149,7 +149,7 @@ if __name__ == "__main__":
     # Manually modify these parameters
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cJSON/cJSON.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/libucl/libucl.yaml"
-    # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/mocklib/mocklib.yaml"
+    config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/mocklib/mocklib.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/libpcap/libpcap.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/zlib/zlib.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/c-ares/c-ares.yaml"
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/pcre2/pcre2.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/openexr/openexr.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/hdf5/hdf5.yaml"
-    config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cgltf/cgltf.yaml"
+    # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cgltf/cgltf.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/StormLib/StormLib.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/libtiff/libtiff.yaml"
     # config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/libzip/libzip.yaml"
