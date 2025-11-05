@@ -24,16 +24,36 @@ Please generate C++ code following C++ best practices.
 
 Please use the standard Libfuzzer entry function: `extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)` to generate 1 complete C++ fuzz harness, including all necessary header files, function implementations, and error handling. The code should be directly usable for Libfuzzer fuzzing tests.
 
-## IMPORTANT: String Input Handling
+**YOU MUST call the function-under-test** in your solution. Carefully study the function signature and its parameters before implementation.
 
-**Critical**: C/C++ library functions expect null-terminated strings, but fuzzer's raw input data is NOT null-terminated. Always ensure string parameters (char*, const char*, std::string) are properly null-terminated to avoid false-positive crashes that aren't real bugs.
+## Coding Guidelines
 
-## Best Practices for C++ Fuzzing
+### 1. Parameter and Variable Initialization (CRITICAL)
+- **All variables and parameters MUST be declared and initialized** before use
+- **None of the parameters can be NULL/nullptr** whenever possible - always provide valid values
+- **Ensure variable and argument types match** - use appropriate C++ casts
+- **Do not create new variables with the same names** as existing variables
+- **Try as many variations of inputs as possible** to maximize fuzzing coverage
+- **Do NOT use random number generators** such as rand() - use fuzzer input data instead
 
-1. **RAII**: Use smart pointers (std::unique_ptr, std::shared_ptr) for automatic memory management
-2. **Exception Safety**: Use try-catch blocks to handle exceptions gracefully
-3. **STL Containers**: Prefer std::vector, std::string over raw arrays when possible
-4. **Bounds Checking**: Use .at() instead of [] for bounds-checked access
-5. **Move Semantics**: Use std::move for efficient resource transfer
-6. **extern "C"**: Always wrap LLVMFuzzerTestOneInput with extern "C" linkage
+### 2. String Input Handling (CRITICAL)
+**C/C++ library functions expect null-terminated strings, but fuzzer's raw input data is NOT null-terminated.**
+- Always ensure string parameters (char*, const char*, std::string) are properly null-terminated
+- For std::string, use constructors that properly handle data and size
+- Allocate extra space for the null terminator when using C-style strings
+- This prevents false-positive crashes that aren't real bugs
+
+### 3. Memory and Resource Management
+- **Memory Safety**: Ensure all allocated memory is properly managed and freed
+- **Resource Cleanup**: Properly release all resources (files, handles, etc.)
+- **Bounds Checking**: Verify array indices and buffer sizes before access
+- **Exception Safety**: Handle exceptions appropriately to prevent resource leaks
+- **Error Handling**: Handle all possible error return values and exceptions
+
+### 4. Proper API Usage (CRITICAL)
+**The goal is to find real bugs in the library, NOT to cause crashes through API misuse.**
+- Always follow the API's intended usage patterns as documented
+- Respect all preconditions and requirements specified in the documentation
+- Use the function correctly according to its documented behavior
+- Avoid intentionally misusing the API just to trigger crashes
 

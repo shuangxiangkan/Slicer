@@ -24,15 +24,33 @@ Please generate C code following C best practices.
 
 Please use the standard Libfuzzer entry function: `int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)` to generate 1 complete C fuzz harness, including all necessary header files, function implementations, and error handling. The code should be directly usable for Libfuzzer fuzzing tests.
 
-## IMPORTANT: String Input Handling
+**YOU MUST call the function-under-test** in your solution. Carefully study the function signature and its parameters before implementation.
 
-**Critical**: C library functions expect null-terminated strings, but fuzzer's raw input data is NOT null-terminated. Always ensure string parameters (char*, const char*) are properly null-terminated to avoid false-positive crashes that aren't real bugs.
+## Coding Guidelines
 
-## Best Practices for C Fuzzing
+### 1. Parameter and Variable Initialization (CRITICAL)
+- **All variables and parameters MUST be declared and initialized** before use
+- **None of the parameters can be NULL** whenever possible - always provide valid values
+- **Ensure variable and argument types match** - add type casts where necessary (e.g., `(char*)data`)
+- **Do not create new variables with the same names** as existing variables
+- **Try as many variations of inputs as possible** to maximize fuzzing coverage
+- **Do NOT use random number generators** such as rand() - use fuzzer input data instead
 
-1. **Memory Management**: Always check malloc/calloc return values and free allocated memory
-2. **Bounds Checking**: Verify array indices and buffer sizes before access
-3. **Null Termination**: Ensure strings are properly null-terminated
-4. **Size Validation**: Check that size parameter is sufficient for operations
-5. **Error Handling**: Handle all possible error return values from library functions
+### 2. String Input Handling (CRITICAL)
+**C library functions expect null-terminated strings, but fuzzer's raw input data is NOT null-terminated.**
+- Always ensure string parameters (char*, const char*) are properly null-terminated
+- Allocate extra space for the null terminator
+- This prevents false-positive crashes that aren't real bugs
 
+### 3. Memory and Resource Management
+- **Memory Management**: Always check malloc/calloc return values and free allocated memory
+- **Bounds Checking**: Verify array indices and buffer sizes before access
+- **Size Validation**: Check that size parameter is sufficient for operations
+- **Error Handling**: Handle all possible error return values from library functions
+
+### 4. Proper API Usage (CRITICAL)
+**The goal is to find real bugs in the library, NOT to cause crashes through API misuse.**
+- Always follow the API's intended usage patterns as documented
+- Respect all preconditions and requirements specified in the documentation
+- Use the function correctly according to its documented behavior
+- Avoid intentionally misusing the API just to trigger crashes

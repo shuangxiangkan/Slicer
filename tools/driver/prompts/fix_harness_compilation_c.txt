@@ -44,19 +44,35 @@ Please analyze the compilation error carefully and generate a CORRECTED C fuzz h
 3. Handle any missing function declarations or definitions
 4. Correct any syntax or linking issues
 5. Make sure the harness is compatible with the target library
-6. **CRITICAL**: If the API involves string parameters, ensure proper null-termination of input data (see string handling practices below)
 
-## IMPORTANT: String Input Handling
+## Coding Guidelines
 
-**Critical**: C library functions expect null-terminated strings, but fuzzer's raw input data is NOT null-terminated. Always ensure string parameters (char*, const char*) are properly null-terminated to avoid false-positive crashes that aren't real bugs.
+### 1. Parameter and Variable Initialization (CRITICAL)
+- **All variables and parameters MUST be declared and initialized** before use
+- **None of the parameters can be NULL** whenever possible - always provide valid values
+- **Ensure variable and argument types match** - add type casts where necessary (e.g., `(char*)data`)
+- **Do not create new variables with the same names** as existing variables
+- **Try as many variations of inputs as possible** to maximize fuzzing coverage
+- **Do NOT use random number generators** such as rand() - use fuzzer input data instead
 
-## Common C Compilation Issues
+### 2. String Input Handling (CRITICAL)
+**C library functions expect null-terminated strings, but fuzzer's raw input data is NOT null-terminated.**
+- Always ensure string parameters (char*, const char*) are properly null-terminated
+- Allocate extra space for the null terminator
+- This prevents false-positive crashes that aren't real bugs
 
-1. **Missing headers**: Include required system and library headers
-2. **Implicit declarations**: Ensure all functions are declared before use
-3. **Type mismatches**: Cast types correctly (e.g., uint8_t* to char*)
-4. **Linkage errors**: Check library linking and function availability
-5. **C99/C11 features**: Use appropriate C standard features
+### 3. Memory and Resource Management
+- **Memory Management**: Always check malloc/calloc return values and free allocated memory
+- **Bounds Checking**: Verify array indices and buffer sizes before access
+- **Size Validation**: Check that size parameter is sufficient for operations
+- **Error Handling**: Handle all possible error return values from library functions
+
+### 4. Proper API Usage (CRITICAL)
+**The goal is to find real bugs in the library, NOT to cause crashes through API misuse.**
+- Always follow the API's intended usage patterns as documented
+- Respect all preconditions and requirements specified in the documentation
+- Use the function correctly according to its documented behavior
+- Avoid intentionally misusing the API just to trigger crashes
 
 Generate ONLY the corrected complete C code that will compile successfully.
 

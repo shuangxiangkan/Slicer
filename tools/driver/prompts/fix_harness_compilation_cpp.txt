@@ -44,21 +44,39 @@ Please analyze the compilation error carefully and generate a CORRECTED C++ fuzz
 3. Handle any missing function declarations or definitions
 4. Correct any syntax or linking issues
 5. Make sure the harness is compatible with the target library
-6. **CRITICAL**: If the API involves string parameters, ensure proper null-termination of input data (see string handling practices below)
 7. **C++ Specific**: Ensure proper use of namespaces, templates, and exception handling
 
-## IMPORTANT: String Input Handling
+## Coding Guidelines
 
-**Critical**: C/C++ library functions expect null-terminated strings, but fuzzer's raw input data is NOT null-terminated. Always ensure string parameters (char*, const char*, std::string) are properly null-terminated to avoid false-positive crashes that aren't real bugs.
+### 1. Parameter and Variable Initialization (CRITICAL)
+- **All variables and parameters MUST be declared and initialized** before use
+- **None of the parameters can be NULL/nullptr** whenever possible - always provide valid values
+- **Ensure variable and argument types match** - use appropriate C++ casts
+- **Do not create new variables with the same names** as existing variables
+- **Try as many variations of inputs as possible** to maximize fuzzing coverage
+- **Do NOT use random number generators** such as rand() - use fuzzer input data instead
 
-## Common C++ Compilation Issues
+### 2. String Input Handling (CRITICAL)
+**C/C++ library functions expect null-terminated strings, but fuzzer's raw input data is NOT null-terminated.**
+- Always ensure string parameters (char*, const char*, std::string) are properly null-terminated
+- For std::string, use constructors that properly handle data and size
+- Allocate extra space for the null terminator when using C-style strings
+- This prevents false-positive crashes that aren't real bugs
 
-1. **Missing headers**: Include required C++ STL and library headers
-2. **Namespace issues**: Use proper namespace qualifiers (std::)
-3. **Template errors**: Ensure correct template instantiation
-4. **Linkage errors**: Use extern "C" for C library functions
-5. **Type conversions**: Use static_cast, reinterpret_cast appropriately
-6. **Exception handling**: Add try-catch blocks where needed
+### 3. Memory and Resource Management
+- **Memory Safety**: Ensure all allocated memory is properly managed and freed
+- **Resource Cleanup**: Properly release all resources (files, handles, etc.)
+- **Bounds Checking**: Verify array indices and buffer sizes before access
+- **Exception Safety**: Handle exceptions appropriately to prevent resource leaks
+- **Error Handling**: Handle all possible error return values and exceptions
+
+### 4. Proper API Usage (CRITICAL)
+**The goal is to find real bugs in the library, NOT to cause crashes through API misuse.**
+- Always follow the API's intended usage patterns as documented
+- Respect all preconditions and requirements specified in the documentation
+- Use the function correctly according to its documented behavior
+- Avoid intentionally misusing the API just to trigger crashes
+
 
 Generate ONLY the corrected complete C++ code that will compile successfully.
 
