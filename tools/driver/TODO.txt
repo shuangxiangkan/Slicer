@@ -12,9 +12,6 @@
 2. exiv2没检查对不对也没有生成harness
 3. libical没检查对不对也没有生成harness
 
-prompt 中加上要避免API misuse
-而且模型是不是可以改成claude，这是虽然速度慢了一点，但是可以减少很多误报
-
 
 Crach Check:
 
