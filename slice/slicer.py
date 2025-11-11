@@ -298,54 +298,45 @@ class FunctionSlicer:
             return "void function()"
 
 def main():
-    """示例用法"""
+    """命令行用法: python slicer.py <源文件路径> <目标函数名>"""
     # 配置日志输出
     setup_logging(level=logging.INFO)
     
-    # 示例代码
-    example_code = """
-static int gz_compress_mmap(FILE *in, gzFile out) {
-    int len;
-    int err;
-    int ifd = fileno(in);
-    caddr_t buf;    /* mmap'ed buffer for the entire input file */
-    off_t buf_len;  /* length of the input file */
-    struct stat sb;
-
-    /* Determine the size of the file, needed for mmap: */
-    if (fstat(ifd, &sb) < 0) return Z_ERRNO;
-    buf_len = sb.st_size;
-    if (buf_len <= 0) return Z_ERRNO;
-
-    /* Now do the actual mmap: */
-    buf = mmap((caddr_t) 0, buf_len, PROT_READ, MAP_SHARED, ifd, (off_t)0);
-    if (buf == (caddr_t)(-1)) return Z_ERRNO;
-
-    /* Compress the whole file at once: */
-    len = gzwrite(out, (char *)buf, (unsigned)buf_len);
-
-    if (len != (int)buf_len) error(gzerror(out, &err));
-
-    munmap(buf, buf_len);
-    fclose(in);
-    if (gzclose(out) != Z_OK) error("failed gzclose");
-    return Z_OK;
-}
-"""
+    # 检查命令行参数
+    if len(sys.argv) != 3:
+        print("用法: python slicer.py <源文件路径> <目标函数名>")
+        print("示例: python slicer.py example.c gzclose")
+        print("注意: 输入文件必须只包含一个函数定义，不能包含多个函数")
+        sys.exit(1)
+    
+    source_file = sys.argv[1]
+    target_function = sys.argv[2]
+    
+    # 读取源文件
+    try:
+        with open(source_file, 'r', encoding='utf-8') as f:
+            source_code = f.read()
+    except FileNotFoundError:
+        logger.error(f"文件不存在: {source_file}")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"读取文件失败: {e}")
+        sys.exit(1)
     
     # 创建切片器
     slicer = FunctionSlicer(language="c")
     
     # 执行切片
     logger.info("=" * 60)
-    logger.info("切片结果:")
+    logger.info(f"对文件 '{source_file}' 中的函数 '{target_function}' 进行切片:")
     logger.info("=" * 60)
-    sliced = slicer.slice_by_function_call(example_code, "gzclose")
+    sliced = slicer.slice_by_function_call(source_code, target_function)
     
     if sliced:
-        logger.info(f"\n{sliced}")
+        print(sliced)
     else:
         logger.error("切片失败")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
