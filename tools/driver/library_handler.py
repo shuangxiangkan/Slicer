@@ -777,6 +777,7 @@ class LibraryHandler:
         """
         Compiles the library based on the configuration and type.
         If the library is already compiled and passes verification, skips compilation.
+        If library source exists, tries compile-only first before re-downloading.
 
         Args:
             library_type: Type of library to compile ("static" or "shared"). Defaults to "static".
@@ -807,26 +808,73 @@ class LibraryHandler:
             log_success(f"Existing {library_type} library found and verified for {self.library_name}, skipping compilation.")
             return True
         
-        # 如果不存在或验证失败，进行编译
-        log_info(f"Starting {library_type} library compilation for {self.library_name}...")
-        
         # Get build command
         if library_type == "static":
-            build_command = self.config_parser.get_formatted_static_build_command()
+            full_build_command = self.config_parser.get_formatted_static_build_command()
         else:  # shared
-            build_command = self.config_parser.get_formatted_shared_build_command()
-            if build_command is None:
+            full_build_command = self.config_parser.get_formatted_shared_build_command()
+            if full_build_command is None:
                 log_error(f"No shared library build command found for {self.library_name}")
                 return False
         
+        # 检查库源码目录是否存在，存在则尝试只编译
+        library_source_dir = os.path.join(self.library_dir, self.library_name)
+        if os.path.exists(library_source_dir) and os.path.isdir(library_source_dir):
+            log_info(f"Library source directory exists: {library_source_dir}, attempting compile-only...")
+            
+            compile_only_cmd = self._get_compile_only_command(full_build_command)
+            if compile_only_cmd:
+                if self._try_compile(compile_only_cmd, library_type, build_config):
+                    return True
+                log_warning(f"Compile-only failed, will re-download and compile...")
+        
+        # 执行完整的构建命令（包括下载）
+        log_info(f"Starting full {library_type} library compilation for {self.library_name}...")
+        return self._try_compile(full_build_command, library_type, build_config)
+    
+    def _get_compile_only_command(self, full_command: str) -> str:
+        """
+        从完整的构建命令中提取仅编译的部分（跳过 rm -rf 和 git clone）
+        
+        Args:
+            full_command: 完整的构建命令
+            
+        Returns:
+            仅编译的命令，如果无法提取则返回 None
+        """
+        # 查找 cd {library_name} 后面的编译命令
+        # 典型格式: rm -rf cJSON && git clone ... && cd cJSON && ...编译命令...
+        library_name = self.library_name
+        
+        # 尝试多种可能的模式
+        for sep in [" && ", " &&\n", "&&"]:
+            pattern = f"cd {library_name}{sep}"
+            idx = full_command.find(pattern)
+            if idx != -1:
+                compile_part = full_command[idx + len(pattern):]
+                return f"cd {library_name} && {compile_part}"
+        
+        return None
+    
+    def _try_compile(self, build_command: str, library_type: str, build_config: dict) -> bool:
+        """
+        尝试执行编译命令并验证结果
+        
+        Args:
+            build_command: 要执行的编译命令
+            library_type: 库类型
+            build_config: 构建配置
+            
+        Returns:
+            True if compilation and verification succeed, False otherwise.
+        """
         log_info(f"Executing command in {self.library_dir}: {build_command}")
         
         try:
-            # Using shell=True because the command is a string with shell features (&&, cd)
-            result = subprocess.run(build_command, shell=True, check=True, capture_output=True, text=True, cwd=self.library_dir)
+            result = subprocess.run(build_command, shell=True, check=True, 
+                                   capture_output=True, text=True, cwd=self.library_dir)
             log_info(f"{library_type.capitalize()} library compilation successful for {self.library_name}.")
             log_info(f"STDOUT:\n{result.stdout}")
-            log_success(f"{library_type.capitalize()} library compilation completed successfully.")
             
             # 验证生成的库文件和头文件路径
             if not self._verify_build_outputs(library_type, build_config):
@@ -838,6 +886,7 @@ class LibraryHandler:
                 log_error(f"AFL++ instrumentation verification failed for {library_type} library")
                 return False
             
+            log_success(f"{library_type.capitalize()} library compilation completed successfully.")
             return True
         except subprocess.CalledProcessError as e:
             log_error(f"{library_type.capitalize()} library compilation failed for {self.library_name}.")
