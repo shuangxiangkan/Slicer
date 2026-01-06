@@ -486,7 +486,7 @@ def load_config(config_path: str) -> ConfigParser:
 
 if __name__ == "__main__":
     
-    config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cJSON/cJSON.yaml"
+    config_path = "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/cJSON/cJSON.yaml"
     
     try:
         # Load configuration

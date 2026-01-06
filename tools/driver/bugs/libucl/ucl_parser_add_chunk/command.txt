@@ -1,2 +1,2 @@
-afl-clang-fast -o ucl_parser_add_chunk ucl_parser_add_chunk.c -I /home/kansx/SVF-Tools/Slicer/tools/driver/Libraries/libucl/include /home/kansx/SVF-Tools/Slicer/tools/driver/Libraries/libucl/build/libucl.a -g -O0 -fsanitize=address
+afl-clang-fast -o ucl_parser_add_chunk ucl_parser_add_chunk.c -I /home/shuangxiang/workspace/code/Slicer/tools/driver/Libraries/libucl/include /home/shuangxiang/workspace/code/Slicer/tools/driver/Libraries/libucl/build/libucl.a -g -O0 -fsanitize=address
 

@@ -71,5 +71,5 @@ documentation:       # optional
 
 # fuzzing configuration
 fuzzing:
-  seeds_dir: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/magic/seeds"  # required, absolute path to seeds directory
+  seeds_dir: "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/magic/seeds"  # required, absolute path to seeds directory
   dictionary_file: ""  # optional, absolute path to dictionary file

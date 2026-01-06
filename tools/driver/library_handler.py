@@ -1059,7 +1059,7 @@ class LibraryHandler:
 
 if __name__ == '__main__':
     # Example usage:
-    cjson_config_path = "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/cJSON/cJSON.yaml"
+    cjson_config_path = "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/cJSON/cJSON.yaml"
     log_info(f"Attempting to compile library using config: {cjson_config_path}")
     
     try:

@@ -72,9 +72,9 @@ driver_build:
   compiler:             # 编译器配置 (通常使用AFL++的插桩编译器)
     - "{CC_FUZZ}"        # 示例: afl-clang-fast, afl-gcc
   extra_flags:          # 库特定的编译标志 (预处理器定义、优化选项等)
-    - "-I/home/kansx/SVF-Tools/Slicer/tools/driver/Libraries/hdf5/src"
-    - "-I/home/kansx/SVF-Tools/Slicer/tools/driver/Libraries/hdf5/build/src"  # For H5pubconf.h
-    - "-I/home/kansx/SVF-Tools/Slicer/tools/driver/Libraries/hdf5/src/H5FDsubfiling"  # For H5FDsubfiling.h
+    - "-I/home/shuangxiang/workspace/code/Slicer/tools/driver/Libraries/hdf5/src"
+    - "-I/home/shuangxiang/workspace/code/Slicer/tools/driver/Libraries/hdf5/build/src"  # For H5pubconf.h
+    - "-I/home/shuangxiang/workspace/code/Slicer/tools/driver/Libraries/hdf5/src/H5FDsubfiling"  # For H5FDsubfiling.h
     - "-lz"              # HDF5 requires zlib
     - "-lm"              # Math library
 
@@ -92,5 +92,5 @@ documentation:       # optional
 
 # fuzzing configuration
 fuzzing:
-  seeds_dir: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/hdf5/seeds"  # required, absolute path to seeds directory
-  dictionary_file: "/home/kansx/SVF-Tools/Slicer/tools/driver/configs/hdf5/hdf5.dict"  # optional, absolute path to dictionary file
+  seeds_dir: "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/hdf5/seeds"  # required, absolute path to seeds directory
+  dictionary_file: "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/hdf5/hdf5.dict"  # optional, absolute path to dictionary file
