@@ -29,6 +29,13 @@ logger = logging.getLogger(__name__)
 class LLMConfig:
     """LLM配置类"""
     
+    # DeepSeek配置 (兼容OpenAI API)
+    deepseek_api_key: Optional[str] = None
+    deepseek_model: Optional[str] = None
+    deepseek_base_url: Optional[str] = None
+    deepseek_temperature: Optional[float] = None
+    deepseek_max_tokens: Optional[int] = None
+    
     # OpenAI配置
     openai_api_key: Optional[str] = None
     openai_model: Optional[str] = None
@@ -62,6 +69,18 @@ class LLMConfig:
         
         # 从.env文件读取配置，不提供默认值，确保所有配置都在.env中定义
         config = cls()
+        
+        # DeepSeek配置
+        if os.getenv('DEEPSEEK_API_KEY'):
+            config.deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
+        if os.getenv('DEEPSEEK_MODEL'):
+            config.deepseek_model = os.getenv('DEEPSEEK_MODEL')
+        if os.getenv('DEEPSEEK_BASE_URL'):
+            config.deepseek_base_url = os.getenv('DEEPSEEK_BASE_URL')
+        if os.getenv('DEEPSEEK_TEMPERATURE'):
+            config.deepseek_temperature = float(os.getenv('DEEPSEEK_TEMPERATURE'))
+        if os.getenv('DEEPSEEK_MAX_TOKENS'):
+            config.deepseek_max_tokens = int(os.getenv('DEEPSEEK_MAX_TOKENS'))
         
         # OpenAI配置
         if os.getenv('OPENAI_API_KEY'):
@@ -120,8 +139,8 @@ class LLMConfig:
     def validate(self) -> bool:
         """验证配置"""
         # 检查是否至少有一个提供商的API密钥可用
-        if not self.openai_api_key and not self.claude_api_key:
-            logger.error("至少需要设置一个LLM提供商的API密钥（OpenAI或Claude）")
+        if not self.deepseek_api_key and not self.openai_api_key and not self.claude_api_key:
+            logger.error("至少需要设置一个LLM提供商的API密钥（DeepSeek、OpenAI或Claude）")
             return False
         
         return True

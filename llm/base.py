@@ -134,7 +134,7 @@ def create_llm_client(provider: str = None, config: LLMConfig = None) -> BaseLLM
     创建LLM客户端的统一接口
     
     Args:
-        provider: 提供商名称 ('openai' 或 'claude')，如果为None则自动选择
+        provider: 提供商名称 ('deepseek', 'openai' 或 'claude')，如果为None则自动选择
         config: LLM配置对象，如果为None则从环境变量加载
         
     Returns:
@@ -146,23 +146,28 @@ def create_llm_client(provider: str = None, config: LLMConfig = None) -> BaseLLM
     # 在函数内部导入，避免循环导入
     from .openai_client import OpenAIClient
     from .claude_client import ClaudeClient
+    from .deepseek_client import DeepSeekClient
     
     if config is None:
         config = LLMConfig.from_env()
     
-    # 如果没有指定provider，自动选择可用的（优先使用Claude）
+    # 如果没有指定provider，自动选择可用的（优先使用DeepSeek）
     if provider is None:
-        if config.claude_api_key:
+        if config.deepseek_api_key:
+            provider = 'deepseek'
+        elif config.claude_api_key:
             provider = 'claude'
         elif config.openai_api_key:
             provider = 'openai'
         else:
-            raise ValueError("No valid API key found. Please set OPENAI_API_KEY or CLAUDE_API_KEY.")
+            raise ValueError("No valid API key found. Please set DEEPSEEK_API_KEY, OPENAI_API_KEY or CLAUDE_API_KEY.")
     
-    # 创建对应的客户端，_setup_client方法会验证API有效性
-    if provider == 'openai':
+    # 创建对应的客户端
+    if provider == 'deepseek':
+        return DeepSeekClient(config)
+    elif provider == 'openai':
         return OpenAIClient(config)
     elif provider == 'claude':
         return ClaudeClient(config)
     else:
-        raise ValueError(f"Unsupported provider: {provider}. Supported providers: 'openai', 'claude'")
+        raise ValueError(f"Unsupported provider: {provider}. Supported providers: 'deepseek', 'openai', 'claude'")
