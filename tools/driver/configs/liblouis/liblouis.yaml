@@ -1,0 +1,81 @@
+library:
+  name: "liblouis"
+  version: "3.36.0"
+  repo_url: "https://github.com/liblouis/liblouis.git"
+  language: "c"
+
+# compiler configuration
+compiler:
+  CC_FUZZ: "afl-clang-fast"
+  CXX_FUZZ: "afl-clang-fast++"
+
+headers:           # required, header and source files for API extraction, relative to library root
+  - "liblouis/liblouis.h"
+
+header_include:    # required, header file name for #include in harness prompts
+  - "liblouis.h"
+
+header_folder:     # required, header directories for compilation include paths, relative to library root
+  - "liblouis"
+
+source_dirs:       # required, folder or files for source analysis
+  - "liblouis/liblouis.h"
+  - "liblouis/internal.h"
+  - "liblouis/commonTranslationFunctions.c"
+  - "liblouis/compileTranslationTable.c"
+  - "liblouis/logging.c"
+  - "liblouis/lou_backTranslateString.c"
+  - "liblouis/lou_translateString.c"
+  - "liblouis/maketable.c"
+  - "liblouis/metadata.c"
+  - "liblouis/pattern.c"
+  - "liblouis/utils.c"
+
+exclude_dirs:      # optional
+  - ""
+
+static_build:      # required
+  static_lib_name: "liblouis.a"
+  output: "liblouis/.libs/{static_lib_name}"
+  command: |
+    rm -rf liblouis && \
+    git clone {repo_url} liblouis && \
+    cd liblouis && \
+    ./autogen.sh && \
+    CC={CC_FUZZ} ./configure --disable-shared --enable-static && \
+    make -j$(nproc)
+
+shared_build:     # optional
+  shared_lib_name: "liblouis.so"
+  output: "liblouis/.libs/{shared_lib_name}"
+  command: |
+    rm -rf liblouis && \
+    git clone {repo_url} liblouis && \
+    cd liblouis && \
+    ./autogen.sh && \
+    CC={CC_FUZZ} ./configure --enable-shared --disable-static && \
+    make -j$(nproc)
+
+# driver_build: 配置harness编译参数
+driver_build:
+  compiler:             # 编译器配置 (通常使用AFL++的插桩编译器)
+    - "{CC_FUZZ}"
+  extra_flags:          # 库特定的编译标志
+    - "-DHAVE_CONFIG_H"
+
+api_selection:
+  api_prefix:      # required - liblouis API functions start with "lou_"
+    - "lou_"
+  api_macros:           # required - API export macro
+    - "EXPORT_CALL"
+  exclude:         # optional - exclude deprecated or internal functions
+    - ""       
+
+documentation:       # optional
+  target_files:
+    - "README"
+
+# fuzzing configuration
+fuzzing:
+  seeds_dir: "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/liblouis/seeds"
+  dictionary_file: "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/liblouis/braille.dict"
