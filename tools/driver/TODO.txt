@@ -27,3 +27,13 @@ Crach Check:
 10. cgltf已完成
 11. StormLib 已完成
 12. libtiff harness没检查 | fuzz 一小时check完成
+
+
+
+gntlab-server上的运行结果：
+
+
+------------------------------------------------
+配置的库需要注意的点：
+1.libzip需要把编译后的zipconf.h复制到lib目录下
+2.libtiff需要把编译后的tiffconf.h复制到include目录下
