@@ -1,0 +1,6 @@
+id,name,description
+1,"John Doe","A ""quoted"" value"
+2,"Jane, Smith","Contains, commas"
+3,"Multi
+Line","Value with
+newlines"

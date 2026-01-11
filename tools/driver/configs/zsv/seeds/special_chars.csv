@@ -1,0 +1,6 @@
+name,symbol,value
+"tab	here","\t",1
+"newline
+here","\n",2
+"quote""here","\"",3
+"comma,here",",",4

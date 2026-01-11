@@ -1,0 +1,78 @@
+# CSV fuzzing dictionary
+# Common CSV delimiters and special characters
+
+# Delimiters
+","
+";"
+"\t"
+"|"
+
+# Quote characters
+"\""
+"'"
+
+# Line endings
+"\n"
+"\r"
+"\r\n"
+
+# Common CSV values
+"NULL"
+"null"
+"NA"
+"N/A"
+"NaN"
+"true"
+"false"
+"TRUE"
+"FALSE"
+
+# Numbers
+"0"
+"-1"
+"1"
+"123"
+"-123"
+"0.0"
+"1.5"
+"-1.5"
+"1e10"
+"1E-10"
+"Infinity"
+"-Infinity"
+
+# Empty and whitespace
+""
+" "
+"  "
+
+# Special characters that need escaping
+"\"\""
+",,"
+"\"\\n\""
+"\"\\r\\n\""
+
+# Malformed UTF-8 triggers
+"\x80"
+"\xff"
+"\xc0\xaf"
+"\xed\xa0\x80"
+
+# Long strings
+"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+
+# BOM markers
+"\xef\xbb\xbf"
+"\xff\xfe"
+"\xfe\xff"
+
+# Common header names
+"id"
+"name"
+"value"
+"date"
+"time"
+"timestamp"
+"column"
+"row"
+"index"

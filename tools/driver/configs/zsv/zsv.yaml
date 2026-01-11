@@ -1,0 +1,80 @@
+library:
+  name: "zsv"
+  version: "0.3.9"
+  repo_url: "https://github.com/liquidaty/zsv.git"
+  language: "c"
+
+# compiler configuration
+compiler:
+  CC_FUZZ: "afl-clang-fast"
+  CXX_FUZZ: "afl-clang-fast++"
+
+headers:           # required, header and source files for API extraction, relative to library root
+  - "include/zsv/api.h"
+  - "include/zsv/common.h"
+
+header_include:    # required, header file name for #include in harness prompts
+  - "zsv.h"
+
+header_folder:     # required, header directories for compilation include paths, relative to library root
+  - "include"
+
+source_dirs:       # required，folder or files
+  - "src/zsv.c"
+  - "src/zsv_internal.c"
+  - "src/zsv_scan_delim.c"
+  - "src/zsv_scan_fixed.c"
+  - "src/zsv_strencode.c"
+  - "src/vector_delim.c"
+  - "include/zsv/"
+
+exclude_dirs:      # optional
+  - ""
+
+static_build:      # required
+  static_lib_name: "libzsv.a"
+  output: "build/Linux/rel/{CC_FUZZ}/lib/{static_lib_name}"
+  command: |
+    rm -rf zsv && \
+    git clone {repo_url} zsv && \
+    cd zsv && \
+    CC={CC_FUZZ} ./configure && \
+    make -C src build
+
+shared_build:     # optional
+  shared_lib_name: "libzsv.so"
+  output: "build/Linux/rel/{CC_FUZZ}/lib/{shared_lib_name}"
+  command: |
+    rm -rf zsv && \
+    git clone {repo_url} zsv && \
+    cd zsv && \
+    CC={CC_FUZZ} ./configure --enable-shared && \
+    make -C src build BUILD_SHAREDLIB=1
+
+# driver_build: 配置harness编译参数
+# 用于指定编译API harness时需要的编译器、依赖库和特殊标志
+# config_parser.py会读取这些配置并动态构建完整的编译命令
+driver_build:
+  compiler:             # 编译器配置 (通常使用AFL++的插桩编译器)
+    - "{CC_FUZZ}"        # 示例: afl-clang-fast, afl-gcc
+  extra_flags:          # 库特定的编译标志 (预处理器定义、优化选项等)
+    - "-fsigned-char"    # zsv 库编译需要此标志
+
+api_selection:
+  api_prefix:      # required - zsv 库的 API 函数都以 zsv_ 开头
+    - "zsv_"
+  api_macros:           # required - zsv 使用 ZSV_EXPORT 宏标记公开 API
+    - "ZSV_EXPORT"
+  exclude:            # optional - 排除一些内部或特殊函数
+    - "zsv_opts_new"       # 复杂的可变参数函数，难以自动生成 harness
+    - "zsv_opts_delete"    # 配套的删除函数
+
+documentation:       # optional
+  target_files:      # optional, specific documentation files to analyze
+    - "README.md"
+    - "docs/"
+
+# fuzzing configuration
+fuzzing:
+  seeds_dir: "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/zsv/seeds"  # required, absolute path to seeds directory
+  dictionary_file: "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/zsv/csv.dict"  # optional, absolute path to dictionary file
