@@ -163,7 +163,8 @@ if __name__ == "__main__":
     # config_path = "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/libtiff/libtiff.yaml"
     # config_path = "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/libzip/libzip.yaml"
     # config_path = "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/libical/libical.yaml"
-    config_path = "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/liblouis/liblouis.yaml"
+    # config_path = "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/liblouis/liblouis.yaml"
+    config_path = "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/zsv/zsv.yaml"
     
     library_type = "static"  # "static", "shared"
     
