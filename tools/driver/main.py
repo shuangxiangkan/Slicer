@@ -165,6 +165,7 @@ if __name__ == "__main__":
     # config_path = "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/libical/libical.yaml"
     # config_path = "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/liblouis/liblouis.yaml"
     config_path = "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/zsv/zsv.yaml"
+    # config_path = "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/libplist/libplist.yaml"
     
     library_type = "static"  # "static", "shared"
     

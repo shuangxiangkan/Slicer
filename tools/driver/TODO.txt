@@ -41,5 +41,14 @@ gntlab-server上的运行结果：
 
 ------------------------------------------------
 
+zsv已经检查完成, 发现一个bug, 在zsv_set_fixed_offsets函数中, 如果offsets为NULL, 会直接崩溃, 需要修复，已提交issue, 等待修复。https://github.com/liquidaty/zsv/issues/529
+libplist还没有检查完成，目前检查到plist_dict_get_uint, 发现一个bug, 在plist_dict_copy_int函数中, 如果key为NULL, 会直接崩溃, 需要修复，已提交issue, 等待修复。https://github.com/libimobiledevice/libplist/issues/296
+
+
+
+------------------------------------------------
+
 candidate libraries:
 libarchive
+libcoap
+libbpf API比较多
