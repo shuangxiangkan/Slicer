@@ -1,0 +1,1 @@
+plist_dict_copy_int, 几个类似的函数都存在plist_dict_get_bool这个问题，需要修复。
