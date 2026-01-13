@@ -1,0 +1,119 @@
+################################################################################
+#
+# AFL dictionary for Apple Property List (plist) formats
+# Supports: Binary, XML, JSON, and OpenStep formats
+# -------------------------------------------------------
+#
+# Combined dictionary for all plist formats supported by libplist.
+#
+
+# Binary plist header
+header_bplist="bplist00"
+
+# XML plist tokens
+attr_encoding=" encoding=\"1\""
+attr_generic=" a=\"1\""
+attr_version=" version=\"1\""
+
+entity_builtin="&lt;"
+entity_decimal="&#1;"
+entity_external="&a;"
+entity_hex="&#x1;"
+
+string_cdata="CDATA"
+string_dashes="--"
+string_empty="EMPTY"
+string_empty_dblquotes="\"\""
+string_empty_quotes="''"
+string_parentheses="()"
+string_pcdata="#PCDATA"
+string_percent="%a"
+string_public="PUBLIC"
+string_utf8="UTF-8"
+
+tag_cdata="<![CDATA["
+tag_close="</plist>"
+tag_doctype="<!DOCTYPE"
+tag_open="<plist>"
+tag_open_close="<plist />"
+tag_open_exclamation="<!"
+tag_open_q="<?"
+tag_sq2_close="]]>"
+tag_xml_q="<?xml?>"
+tag_array="<array>"
+tag_array_close="</array>"
+tag_data="<data>"
+tag_data_close="</data>"
+tag_date="<date>"
+tag_date_close="</date>"
+tag_dict="<dict>"
+tag_dict_close="</dict>"
+tag_false="<false/>"
+tag_integer="<integer>"
+tag_integer_close="</integer>"
+tag_key="<key>"
+tag_key_close="</key>"
+tag_plist="<plist>"
+tag_plist_close="</plist>"
+tag_real="<real>"
+tag_real_close="</real>"
+tag_string="<string>"
+tag_string_close="</string>"
+tag_true="<true/>"
+
+# JSON tokens
+json_zero="0"
+json_comma_zero=",0"
+json_colon_zero=":0"
+json_zero_colon="0:"
+json_float="-1.2e+3"
+
+json_true="true"
+json_false="false"
+json_null="null"
+
+json_empty_string="\"\""
+json_comma_string=",\"\""
+json_colon_string=":\"\""
+json_string_colon="\"\":"
+
+json_empty_obj="{}"
+json_comma_obj=",{}"
+json_colon_obj=":{}"
+json_obj_with_val="{\"\":0}"
+json_nested_obj="{{}}"
+
+json_empty_arr="[]"
+json_comma_arr=",[]"
+json_colon_arr=":[]"
+json_arr_with_val="[0]"
+json_nested_arr="[[]]"
+
+json_quote="''"
+json_backslash="\\"
+json_escape_b="\\b"
+json_escape_f="\\f"
+json_escape_n="\\n"
+json_escape_r="\\r"
+json_escape_t="\\t"
+json_escape_u="\\u0000"
+json_escape_x="\\x00"
+json_escape_0="\\0"
+json_unicode_1="\\uD800\\uDC00"
+json_unicode_2="\\uDBFF\\uDFFF"
+
+json_key_val="\"\":0"
+json_comment_line="//"
+json_comment_block="/**/"
+
+# OpenStep tokens
+op_equals="="
+op_semicolon=";"
+op_parens="()"
+op_comma_parens=",()"
+op_equals_parens="=()"
+op_parens_val="(0)"
+op_nested_parens="(())"
+op_escape_U="\\U0000"
+op_escape_a="\\a"
+op_escape_v="\\v"

@@ -1,0 +1,5 @@
+{
+  Name = Test;
+  Count = 42;
+  Active = YES;
+}

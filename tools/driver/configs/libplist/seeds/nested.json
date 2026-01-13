@@ -1,0 +1,9 @@
+{
+  "Person": {
+    "Name": "John Doe",
+    "Age": 30,
+    "Active": true
+  },
+  "Tags": ["developer", "tester"],
+  "Scores": [95, 87, 92]
+}

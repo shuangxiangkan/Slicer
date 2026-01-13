@@ -1,0 +1,73 @@
+library:
+  name: "libplist"
+  version: "2.6.0"
+  repo_url: "https://github.com/libimobiledevice/libplist.git"
+  language: "c"
+
+# compiler configuration
+compiler:
+  CC_FUZZ: "afl-clang-fast"
+  CXX_FUZZ: "afl-clang-fast++"
+
+headers:           # required, header and source files for API extraction, relative to library root
+  - "include/plist/plist.h"
+
+header_include:    # required, header file name for #include in harness prompts
+  - "plist.h"
+
+header_folder:     # required, header directories for compilation include paths, relative to library root
+  - "include/plist"
+
+source_dirs:       # required，folder or files
+  - "src/"
+  - "include/plist/"
+
+exclude_dirs:      # optional
+  - ""
+
+static_build:      # required
+  static_lib_name: "libplist-2.0.a"
+  output: "src/.libs/{static_lib_name}"
+  command: |
+    rm -rf libplist && \
+    git clone {repo_url} libplist && \
+    cd libplist && \
+    ./autogen.sh --without-cython CC={CC_FUZZ} CXX={CXX_FUZZ} && \
+    make -j$(nproc)
+
+shared_build:     # optional
+  shared_lib_name: "libplist-2.0.so"
+  output: "src/.libs/{shared_lib_name}"
+  command: |
+    rm -rf libplist && \
+    git clone {repo_url} libplist && \
+    cd libplist && \
+    ./autogen.sh --without-cython CC={CC_FUZZ} CXX={CXX_FUZZ} && \
+    make -j$(nproc)
+
+# driver_build: 配置harness编译参数
+# 用于指定编译API harness时需要的编译器、依赖库和特殊标志
+# config_parser.py会读取这些配置并动态构建完整的编译命令
+driver_build:
+  compiler:             # 编译器配置 (通常使用AFL++的插桩编译器)
+    - "{CC_FUZZ}"        # 示例: afl-clang-fast, afl-gcc
+  extra_flags:          # 库特定的编译标志 (预处理器定义、优化选项等)
+    - "-DLIBPLIST_STATIC"    # 静态链接时需要定义此宏
+
+api_selection:
+  api_prefix:      # required - libplist 库的 API 函数都以 plist_ 开头
+    - "plist_"
+  api_macros:           # required - libplist 使用 PLIST_API 宏标记公开 API
+    - "PLIST_API"
+  exclude:            # optional - 排除一些已废弃或特殊函数
+    - ""       # va_list 参数函数
+
+documentation:       # optional
+  target_files:      # optional, specific documentation files to analyze
+    - "README.md"
+    - "docs/"
+
+# fuzzing configuration
+fuzzing:
+  seeds_dir: "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/libplist/seeds"  # required, absolute path to seeds directory
+  dictionary_file: "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/libplist/plist.dict"  # optional, absolute path to dictionary file
