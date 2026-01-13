@@ -92,10 +92,10 @@ class BugFilter:
             
             return {
                 'failure_type': failure_type,
-                'failure_dir': str(failure_dir),
+                'failure_dir': str(failure_dir.resolve()),
                 'api_name': api_dir.name,
                 'harness_name': harness_name,
-                'harness_source_path': str(harness_source) if harness_source else None,
+                'harness_source_path': str(harness_source.resolve()) if harness_source else None,
                 'debug_info': debug_info
             }
         except Exception as e:
