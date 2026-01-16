@@ -31,8 +31,6 @@ Crach Check:
 
 
 gntlab-server上的运行结果：
-
-
 ------------------------------------------------
 配置的库需要注意的点：
 1.libzip需要把编译后的zipconf.h复制到lib目录下
@@ -51,5 +49,5 @@ libplist还没有检查完成，目前检查到plist_dict_get_uint, 发现一个
 candidate libraries:
 libarchive
 libcoap
-libbpf API比较多
+libbpf API比较多 
 libucl
