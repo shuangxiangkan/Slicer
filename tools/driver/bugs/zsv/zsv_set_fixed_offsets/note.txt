@@ -1,5 +1,5 @@
 编译命令：
-afl-clang-fast -o //home/shuangxiang/workspace/code/Slicer/tools/driver/Output/zsv/bug_reproduce/zsv_set_fixed_offsets/zsv_set_fixed_offsets_driver /home/shuangxiang/workspace/code/Slicer/tools/driver/Output/zsv/bug_reproduce/zsv_set_fixed_offsets/zsv_set_fixed_offsets_driver.c -I /home/shuangxiang/workspace/code/Slicer/tools/driver/Libraries/zsv/include /home/shuangxiang/workspace/code/Slicer/tools/driver/Libraries/zsv/build/Linux/rel/afl-clang-fast/lib/libzsv.a -fsigned-char -g -O0 -fsanitize=address
+afl-clang-fast -o //home/shuangxiang/research/Slicer/tools/driver/Output/zsv/bug_reproduce/zsv_set_fixed_offsets/zsv_set_fixed_offsets_driver /home/shuangxiang/research/Slicer/tools/driver/Output/zsv/bug_reproduce/zsv_set_fixed_offsets/zsv_set_fixed_offsets_driver.c -I /home/shuangxiang/research/Slicer/tools/driver/Libraries/zsv/include /home/shuangxiang/research/Slicer/tools/driver/Libraries/zsv/build/Linux/rel/afl-clang-fast/lib/libzsv.a -fsigned-char -g -O0 -fsanitize=address
 
 bug原因：
 zsv_set_fixed_offsets() 没有对 offsets == NULL 做任何检查，却在 count > 0 的情况下**无条件访问 offsets[0] 和 offsets[count-1]，导致可被合法 API 调用直接触发的 NULL dereference。

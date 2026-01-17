@@ -100,5 +100,5 @@ documentation:       # optional
 
 # fuzzing configuration
 fuzzing:
-  seeds_dir: "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/libzip/seeds"  # required, absolute path to seeds directory
-  dictionary_file: "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/libzip/zip.dict"  # optional, absolute path to dictionary file
+  seeds_dir: "/home/shuangxiang/research/Slicer/tools/driver/configs/libzip/seeds"  # required, absolute path to seeds directory
+  dictionary_file: "/home/shuangxiang/research/Slicer/tools/driver/configs/libzip/zip.dict"  # optional, absolute path to dictionary file

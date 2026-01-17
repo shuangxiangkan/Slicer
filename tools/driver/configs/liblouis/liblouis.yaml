@@ -77,5 +77,5 @@ documentation:       # optional
 
 # fuzzing configuration
 fuzzing:
-  seeds_dir: "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/liblouis/seeds"
-  dictionary_file: "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/liblouis/braille.dict"
+  seeds_dir: "/home/shuangxiang/research/Slicer/tools/driver/configs/liblouis/seeds"
+  dictionary_file: "/home/shuangxiang/research/Slicer/tools/driver/configs/liblouis/braille.dict"

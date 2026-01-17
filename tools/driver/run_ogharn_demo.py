@@ -134,11 +134,11 @@ def run_ogharn_demo(harness_dir, seeds_valid_dir, output_dir="output", log_dir="
 def main():
     """主函数入口"""
     # 写死参数，无需命令行输入
-    harness_dir = '/home/shuangxiang/workspace/code/Slicer/tools/driver/harness_filter_demo/harness_samples'
-    seeds_valid_dir = '/home/shuangxiang/workspace/code/Slicer/tools/driver/harness_filter_demo/seeds'
-    output_dir = '/home/shuangxiang/workspace/code/Slicer/tools/driver/harness_filter_demo/output'
-    log_dir = '/home/shuangxiang/workspace/code/Slicer/tools/driver/harness_filter_demo/logs'
-    final_dir = '/home/shuangxiang/workspace/code/Slicer/tools/driver/harness_filter_demo/final_best'
+    harness_dir = '/home/shuangxiang/research/Slicer/tools/driver/harness_filter_demo/harness_samples'
+    seeds_valid_dir = '/home/shuangxiang/research/Slicer/tools/driver/harness_filter_demo/seeds'
+    output_dir = '/home/shuangxiang/research/Slicer/tools/driver/harness_filter_demo/output'
+    log_dir = '/home/shuangxiang/research/Slicer/tools/driver/harness_filter_demo/logs'
+    final_dir = '/home/shuangxiang/research/Slicer/tools/driver/harness_filter_demo/final_best'
     max_harnesses = 3
     
     # 检查输入目录是否存在

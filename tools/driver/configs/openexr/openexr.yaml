@@ -104,5 +104,5 @@ documentation:       # optional
 
 # fuzzing configuration - 暂时留空，用户后续补充
 fuzzing:
-  seeds_dir: "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/openexr/seeds"  # required, absolute path to seeds directory
-  dictionary_file: "/home/shuangxiang/workspace/code/Slicer/tools/driver/configs/openexr/openexr.dict"  # optional, absolute path to dictionary file
+  seeds_dir: "/home/shuangxiang/research/Slicer/tools/driver/configs/openexr/seeds"  # required, absolute path to seeds directory
+  dictionary_file: "/home/shuangxiang/research/Slicer/tools/driver/configs/openexr/openexr.dict"  # optional, absolute path to dictionary file
