@@ -1,0 +1,6 @@
+afl-clang-fast -fsanitize=address -g \
+      -I/home/shuangxiang/research/Slicer/tools/driver/Libraries/liblouis/liblouis \
+      -L/home/shuangxiang/research/Slicer/tools/driver/Libraries/liblouis/liblouis/.libs \
+      memory_leak.c \
+      -llouis \
+      -o memory_leak
